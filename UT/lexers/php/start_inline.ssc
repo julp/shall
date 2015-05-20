@@ -1,0 +1,10 @@
+--TEST--
+PHP : test for start_inline option
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+exit;
+--EXPECT--
+NAME_BUILTIN: exit
+PUNCTUATION: ;

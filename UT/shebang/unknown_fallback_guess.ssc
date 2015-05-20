@@ -1,0 +1,16 @@
+--TEST--
+Unknown shebang, fallback on guess
+--LEXER--
+guess
+--SOURCE--
+#!/bin/foo
+<?php
+echo __LINE__;
+--EXPECT--
+IGNORABLE: #!/bin/foo\n
+NAME_TAG: <?php
+IGNORABLE: \n
+NAME_BUILTIN: echo
+IGNORABLE:  
+NAME_BUILTIN_PSEUDO: __LINE__
+PUNCTUATION: ;

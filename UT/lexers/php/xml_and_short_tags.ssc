@@ -1,0 +1,14 @@
+--TEST--
+PHP : assume there is no conflict on <?xml and sublexer get <?
+--LEXER--
+php
+secondary=xml
+short_tags=off
+--SOURCE--
+<?xml version="1.0"?>
+--EXPECT--
+TAG_PREPROC: <?xml
+IGNORABLE:  
+NAME_ATTRIBUTE: version=
+STRING_SINGLE: "1.0"
+TAG_PREPROC: ?>

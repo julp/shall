@@ -1,0 +1,9 @@
+--TEST--
+Varnish default version to 3
+--LEXER--
+varnish
+--SOURCE--
+bereq.method;
+--EXPECT--
+IGNORABLE: bereq.method
+PUNCTUATION: ;

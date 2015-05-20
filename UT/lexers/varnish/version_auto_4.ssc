@@ -1,0 +1,16 @@
+--TEST--
+Varnish autodetection to version 4
+--LEXER--
+varnish
+--SOURCE--
+vcl 4.0;
+
+bereq.method;
+--EXPECT--
+KEYWORD_DECLARATION: vcl
+IGNORABLE:  
+NUMBER_FLOAT: 4.0
+PUNCTUATION: ;
+IGNORABLE: \n\n
+NAME_VARIABLE: bereq.method
+PUNCTUATION: ;

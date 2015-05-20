@@ -1,0 +1,10 @@
+--TEST--
+Varnish version forced to 4
+--LEXER--
+varnish
+version=4
+--SOURCE--
+bereq.method;
+--EXPECT--
+NAME_VARIABLE: bereq.method
+PUNCTUATION: ;

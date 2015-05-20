@@ -1,0 +1,18 @@
+require 'rake/extensiontask'
+require 'rdoc/task'
+
+GEM_NAME = 'shall'
+
+# spec = Gem::Specification.load("#{GEM_NAME}.gemspec")
+
+Rake::ExtensionTask.new GEM_NAME do |ext|
+#Rake::ExtensionTask.new GEM_NAME, spec do |ext|
+    ext.lib_dir = 'lib/shall'
+end
+
+RDoc::Task.new :rdoc do |rdoc|
+    rdoc.rdoc_dir = 'html'
+    rdoc.title = GEM_NAME
+    rdoc.main = 'README.md'
+    rdoc.rdoc_files.include('README.md', 'ext/shall/shall.c', 'doc/shall.rb')
+end
