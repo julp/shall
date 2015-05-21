@@ -19,8 +19,15 @@ enum {
 
 typedef struct {
     LexerData data;
+    int *in_dtd; // if not NULL, this is &XMLLexerData.in_dtd of parent lexer
+    /* ... */ // voluntarily to keep it opaque
+} DTDLexerData;
+
+typedef struct {
+    LexerData data;
     int in_dtd;
     int saved_state;
+    char dtddata[1024]; // TODO and voluntarily to keep it opaque
 } XMLLexerData;
 
 #define SAVE_STATE    mydata->saved_state = YYSTATE
@@ -260,11 +267,12 @@ NDataDecl = S "NDATA" S Name; // [76]
 fallback:
     if (mydata->in_dtd) {
         extern const LexerImplementation dtd_lexer;
-        //static LexerData data = { 0 };
+        DTDLexerData *dtddata;
 
         YYCURSOR = YYTEXT;
-        // TODO: reset mydata->in_dtd
-        return dtd_lexer.yylex(yy, (LexerData *) mydata/*&data*/);
+        dtddata = (DTDLexerData *) &mydata->dtddata;
+        dtddata->in_dtd = &mydata->in_dtd;
+        return dtd_lexer.yylex(yy, (LexerData *) dtddata);
     } else {
         return IGNORABLE;
     }

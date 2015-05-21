@@ -12,6 +12,12 @@ enum {
     STATE(IN_DOUBLE_STRING),
 };
 
+/**
+ * TODO:
+ * - gérer les LITERAL_DURATION et LITERAL_SIZE (cf http://nginx.org/en/docs/syntax.html)
+ * - une variable ne sera pas interpolée dans une expression régulière
+ * - pour l'interpolation, lever toute ambiguité notamment, le nom d'une variable peut être entourée d'accolades
+ **/
 static int nginxlex(YYLEX_ARGS) {
     YYTEXT = YYCURSOR;
 /*!re2c
