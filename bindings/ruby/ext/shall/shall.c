@@ -1,5 +1,6 @@
 #include <ruby.h>
 
+#define DEBUG
 #include <shall/cpp.h>
 #include "../../../../formatter.h" // TODO: temporary
 #include <shall/shall.h>
@@ -445,6 +446,7 @@ static OptionValue *ruby_get_option_ptr(Formatter *fmt, int define, size_t UNUSE
 
 static const FormatterImplementation rubyfmt = {
     "Ruby", // unused
+    "", // unused
     ruby_get_option_ptr,
     ruby_start_document,
     ruby_end_document,
@@ -480,6 +482,32 @@ static VALUE rb_formatter_alloc(VALUE klass)
         mydata = (RubyFormatterData *) &f->formatter->optvals;
         mydata->self = o;
         mydata->options = st_init_strtable();
+#if 1
+        {
+/*
+#define CLASS_EQ(c1, c2) \
+    (c1 == c2 || RCLASS_M_TBL(c1) == RCLASS_M_TBL(c2))
+*/
+
+            VALUE klass_before_base, k;
+
+            for (k = klass_before_base = klass; cBaseFormatter != /*RCLASS_SUPER*/(k); klass_before_base = k, k = RCLASS_SUPER(k))
+                ;
+debug("klass_before_base = %s", rb_class2name(klass_before_base));
+            if (klass_before_base != klass) {
+                if (Qtrue == rb_ary_includes(formatters, klass_before_base)) {
+                    const FormatterImplementation *imp;
+
+                    imp = formatter_implementation_by_name(rb_class2name(klass_before_base) + STR_LEN("Shall::Formatter::"));
+                    debug("[F] %s > %s (hérite d'un builtin formatter: %s)", rb_class2name(klass), rb_class2name(klass_before_base), formatter_implementation_name(imp));
+                } else {
+                    debug("[F] %s n'hérite pas d'un builtin formatter", rb_class2name(klass));
+                }
+            } else {
+                debug("[F] %s hérite directement de Shall::Formatter::Base", rb_class2name(klass));
+            }
+        }
+#endif
     }
 
     return o;
