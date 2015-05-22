@@ -34,7 +34,7 @@ typedef struct {
     int max_version;
     const char *name;
     size_t name_len;
-} named_element_t;
+} varnish_named_element_t;
 
 typedef struct {
     LexerData data;
@@ -53,7 +53,7 @@ typedef struct {
 #define ELT4(s) \
     { 0, 4, UM, s, STR_LEN(s) },
 
-static const named_element_t functions[] = {
+static const varnish_named_element_t functions[] = {
     ELT("ban")
     ELT3("ban_url")
     ELT("call")
@@ -96,7 +96,7 @@ static const named_element_t functions[] = {
 // - distinguish client from server variables?
 // - regrouper variables et functions en ajoutant un membre token_type ?
 // sed -E 's#^(ELT[34]?|VAR)\("([^"]*)"\)#\0 \2#' sort.txt | sort -k 2 | cut -d " " -f 1
-static const named_element_t variables[] = {
+static const varnish_named_element_t variables[] = {
     ELT("bereq")
     ELT("bereq.backend")
     ELT("bereq.between_bytes_timeout")
@@ -191,7 +191,7 @@ static const named_element_t variables[] = {
 #define VCL4(s) \
     { 0, 4, UM, "vcl_" s, STR_LEN("vcl_" s) },
 
-static const named_element_t subroutines[] = {
+static const varnish_named_element_t subroutines[] = {
     VCL3("fetch")
     VCL4("backend_error")
     VCL4("backend_fetch")
@@ -209,9 +209,9 @@ static const named_element_t subroutines[] = {
     VCL("synth")
 };
 
-static int named_elements_cmp(const void *a, const void *b)
+static int varnish_named_elements_cmp(const void *a, const void *b)
 {
-    const named_element_t *na, *nb;
+    const varnish_named_element_t *na, *nb;
 
     na = (const named_element_t *) a; /* key */
     nb = (const named_element_t *) b;
@@ -333,9 +333,9 @@ SPACE = [ \f\n\r\t\v]+;
         }
     } else {
         {
-            named_element_t *match, key = { 0, 0, 0, (char *) YYTEXT, YYLENG };
+            varnish_named_element_t *match, key = { 0, 0, 0, (char *) YYTEXT, YYLENG };
 
-            if (NULL != (match = bsearch(&key, variables, ARRAY_SIZE(variables), sizeof(variables[0]), named_elements_cmp))) {
+            if (NULL != (match = bsearch(&key, variables, ARRAY_SIZE(variables), sizeof(variables[0]), varnish_named_elements_cmp))) {
                 if (mydata->version >= match->min_version && mydata->version < match->max_version) {
                     return NAME_VARIABLE;
                 } else {

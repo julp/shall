@@ -48,17 +48,16 @@ enum {
 };
 
 typedef struct {
+    named_element_t ne;
     int type;
-    const char *name;
-    size_t name_len;
-} named_element_t;
+} postgresql_named_element_t;
 
-static const named_element_t keywords[] = {
+static const postgresql_named_element_t keywords[] = {
 #define PG_TYPE(name) \
-    { KEYWORD_TYPE, name, STR_LEN(name) },
+    { NE(name), KEYWORD_TYPE },
 // PG_KEYWORD\(("[^"]*"),[^,]+,([^)]+)\) => PG_KEYWORD(\1,\2)
 #define PG_KEYWORD(name, category) \
-    { KEYWORD, name, STR_LEN(name) },
+    { NE(name), KEYWORD },
 PG_KEYWORD("abort", UNRESERVED_KEYWORD)
 PG_KEYWORD("absolute", UNRESERVED_KEYWORD)
 PG_KEYWORD("access", UNRESERVED_KEYWORD)
@@ -523,16 +522,6 @@ PG_KEYWORD("zone", UNRESERVED_KEYWORD)
 #undef PG_TYPE
 };
 
-static int named_elements_cmp(const void *a, const void *b)
-{
-    const named_element_t *na, *nb;
-
-    na = (const named_element_t *) a;
-    nb = (const named_element_t *) b;
-
-    return ascii_strcasecmp_l(na->name, na->name_len, nb->name, nb->name_len);
-}
-
 static int pglex(YYLEX_ARGS) {
     PgLexerData *mydata;
 
@@ -951,9 +940,10 @@ other = .;
 }
 
 <INITIAL> identifier {
-    named_element_t *match, key = { 0, (char *) YYTEXT, YYLENG };
+    named_element_t key = { (char *) YYTEXT, YYLENG };
+    postgresql_named_element_t *match;
 
-    if (NULL != (match = bsearch(&key, keywords, ARRAY_SIZE(keywords), sizeof(keywords[0]), named_elements_cmp))) {
+    if (NULL != (match = bsearch(&key, keywords, ARRAY_SIZE(keywords), sizeof(keywords[0]), named_elements_casecmp))) {
         if (mydata->uppercase_keywords/* && KEYWORD == match->type*/) {
             YYCTYPE *p;
 

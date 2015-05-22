@@ -230,24 +230,16 @@ static struct {
     DECL_KW("goto")
 };
 
-typedef struct {
-    const char *name;
-    size_t name_len;
-} named_element_t;
-
-#define ELT(s) \
-    { s, STR_LEN(s) },
-
 #if 0 /* UNUSED YET */
 static named_element_t functions[] = {
-    ELT("urlencode")
-    ELT("array_key_exists")
+    NE("urlencode"),
+    NE("array_key_exists"),
 };
 
 static named_element_t classes[] = {
-    ELT("Directory")
-//     ELT("stdClass")
-//     ELT("__PHP_Incomplete_Class")
+    NE("Directory"),
+//     NE("stdClass"),
+//     NE("__PHP_Incomplete_Class"),
 };
 #endif
 

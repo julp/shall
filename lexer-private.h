@@ -38,6 +38,18 @@
 
 # define yymore() goto yymore_restart
 
+
+#define NE(s) { s, STR_LEN(s) }
+
+typedef struct {
+    const char *name;
+    size_t name_len;
+} named_element_t;
+
+int named_elements_cmp(const void *a, const void *b);
+int named_elements_casecmp(const void *a, const void *b);
+
+
 /*
 #   define YYCTYPE        char
 #   define YYPEEK()       *cursor
