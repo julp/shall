@@ -5,6 +5,7 @@
 #include "php.h"
 #include "php_ini.h"
 #include "ext/standard/php_smart_str.h"
+#define DEBUG
 #include <shall/cpp.h>
 #include "../../formatter.h" // TODO: temporary
 #include <shall/shall.h>
@@ -13,17 +14,6 @@
 
 #define STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) STRINGIFY(x)
-
-#define DEBUG
-
-#ifdef DEBUG
-# include <stdio.h>
-# include <stdarg.h>
-# define debug(format, ...) \
-    fprintf(stderr, format "\n", ## __VA_ARGS__)
-#else
-# define debug(format, ...)
-#endif
 
 typedef struct {
     zend_object zo;
@@ -493,6 +483,7 @@ static OptionValue *php_get_option_ptr(Formatter *fmt, int define, size_t UNUSED
 
 static const FormatterImplementation phpfmt = {
     "PHP", // unused
+    "", // unused
     php_get_option_ptr,
     php_start_document,
     php_end_document,
