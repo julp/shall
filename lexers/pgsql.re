@@ -47,12 +47,7 @@ enum {
     RESERVED_KEYWORD
 };
 
-typedef struct {
-    named_element_t ne;
-    int type;
-} postgresql_named_element_t;
-
-static const postgresql_named_element_t keywords[] = {
+static const typed_named_element_t keywords[] = {
 #define PG_TYPE(name) \
     { NE(name), KEYWORD_TYPE },
 // PG_KEYWORD\(("[^"]*"),[^,]+,([^)]+)\) => PG_KEYWORD(\1,\2)
@@ -941,7 +936,7 @@ other = .;
 
 <INITIAL> identifier {
     named_element_t key = { (char *) YYTEXT, YYLENG };
-    postgresql_named_element_t *match;
+    typed_named_element_t *match;
 
     if (NULL != (match = bsearch(&key, keywords, ARRAY_SIZE(keywords), sizeof(keywords[0]), named_elements_casecmp))) {
         if (mydata->uppercase_keywords/* && KEYWORD == match->type*/) {

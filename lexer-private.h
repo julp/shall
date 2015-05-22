@@ -46,6 +46,11 @@ typedef struct {
     size_t name_len;
 } named_element_t;
 
+typedef struct {
+    named_element_t ne;
+    int type;
+} typed_named_element_t;
+
 int named_elements_cmp(const void *a, const void *b);
 int named_elements_casecmp(const void *a, const void *b);
 
