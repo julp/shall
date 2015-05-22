@@ -14,6 +14,8 @@ module Shall
         class C < Base ; end
         # Lexer for CMake files
         class CMake < Base ; end
+        # TODO
+        class CSS < Base ; end
         # Lexer for unified or context-style diffs or patches
         class Diff < Base ; end
         # For JSON data structures

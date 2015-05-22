@@ -71,6 +71,14 @@ Filename(s): CMakeLists.txt, *.cmake
 
 MIME type(s): text/x-cmake
 
+## CSS
+
+TODO
+
+Filename(s): *.css
+
+MIME type(s): text/css
+
 ## Diff
 
 Lexer for unified or context-style diffs or patches

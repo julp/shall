@@ -20,6 +20,7 @@
 extern const LexerImplementation apache_lexer;
 extern const LexerImplementation c_lexer;
 extern const LexerImplementation cmake_lexer;
+extern const LexerImplementation css_lexer;
 extern const LexerImplementation dtd_lexer;
 extern const LexerImplementation diff_lexer;
 extern const LexerImplementation json_lexer;
@@ -42,6 +43,7 @@ static const LexerImplementation *available_lexers[] = {
     &dtd_lexer,
     &c_lexer,
     &cmake_lexer,
+    &css_lexer,
     &diff_lexer,
     &json_lexer,
     &nginx_lexer,
