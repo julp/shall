@@ -59,7 +59,7 @@ static void php_get_option(int type, OptionValue *optvalptr, zval *return_value)
     }
 }
 
-int formatter_set_option_compat_cb(void *object, const char *name, OptionType type, OptionValue optval, void **UNUSED(ptr))
+static int formatter_set_option_compat_cb(void *object, const char *name, OptionType type, OptionValue optval, void **UNUSED(ptr))
 {
     return formatter_set_option((Formatter *) object, name, type, optval);
 }
@@ -74,7 +74,9 @@ static inline Lexer *php_lexer_unwrap(void *object)
     return o->lexer;
 }
 
-static int php_set_option(void *object, const char *name, zval *value, int reject_lexer, int (*cb)(void *, const char *, OptionType, OptionValue, void **))
+typedef int (*set_option_t)(void *, const char *, OptionType, OptionValue, void **);
+
+static int php_set_option(void *object, const char *name, zval *value, int reject_lexer, set_option_t cb)
 {
     int type;
     zval *ptr;
@@ -115,7 +117,7 @@ static int php_set_option(void *object, const char *name, zval *value, int rejec
     return 1;
 }
 
-static void php_set_options(Lexer *lexer, zval *options, int reject_lexer, int (*cb)(void *, const char *, OptionType, OptionValue, void **))
+static void php_set_options(void *lexer_or_formatter, zval *options, int reject_lexer, int (*cb)(void *, const char *, OptionType, OptionValue, void **))
 {
     int key_type;
     ulong key_num;
@@ -131,7 +133,7 @@ static void php_set_options(Lexer *lexer, zval *options, int reject_lexer, int (
     ) {
         key_type = zend_hash_get_current_key_ex(Z_ARRVAL_P(options), &key_name, &key_name_len, &key_num, 0, &pos);
         if (HASH_KEY_IS_STRING == key_type) {
-            php_set_option(lexer, key_name, *entry, reject_lexer, cb);
+            php_set_option(lexer_or_formatter, key_name, *entry, reject_lexer, cb);
         }
     }
 }
@@ -248,7 +250,7 @@ PHP_FUNCTION(Shall_Base_Lexer_setOption)
         RETURN_FALSE;
     }
     SHALL_FETCH_LEXER(o, object);
-    RETURN_BOOL(php_set_option((void *) o->lexer, name, value, 0, lexer_set_option));
+    RETURN_BOOL(php_set_option((void *) o->lexer, name, value, 0, (set_option_t) lexer_set_option));
 }
 
 /* class methods */
@@ -319,7 +321,7 @@ PHP_FUNCTION(Shall_Lexer__construct)
         Shall_Lexer_object *o;
 
         SHALL_FETCH_LEXER(o, return_value);
-        php_set_options((void *) o->lexer, options, 0, lexer_set_option);
+        php_set_options((void *) o->lexer, options, 0, (set_option_t) lexer_set_option);
     }
 }
 
@@ -741,7 +743,7 @@ static void shall_lexer_create(const LexerImplementation *imp, zval *options, zv
         lexer = lexer_create(imp);
         wrap_Lexer(*ceptr, out, lexer);
         if (NULL != options) {
-            php_set_options((void *) lexer, options, 0, lexer_set_option);
+            php_set_options((void *) lexer, options, 0, (set_option_t) lexer_set_option);
         }
     }
 }

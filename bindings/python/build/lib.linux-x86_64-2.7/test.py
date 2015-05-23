@@ -10,7 +10,8 @@ try:
     code = """\
 #!/usr/bin/env php54
 
-echo 'Hello world';\
+echo 'Hello world';
+?><html>\
 """
 
     print shall.lexer_guess(code, { 'start_inline': True })
@@ -55,9 +56,8 @@ echo 'Hello world';\
 
     print '=' * 20
 
-    php = shall.PHP()
-    print php.get_option('secondary')
-    php.set_option('secondary', shall.XML())
+    php = shall.PHP({'start_inline': True})
+    print php.set_option('secondary', shall.XML())
     print php.get_option('secondary')
 
     print shall.highlight(code, php, shall.Terminal())

@@ -61,14 +61,14 @@ static const LexerImplementation *available_lexers[] = {
 SHALL_API const size_t SHALL_LEXER_COUNT = ARRAY_SIZE(available_lexers);
 
 #ifndef DOXYGEN
-extern const FormatterImplementation _xmlfmt;
+// extern const FormatterImplementation _xmlfmt;
 extern const FormatterImplementation _htmlfmt;
 extern const FormatterImplementation _termfmt;
 extern const FormatterImplementation _plainfmt;
 #endif /* !DOXYGEN */
 
 static const FormatterImplementation *available_formatters[] = {
-    &_xmlfmt,
+//     &_xmlfmt,
     &_htmlfmt,
     &_termfmt,
     &_plainfmt

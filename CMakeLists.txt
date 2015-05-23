@@ -10,7 +10,7 @@ find_package(RE2C 0.13.7 REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES shall.c lexer-private.c xtring.c darray.c)# hashtable.c)
-set(FORMATTERS html xml terminal plain)
+set(FORMATTERS html terminal plain) # xml
 set(C_LEXERS text diff)
 set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
 

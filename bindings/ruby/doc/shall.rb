@@ -32,8 +32,6 @@ module Shall
         class Text < Base ; end
     end
     module Formatter
-        # Format tokens as a XML tree
-        class XML < Base ; end
         # Format tokens as HTML 4 <span> tags within a <pre> tag
         class HTML < Base ; end
         # Format tokens with ANSI color sequences, for output in a text console
