@@ -30,30 +30,41 @@ http://www.xmlgrrl.com/publications/DSDTD/ch10.html
 #endif
 
 enum {
-    ELEMENT,
-    ATTLIST,
-    NOTATION,
-    ENTITY
-};
-
-enum {
     STATE(INITIAL),
-    STATE(IN_TAG),
+    STATE(IN_ENTITY),
     STATE(IN_ELEMENT),
+    STATE(IN_ATTLIST),
+    STATE(IN_NOTATION),
     STATE(IN_PREPROC),
     STATE(IN_COMMENT),
+    STATE(IN_STRING_SINGLE),
+    STATE(IN_STRING_DOUBLE),
+};
+
+static int default_token_type[] = {
+    IGNORABLE, // INITIAL
+    IGNORABLE, // IN_ENTITY
+    IGNORABLE, // IN_ELEMENT
+    IGNORABLE, // IN_ATTLIST
+    IGNORABLE, // IN_NOTATION
+    IGNORABLE, // IN_PREPROC
+    COMMENT_MULTILINE, // IN_COMMENT
+    STRING_SINGLE, // IN_STRING_SINGLE
+    STRING_SINGLE, // IN_STRING_DOUBLE
 };
 
 typedef struct {
     LexerData data;
     int *in_dtd; // if not NULL, this is &XMLLexerData.in_dtd of parent lexer
     int depth;
-    int argno;
-    int tag;
+    int saved_state;
 } DTDLexerData;
 
 #define YYSTRNCMP(x) \
     strncmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG, STR_LEN(x))
+
+#define SAVE_STATE    mydata->saved_state = YYSTATE
+#define RESTORE_STATE YYSETCONDITION(mydata->saved_state)
 
 static int dtdlex(YYLEX_ARGS) {
     DTDLexerData *mydata;
@@ -68,21 +79,23 @@ NameStartChar = ':' | [A-Z] | '_' | [a-z] | [\xC0-\xD6] | [\xD8-\xF6] | [\u00F8-
 
 NameChar = NameStartChar | '-' | '.' | [0-9] | [\xB7] | [\u0300-\u036F] | [\u203F-\u2040]; // [4a]
 Name = NameStartChar NameChar*; // [5]
+CharRef = "&#" [0-9]+ ";" | "&#x" [0-9a-fA-F]+ ";"; // [66]
+EntityRef = "&" Name ";"; // [68]
+Reference = EntityRef | CharRef; // [67]
 PEReference = "%" Name ";"; // [69]
+
+EntityValue = '"' ([^%&"] | PEReference | Reference)* '"' | "'" ([^%&'] | PEReference | Reference)* "'"; // [9]
+AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [10]
 
 <INITIAL>"<!ELEMENT" S {
     yyless(STR_LEN("<!ELEMENT"));
-    BEGIN(IN_TAG);
-    mydata->argno = 0;
-    mydata->tag = ELEMENT;
+    BEGIN(IN_ELEMENT);
     return NAME_TAG;
 }
 
 <INITIAL>"<!ATTLIST" S {
     yyless(STR_LEN("<!ATTLIST"));
-    BEGIN(IN_TAG);
-    mydata->argno = 0;
-    mydata->tag = ATTLIST;
+    BEGIN(IN_ATTLIST);
     return NAME_TAG;
 }
 
@@ -91,11 +104,20 @@ PEReference = "%" Name ";"; // [69]
     return NAME_TAG;
 }
 
-<INITIAL>"<!" ("ENTITY" | "NOTATION") S {
-    mydata->argno = 0;
-    mydata->tag = ENTITY;
-    BEGIN(IN_TAG);
+<INITIAL>"<!ENTITY" S {
+    yyless(STR_LEN("<!ENTITY"));
+    BEGIN(IN_ENTITY);
     return NAME_TAG;
+}
+
+<INITIAL>"<!NOTATION" S {
+    yyless(STR_LEN("<!NOTATION"));
+    BEGIN(IN_NOTATION);
+    return NAME_TAG;
+}
+
+<IN_NOTATION>"PUBLIC" | "SYSTEM" {
+    return KEYWORD_CONSTANT;
 }
 
 <INITIAL>'<!--' {
@@ -108,64 +130,80 @@ PEReference = "%" Name ";"; // [69]
     return COMMENT_MULTILINE;
 }
 
-<IN_COMMENT>[^] {
-    return COMMENT_MULTILINE;
-}
-
 <*> PEReference {
     return NAME_ENTITY;
 }
 
-<IN_TAG>[^ \n\r\t>]+ {
-    // NOTE: positionnal argument is a bad idea as entity can break it?
-    ++mydata->argno;
-    switch (mydata->tag) {
-        case ELEMENT:
-            if (2 == mydata->argno) {
-                if (0 == YYSTRNCMP("EMPTY") || 0 == YYSTRNCMP("ANY")) {
-                    return KEYWORD;
-                }
-            }
-            break;
-        case ATTLIST:
-            if (mydata->argno >= 2) {
-                switch ((mydata->argno - 2) % 3) {
-                    case 1:
-                        if (0 == YYSTRNCMP("CDATA") || 0 == YYSTRNCMP("ID") || 0 == YYSTRNCMP("IDREF") /* ... */) {
-                            return KEYWORD;
-                        }
-                        break;
-                    case 2:
-                        if (0 == YYSTRNCMP("#IMPLIED") || 0 == YYSTRNCMP("#REQUIRED")) {
-                            return KEYWORD;
-                        }
-                        break;
-                }
-            }
-            break;
-    }
-
-    return IGNORABLE;
+<IN_ENTITY>"SYSTEM" | "PUBLIC" | "NDATA" {
+    return KEYWORD_CONSTANT;
 }
 
-<IN_TAG>'>' {
-    BEGIN(INITIAL);
-    return NAME_TAG;
+<IN_ENTITY>Name {
+    return NAME_ENTITY;
 }
 
-/*
 <IN_ELEMENT>[(),] {
     return PUNCTUATION;
 }
 
-<IN_ELEMENT>[|?*+] {
+<IN_ELEMENT>[|*+?] {
     return OPERATOR;
 }
 
-<IN_ELEMENT>"#PCDATA" {
-    return KEYWORD_TYPE;
+<IN_ELEMENT>Name {
+    return NAME_TAG;
 }
-*/
+
+<IN_ELEMENT>"EMPTY" | "ANY" | "#PCDATA" {
+    return KEYWORD_CONSTANT;
+}
+
+<IN_ATTLIST>[()] {
+    return PUNCTUATION;
+}
+
+<IN_ATTLIST>[|] {
+    return OPERATOR;
+}
+
+<IN_ATTLIST>"CDATA" | "ID" | ("IDREF" "S"?) | "ENTITY" | "ENTITIES" | ("NMTOKEN" "S"?) | "NOTATION" {
+    return KEYWORD_CONSTANT;
+}
+
+<IN_ATTLIST>"#IMPLIED" | "#REQUIRED" | "#FIXED" {
+    return KEYWORD_CONSTANT;
+}
+
+<IN_ATTLIST>Name {
+    return NAME_ATTRIBUTE;
+}
+
+<IN_ATTLIST,IN_ENTITY>"'" {
+    SAVE_STATE;
+    BEGIN(IN_STRING_SINGLE);
+    return STRING_SINGLE;
+}
+
+<IN_ATTLIST,IN_ENTITY>'"' {
+    SAVE_STATE;
+    BEGIN(IN_STRING_DOUBLE);
+    return STRING_SINGLE;
+}
+
+<IN_STRING_SINGLE>"'" {
+    RESTORE_STATE;
+    return STRING_SINGLE;
+}
+
+<IN_STRING_DOUBLE>'"' {
+    RESTORE_STATE;
+    return STRING_SINGLE;
+}
+
+<IN_ELEMENT,IN_ATTLIST,IN_ENTITY,IN_NOTATION>'>' {
+    BEGIN(INITIAL);
+    return NAME_TAG;
+}
 
 <INITIAL>"]]>" {
     if (--mydata->depth >= 0) {
@@ -188,7 +226,7 @@ PEReference = "%" Name ";"; // [69]
 }
 
 <*> [^] {
-    return IGNORABLE;
+    return default_token_type[YYSTATE];
 }
 */
 }
