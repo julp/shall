@@ -13,17 +13,6 @@ typedef struct {
     DArray state_stack;
 } CMakeLexerData;
 
-#define PUSH_STATE(new_state) \
-    do { \
-        darray_push(&mydata->state_stack, &YYSTATE); \
-        BEGIN(new_state); \
-    } while (0);
-
-#define POP_STATE() \
-    do { \
-        darray_pop(&mydata->state_stack, &YYSTATE); \
-    } while (0);
-
 static void cmakeinit(LexerData *data)
 {
     CMakeLexerData *mydata;

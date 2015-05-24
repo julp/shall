@@ -73,7 +73,7 @@ MIME type(s): text/x-cmake
 
 ## CSS
 
-TODO
+For CSS (Cascading Style Sheets)
 
 Filename(s): *.css
 

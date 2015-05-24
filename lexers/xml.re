@@ -30,9 +30,6 @@ typedef struct {
     char dtddata[1024]; // TODO and voluntarily to keep it opaque
 } XMLLexerData;
 
-#define SAVE_STATE    mydata->saved_state = YYSTATE
-#define RESTORE_STATE YYSETCONDITION(mydata->saved_state)
-
 static int xmlanalyse(const char *src, size_t src_len)
 {
     if (src_len >= STR_LEN("<?xml") && 0 == memcmp(src, "<?xml", STR_LEN("<?xml"))) {

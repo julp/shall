@@ -60,12 +60,6 @@ typedef struct {
     int saved_state;
 } DTDLexerData;
 
-#define YYSTRNCMP(x) \
-    strncmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG, STR_LEN(x))
-
-#define SAVE_STATE    mydata->saved_state = YYSTATE
-#define RESTORE_STATE YYSETCONDITION(mydata->saved_state)
-
 static int dtdlex(YYLEX_ARGS) {
     DTDLexerData *mydata;
 

@@ -14,7 +14,7 @@ module Shall
         class C < Base ; end
         # Lexer for CMake files
         class CMake < Base ; end
-        # TODO
+        # For CSS (Cascading Style Sheets)
         class CSS < Base ; end
         # Lexer for unified or context-style diffs or patches
         class Diff < Base ; end

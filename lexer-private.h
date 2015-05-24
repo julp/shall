@@ -38,6 +38,22 @@
 
 # define yymore() goto yymore_restart
 
+#define SAVE_STATE    mydata->saved_state = YYSTATE
+#define RESTORE_STATE YYSETCONDITION(mydata->saved_state)
+
+#define PUSH_STATE(new_state) \
+    do { \
+        darray_push(&mydata->state_stack, &YYSTATE); \
+        BEGIN(new_state); \
+    } while (0);
+
+#define POP_STATE() \
+    do { \
+        darray_pop(&mydata->state_stack, &YYSTATE); \
+    } while (0);
+
+#define YYSTRNCMP(x) \
+    strncmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG, STR_LEN(x))
 
 #define NE(s) { s, STR_LEN(s) }
 
