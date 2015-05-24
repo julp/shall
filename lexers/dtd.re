@@ -57,7 +57,6 @@ typedef struct {
     LexerData data;
     int *in_dtd; // if not NULL, this is &XMLLexerData.in_dtd of parent lexer
     int depth;
-    int saved_state;
 } DTDLexerData;
 
 static int dtdlex(YYLEX_ARGS) {
@@ -132,6 +131,10 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
     return KEYWORD_CONSTANT;
 }
 
+<IN_ELEMENT>"EMPTY" | "ANY" | "#PCDATA" {
+    return KEYWORD_CONSTANT;
+}
+
 <IN_ENTITY>Name {
     return NAME_ENTITY;
 }
@@ -146,10 +149,6 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 
 <IN_ELEMENT>Name {
     return NAME_TAG;
-}
-
-<IN_ELEMENT>"EMPTY" | "ANY" | "#PCDATA" {
-    return KEYWORD_CONSTANT;
 }
 
 <IN_ATTLIST>[()] {
@@ -173,28 +172,26 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <IN_ATTLIST,IN_ENTITY>"'" {
-    SAVE_STATE;
-    BEGIN(IN_STRING_SINGLE);
+    PUSH_STATE(IN_STRING_SINGLE);
     return STRING_SINGLE;
 }
 
 <IN_ATTLIST,IN_ENTITY>'"' {
-    SAVE_STATE;
-    BEGIN(IN_STRING_DOUBLE);
+    PUSH_STATE(IN_STRING_DOUBLE);
     return STRING_SINGLE;
 }
 
 <IN_STRING_SINGLE>"'" {
-    RESTORE_STATE;
+    POP_STATE();
     return STRING_SINGLE;
 }
 
 <IN_STRING_DOUBLE>'"' {
-    RESTORE_STATE;
+    POP_STATE();
     return STRING_SINGLE;
 }
 
-<IN_ELEMENT,IN_ATTLIST,IN_ENTITY,IN_NOTATION>'>' {
+<IN_ELEMENT,IN_ATTLIST,IN_ENTITY,IN_NOTATION>">" {
     BEGIN(INITIAL);
     return NAME_TAG;
 }

@@ -3,21 +3,24 @@
 # define LEXER_H
 
 # include "option.h"
+# include "darray.h"
 
 /**
  * Common data of any lexer
+ *
+ * @note each member have to be ALIGNED(sizeof(OptionValue)),
+ * this is a shortcut to union with an OptionValue and let us
+ * to have a direct access to the final value.
  */
 typedef struct {
     /**
      * Lexer's state/condition
      */
     int state ALIGNED(sizeof(OptionValue));
-#if 0
-# define PUSH_STATE(name) data->state[data->state_depth++] = STATE(name)
-# define POP_STATE        --data->state_depth
-    int state[sizeof(OptionValue) / sizeof(int) - 1] /*ALIGNED(sizeof(OptionValue))*/;
-    int state_depth;
-#endif
+    /**
+     * Stack
+     */
+    DArray *state_stack ALIGNED(sizeof(OptionValue));
     /**
      * Mark next token kind
      */

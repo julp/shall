@@ -30,7 +30,6 @@
 #include "tokens.h"
 #include "lexer.h"
 #include "lexer-private.h"
-#include "darray.h"
 
 typedef struct {
     LexerData data;
@@ -40,16 +39,7 @@ typedef struct {
     int in_namespace;
     char *doclabel; // (?:now|here)doc label // TODO: may leak
     size_t doclabel_len;
-    DArray state_stack;
 } PHPLexerData;
-
-static void phpinit(LexerData *data)
-{
-    PHPLexerData *mydata;
-
-    mydata = (PHPLexerData *) data;
-    darray_init(&mydata->state_stack, 0, sizeof(data->state));
-}
 
 static int phpanalyse(const char *src, size_t src_len)
 {
@@ -232,16 +222,6 @@ static named_element_t classes[] = {
 };
 #endif
 
-#if 0
-static void phpclose(LexerData *data)
-{
-    PHPLexerData *mydata;
-
-    mydata = (PHPLexerData *) data;
-    darray_destroy(&mydata->state_stack);
-}
-#endif
-
 /**
  * NOTE:
  * - ' = case insensitive (ASCII letters only)
@@ -400,7 +380,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"${" {
     PUSH_STATE(ST_LOOKING_FOR_VARNAME);
-    return SEQUENCE_INTERPOLATED; // TODO
+    return SEQUENCE_INTERPOLATED;
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"{$" {
@@ -611,10 +591,10 @@ debug("[ERR] %d", __LINE__);
 
 <ST_IN_SCRIPTING>"%>"NEWLINE? {
     if (mydata->asp_tags) {
+        yyless(STR_LEN("%>"));
         BEGIN(INITIAL);
         return NAME_TAG;
     } else {
-        //yyless(1);
         return IGNORABLE;
     }
 }
@@ -818,16 +798,6 @@ not_php:
         YYCURSOR = YYTEXT;
 
         return secondary->imp->yylex(yy, (LexerData *) secondary->optvals);
-#if 0
-    extern const LexerImplementation xml_lexer;
-//     extern const LexerImplementation json_lexer;
-    static LexerData data = {0};
-
-    YYCURSOR = YYTEXT;
-//     memset(&data, 0, sizeof(data));
-    return xml_lexer.yylex(yy, &data);
-//     return json_lexer.yylex(yy, &data);
-#endif
     }
 }
 
@@ -844,7 +814,7 @@ LexerImplementation php_lexer = {
     (const char * const []) { "*.php", "*.php[345]", "*.inc", NULL },
     (const char * const []) { "text/x-php", "application/x-httpd-php", NULL },
     (const char * const []) { "php", "php-cli", "php5*", NULL },
-    phpinit,
+    NULL,
     phpanalyse,
     phplex,
     sizeof(PHPLexerData),

@@ -26,7 +26,6 @@ typedef struct {
 typedef struct {
     LexerData data;
     int in_dtd;
-    int saved_state;
     char dtddata[1024]; // TODO and voluntarily to keep it opaque
 } XMLLexerData;
 
@@ -54,6 +53,7 @@ static int xmllex(YYLEX_ARGS) {
     mydata = (XMLLexerData *) data;
     YYTEXT = YYCURSOR;
     if (mydata->in_dtd) {
+        ++YYCURSOR;
         goto fallback;
     }
 /*!re2c
@@ -185,25 +185,21 @@ NDataDecl = S "NDATA" S Name; // [76]
 }
 
 <INITIAL>"<!DOCTYPE" {
-    BEGIN(IN_TAG);
-    SAVE_STATE;
+    PUSH_STATE(IN_TAG);
     return NAME_TAG;
 }
 
-<INITIAL>'<!' {
+<INITIAL>"<!" {
     return IGNORABLE;
 }
 
-<INITIAL>'<?' Name {
-    BEGIN(IN_PREPROC);
-    SAVE_STATE;
+<INITIAL>"<?" Name {
+    PUSH_STATE(IN_PREPROC);
     return TAG_PREPROC;
 }
 
-<INITIAL> '<' Name {
-    // '/' == yytext[0]
-    BEGIN(IN_TAG);
-    SAVE_STATE;
+<INITIAL> "<" Name {
+    PUSH_STATE(IN_TAG);
     return NAME_TAG;
 }
 
@@ -215,40 +211,44 @@ NDataDecl = S "NDATA" S Name; // [76]
     return IGNORABLE;
 }
 
-<IN_TAG>'>' {
-    BEGIN(INITIAL);
+<IN_TAG>">" {
+    //BEGIN(INITIAL);
+    POP_STATE();
     return NAME_TAG;
 }
 
 <IN_PREPROC> "?>" {
-    BEGIN(INITIAL);
+    //BEGIN(INITIAL);
+    POP_STATE();
     return TAG_PREPROC;
 }
 
 <IN_TAG,IN_PREPROC> Name Eq {
-    BEGIN(IN_ATTRIBUTE);
+    PUSH_STATE(IN_ATTRIBUTE);
     return NAME_ATTRIBUTE;
 }
 
-<IN_ATTRIBUTE> '\'' {
+<IN_ATTRIBUTE> "'" {
+    //PUSH_STATE(IN_SINGLE_QUOTES);
     BEGIN(IN_SINGLE_QUOTES);
     return STRING_SINGLE;
 }
 
-<IN_SINGLE_QUOTES> '\'' {
-    //BEGIN(IN_TAG);
-    RESTORE_STATE;
+<IN_SINGLE_QUOTES> "'" {
+    POP_STATE();
+    //POP_STATE();
     return STRING_SINGLE;
 }
 
 <IN_ATTRIBUTE> '"' {
+    //PUSH_STATE(IN_DOUBLE_QUOTES);
     BEGIN(IN_DOUBLE_QUOTES);
     return STRING_SINGLE;
 }
 
 <IN_DOUBLE_QUOTES> '"' {
-    //BEGIN(IN_TAG);
-    RESTORE_STATE;
+    POP_STATE();
+    //POP_STATE();
     return STRING_SINGLE;
 }
 
@@ -263,6 +263,7 @@ NDataDecl = S "NDATA" S Name; // [76]
 <INITIAL>[^] {
 fallback:
     if (mydata->in_dtd) {
+#if 0
         extern const LexerImplementation dtd_lexer;
         DTDLexerData *dtddata;
 
@@ -270,6 +271,9 @@ fallback:
         dtddata = (DTDLexerData *) &mydata->dtddata;
         dtddata->in_dtd = &mydata->in_dtd;
         return dtd_lexer.yylex(yy, (LexerData *) dtddata);
+#else
+        return IGNORABLE;
+#endif
     } else {
         return IGNORABLE;
     }

@@ -5,21 +5,11 @@
 #include "utils.h"
 #include "lexer.h"
 #include "lexer-private.h"
-#include "darray.h"
 
 typedef struct {
     LexerData data;
     int bracket_len; // total length of "[" "="* "["
-    DArray state_stack;
 } CMakeLexerData;
-
-static void cmakeinit(LexerData *data)
-{
-    CMakeLexerData *mydata;
-
-    mydata = (CMakeLexerData *) data;
-    darray_init(&mydata->state_stack, 0, sizeof(data->state));
-}
 
 enum {
     STATE(INITIAL),
@@ -304,7 +294,7 @@ LexerImplementation cmake_lexer = {
     (const char * const []) { "CMakeLists.txt", "*.cmake", NULL },
     (const char * const []) { "text/x-cmake", NULL },
     NULL,
-    cmakeinit,
+    NULL,
     NULL,
     cmakelex,
     sizeof(CMakeLexerData),

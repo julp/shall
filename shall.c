@@ -803,8 +803,16 @@ SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
     Lexer *lexer;
 
     if (NULL != (lexer = malloc(sizeof(*lexer) + imp->data_size))) {
+        LexerData *data;
+
         lexer->imp = imp;
         bzero(lexer->optvals, imp->data_size);
+        data = (LexerData *) &lexer->optvals;
+        if (NULL == (data->state_stack = malloc(sizeof(*data->state_stack)))) {
+            free(lexer);
+            return NULL;
+        }
+        darray_init(data->state_stack, 0, sizeof(data->state));
         if (NULL != imp->options) {
             LexerOption *lo;
 
@@ -863,6 +871,13 @@ SHALL_API void lexer_each_sublexers(Lexer *lexer, on_lexer_destroy_cb_t cb)
  */
 SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
 {
+    LexerData *data;
+
+    data = (LexerData *) &lexer->optvals;
+    if (NULL != data->state_stack) {
+        darray_destroy(data->state_stack);
+        free(data->state_stack);
+    }
     if (NULL != lexer->imp->options) {
         LexerOption *lo;
 
@@ -1210,14 +1225,58 @@ SHALL_API const FormatterImplementation *formatter_implementation(Formatter *fmt
 }
 
 /**
- * Creates a new formatter from a formatter implementation
+ * Creates a new formatter from a formatter implementation which may inherit
+ * from an other one.
+ *
+ * @param super the targeted formatter implementation from which we intent to
+ * create a new formatter
+ * @param base the parent formatter implementation
+ *
+ * @return a new formatter for the given implementation
+ */
+SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *super, const FormatterImplementation *base)
+{
+    Formatter *fmt;
+
+    if (NULL != (fmt = malloc(sizeof(*fmt) + super->data_size/* - sizeof(fmt->data)*/))) {
+        fmt->imp = super;
+        if (NULL != base->options) {
+            FormatterOption *fo;
+
+            for (fo = base->options; NULL != fo->name; fo++) {
+                OptionValue *optvalptr;
+
+                if (NULL != (optvalptr = base->get_option_ptr(fmt, 1, fo->offset, fo->name, fo->name_len))) {
+                    memcpy(optvalptr, &fo->defval, sizeof(fo->defval));
+                }
+            }
+        }
+        if (super != base && NULL != super->options) {
+            FormatterOption *fo;
+
+            for (fo = super->options; NULL != fo->name; fo++) {
+                OptionValue *optvalptr;
+
+                if (NULL != (optvalptr = super->get_option_ptr(fmt, 1, fo->offset, fo->name, fo->name_len))) {
+                    memcpy(optvalptr, &fo->defval, sizeof(fo->defval));
+                }
+            }
+        }
+    }
+
+    return fmt;
+}
+
+/**
+ * Creates a new formatter from a **base** formatter implementation
  *
  * @param imp the formatter implementation
  *
  * @return a new formatter for the given implementation
  */
-SHALL_API Formatter *formatter_create(const FormatterImplementation *imp/*, void *private*/)
+SHALL_API Formatter *formatter_create(const FormatterImplementation *imp)
 {
+#if 0
     Formatter *fmt;
 
     if (NULL != (fmt = malloc(sizeof(*fmt) + imp->data_size/* - sizeof(fmt->data)*/))) {
@@ -1241,6 +1300,9 @@ SHALL_API Formatter *formatter_create(const FormatterImplementation *imp/*, void
     }
 
     return fmt;
+#else
+        return formatter_create_inherited(imp, imp);
+#endif
 }
 
 /**
