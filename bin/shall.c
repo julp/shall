@@ -86,7 +86,7 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
         }
         imp_name = lexer_implementation_name(limp);
         h = hashtable_hash(&lexers, imp_name);
-        if (!hashtable_quick_get(&lexers, h, imp_name, (void **) &lexer)) {
+        if (!hashtable_quick_get(&lexers, h, imp_name, &lexer)) {
             lexer = lexer_create(limp);
             for (o = 0; o < lexer_options->options_len; o++) {
                 if (0 != lexer_set_option_as_string(lexer, lexer_options->options[o].name, lexer_options->options[o].value, lexer_options->options[o].value_len)) {

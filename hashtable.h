@@ -99,10 +99,10 @@ ht_hash_t value_hash(ht_key_t);
     _hashtable_quick_put(ht, f, h, (ht_key_t) k, nv, ov)
 
 #define hashtable_get(ht, k, v) \
-    _hashtable_get(ht, (ht_key_t) k, v)
+    _hashtable_get(ht, (ht_key_t) k, (void **) v)
 
 #define hashtable_quick_get(ht, h, k, v) \
-    _hashtable_quick_get(ht, h, (ht_key_t) k, v)
+    _hashtable_quick_get(ht, h, (ht_key_t) k, (void **) v)
 
 #define hashtable_delete(ht, k, dtor) \
     _hashtable_delete(ht, (ht_key_t) k, dtor)
