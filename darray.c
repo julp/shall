@@ -47,6 +47,7 @@ void darray_destroy(DArray *da)
 void darray_clear(DArray *da)
 {
     da->length = 0;
+    bzero(da->data, da->allocated);
 }
 
 bool darray_at(DArray *da, unsigned int offset, void *value)
