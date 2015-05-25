@@ -62,7 +62,7 @@ typedef struct LexerInput LexerInput;
 /**
  * Define a lexer (acts as a class)
  */
-typedef struct {
+typedef struct LexerImplementation {
     /**
      * Official name of the lexer.
      * Should start with an uppercase letter and include only ASCII alphanumeric characters plus underscores
@@ -121,6 +121,10 @@ typedef struct {
      * Available options
      */
     /*const*/ LexerOption /*const */*options;
+    /**
+     * Implicit dependencies to other lexers
+     */
+    const struct LexerImplementation * const *implicit;
 } LexerImplementation;
 
 /**

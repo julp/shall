@@ -281,6 +281,8 @@ fallback:
 */
 }
 
+extern const LexerImplementation dtd_lexer;
+
 LexerImplementation xml_lexer = {
     "XML",
     0,
@@ -293,5 +295,6 @@ LexerImplementation xml_lexer = {
     xmlanalyse,
     xmllex,
     sizeof(XMLLexerData),
-    NULL
+    NULL,
+    (const LexerImplementation * const []) { &dtd_lexer, NULL }
 };

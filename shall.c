@@ -824,6 +824,13 @@ SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
         if (NULL != imp->init) {
             imp->init((LexerData *) lexer->optvals);
         }
+        if (NULL != imp->implicit) {
+            const LexerImplementation * const *dep;
+
+            for (dep = imp->implicit; NULL != *dep; dep++) {
+// debug("%s depends on %s", imp->name, (*dep)->name);
+            }
+        }
     }
 
     return lexer;
