@@ -735,8 +735,14 @@ invalid = invalid1 | invalid2;
     return IGNORABLE;
 }
 
-<INITIAL>"/*" {
-    BEGIN(IN_COMMENT); // TODO: PUSH
+<*> ":" ":"? ident {
+    return KEYWORD_PSEUDO;
+}
+
+<*>"/*" {
+    if (STATE(IN_COMMENT) != YYSTATE) {
+        PUSH_STATE(IN_COMMENT);
+    }
     return COMMENT_MULTILINE;
 }
 
@@ -755,7 +761,7 @@ invalid = invalid1 | invalid2;
 }
 
 <IN_COMMENT>"*/" {
-    BEGIN(INITIAL); // TODO: POP
+    POP_STATE();
     return COMMENT_MULTILINE;
 }
 
@@ -815,11 +821,14 @@ invalid = invalid1 | invalid2;
     return KEYWORD;
 }
 
+// "@page" pseudo_page?
+// "@charset" string
+// "@media" media_list
 <INITIAL>"@" ident {
     return KEYWORD;
 }
 
-<INITIAL>"." name {
+<INITIAL>"." ident {
     return NAME_CLASS;
 }
 
@@ -840,6 +849,8 @@ invalid = invalid1 | invalid2;
     return NUMBER_DECIMAL;
 }
 
+// CSS2 defines em, ex, px, cm, mm, in, pt, pc, deg, rad, grad, ms, s, hz, khz (in all variants - case and escape character)
+// but CSS3 is wider, unity is simply an "identifier"
 <IN_CONTENT>num ("%" | ident) {
     return NUMBER_DECIMAL;
 }
