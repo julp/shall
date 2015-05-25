@@ -289,6 +289,7 @@ restart_string_bracket:
 
 LexerImplementation cmake_lexer = {
     "CMake",
+    0,
     "Lexer for CMake files",
     NULL,
     (const char * const []) { "CMakeLists.txt", "*.cmake", NULL },

@@ -224,6 +224,7 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 
 LexerImplementation dtd_lexer = {
     "DTD",
+    0,
     "A lexer for DTDs (Document Type Definitions)",
     NULL,
     (const char * const []) { "*.dtd", NULL },

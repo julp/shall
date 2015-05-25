@@ -114,6 +114,7 @@ SPACE = [ \n\r\t];
 
 LexerImplementation nginx_lexer = {
     "Nginx",
+    0,
     "Lexer for Nginx configuration files",
     (const char * const []) { "nginxconf", NULL },
     (const char * const []) { "nginx.conf", NULL },

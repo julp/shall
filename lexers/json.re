@@ -67,6 +67,7 @@ EXPONENT_DNUM = ((LNUM|DNUM)[eE][+-]?LNUM);
 
 LexerImplementation json_lexer = {
     "JSON",
+    0,
     "For JSON data structures",
     NULL,
     (const char * const []) { "*.json", NULL },

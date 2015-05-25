@@ -852,6 +852,7 @@ invalid = invalid1 | invalid2;
 
 LexerImplementation css_lexer = {
     "CSS",
+    0,
     "For CSS (Cascading Style Sheets)",
     NULL,
     (const char * const []) { "*.css", NULL },

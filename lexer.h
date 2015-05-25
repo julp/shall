@@ -69,6 +69,10 @@ typedef struct {
      */
     const char *name;
     /**
+     * Flags
+     */
+    uint16_t flags;
+    /**
      * A string for self documentation
      */
     const char *docstr;

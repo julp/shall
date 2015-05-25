@@ -283,6 +283,7 @@ fallback:
 
 LexerImplementation xml_lexer = {
     "XML",
+    0,
     "Generic lexer for XML (eXtensible Markup Language)",
     NULL,
     (const char * const []) { "*.xml", "*.xsd", NULL },

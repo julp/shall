@@ -423,6 +423,7 @@ SPACE = [ \f\n\r\t\v]+;
 
 LexerImplementation varnish_lexer = {
     "Varnish",
+    0,
     "A lexer for Varnish configuration language",
     (const char * const []) { "varnishconf", "VCL", NULL },
     (const char * const []) { "*.vcl", NULL },

@@ -27,6 +27,7 @@ static int textlex(YYLEX_ARGS) {
 
 LexerImplementation text_lexer = {
     "Text",
+    0,
     "A \"dummy\" lexer that doesn't highlight anything",
     (const char * const []) { NULL },
     (const char * const []) { "*.txt", NULL },

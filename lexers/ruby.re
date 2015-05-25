@@ -370,6 +370,7 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 
 LexerImplementation ruby_lexer = {
     "Ruby",
+    0,
     "For Ruby source code",
     NULL,
     (const char * const []) { "*.rb", NULL },
@@ -384,6 +385,7 @@ LexerImplementation ruby_lexer = {
 
 LexerImplementation erb_lexer = {
     "ERB",
+    0,
     "For ERB (Ruby) templates. Use the \"secondary\" option to delegate tokenization of parts which are outside of ERB tags.",
     NULL,
     (const char * const []) { "*.erb", NULL },

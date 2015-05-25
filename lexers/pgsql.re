@@ -962,6 +962,7 @@ other = .;
 
 LexerImplementation postgresql_lexer = {
     "PostgreSQL",
+    0,
     "Lexer for the PostgreSQL dialect of SQL",
     (const char * const []) { "pgsql", "postgre", NULL },
     NULL, // "*.sql" but it may conflict with future mysql & co?

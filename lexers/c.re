@@ -168,6 +168,7 @@ IS = [uUlL]*;
 
 LexerImplementation c_lexer = {
     "C",
+    0,
     "For C source code with preprocessor directives",
     NULL,
     (const char * const []) { "*.[ch]", NULL },

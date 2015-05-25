@@ -131,6 +131,7 @@ EOS = [\000];
 
 LexerImplementation apache_lexer = {
     "Apache",
+    0,
     "Lexer for configuration files following the Apache configuration file format (including .htaccess)",
     (const char * const []) { "apacheconf", NULL },
     (const char * const []) { "httpd.conf", "apache.conf", "apache2.conf", ".htaccess", NULL },

@@ -63,6 +63,7 @@ static int difflex(YYLEX_ARGS)
 
 LexerImplementation diff_lexer = {
     "Diff",
+    0,
     "Lexer for unified or context-style diffs or patches",
     (const char * const []) { "udiff", NULL },
     (const char * const []) { "*.diff", "*.patch", NULL },

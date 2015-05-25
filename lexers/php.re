@@ -809,6 +809,7 @@ not_php:
 
 LexerImplementation php_lexer = {
     "PHP",
+    0,
     "For PHP source code",
     (const char * const []) { "php3", "php4", "php5", NULL },
     (const char * const []) { "*.php", "*.php[345]", "*.inc", NULL },
