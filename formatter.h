@@ -119,10 +119,12 @@ struct Formatter {
      * Implementation on which depends the formatter (like its "class")
      */
     const FormatterImplementation *imp;
+#ifdef TEST
     /**
      * Hashtable to associate option's name to its value
      */
     HashTable optmap;
+#endif
     /**
      * (Variable) Space to store current values of options
      */
