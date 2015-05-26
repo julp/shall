@@ -4,13 +4,9 @@
 
 # include <stddef.h> /* uintptr_t */
 # include <stdint.h> /* uint32_t */
+# include "bool.h"
 
 typedef struct _HashTable HashTable;
-
-typedef enum {
-    FALSE,
-    TRUE
-} bool;
 
 typedef uintptr_t ht_key_t; // key_t is defined for ftok
 typedef uintptr_t ht_hash_t;

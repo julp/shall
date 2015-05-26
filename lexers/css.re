@@ -6,6 +6,8 @@
 #include "lexer-private.h"
 #include "utils.h"
 
+// http://www.w3.org/TR/CSS2/grammar.html
+
 enum {
     STATE(INITIAL),
     STATE(IN_COMMENT),

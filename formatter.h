@@ -2,8 +2,9 @@
 
 # define FORMATTER_H
 
-# include "option.h"
+# include "types.h"
 # include "xtring.h"
+# include "hashtable.h"
 
 typedef void FormatterData;
 
@@ -43,12 +44,12 @@ typedef struct {
 #define END_OF_FORMATTER_OPTIONS \
     { NULL, 0, 0, 0, OPT_DEF_INT(0), NULL }
 
-typedef struct Formatter Formatter;
+// typedef struct Formatter Formatter;
 
 /**
  * Define a formatter (acts as a class)
  */
-typedef struct {
+struct FormatterImplementation {
     /**
      * Official name of the formatter.
      * Should start with an uppercase letter and include only ASCII alphanumeric characters plus underscores
@@ -108,7 +109,7 @@ typedef struct {
      * Available options
      */
     /*const*/ FormatterOption /*const */*options;
-} FormatterImplementation;
+};
 
 /**
  * Use a formatter (acts as an instance)
@@ -119,12 +120,14 @@ struct Formatter {
      */
     const FormatterImplementation *imp;
     /**
+     * Hashtable to associate option's name to its value
+     */
+    HashTable optmap;
+    /**
      * (Variable) Space to store current values of options
      */
     OptionValue optvals[];
 };
-
-# define SHALL_FORMATTER_DEFINED
 
 extern OptionValue *formatter_implementation_default_get_option_ptr(Formatter *, int, size_t, const char *, size_t);
 

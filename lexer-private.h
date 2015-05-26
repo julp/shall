@@ -49,6 +49,8 @@
         darray_pop(/*&my*/data->state_stack, &YYSTATE); \
     } while (0);
 
+void reset_lexer(LexerData *);
+
 #define YYSTRNCMP(x) \
     strncmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG, STR_LEN(x))
 

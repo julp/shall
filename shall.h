@@ -9,13 +9,15 @@
 # define SHALL_API
 
 # ifndef SHALL_LEXER_DEFINED
-typedef struct LexerImplementation LexerImplementation;
-typedef struct Lexer Lexer;
+// typedef struct LexerImplementation LexerImplementation;
+// typedef struct Lexer Lexer;
 # endif /* SHALL_LEXER_DEFINED */
 # ifndef SHALL_FORMATTER_DEFINED
-typedef struct FormatterImplementation FormatterImplementation;
-typedef struct Formatter Formatter;
+// typedef struct FormatterImplementation FormatterImplementation;
+// typedef struct Formatter Formatter;
 # endif /* SHALL_FORMATTER_DEFINED */
+
+#include "types.h"
 
 typedef void (*on_lexer_destroy_cb_t)(void *);
 

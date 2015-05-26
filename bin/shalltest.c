@@ -13,7 +13,7 @@
 #include <fts.h>
 
 #include "cpp.h"
-#include "option.h"
+#include "types.h"
 #include "optparse.h"
 #include "shall.h"
 #include "utils.h"

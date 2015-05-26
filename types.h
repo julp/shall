@@ -1,8 +1,16 @@
-#ifndef OPTION_H
+#ifndef TYPES_H
 
-# define OPTION_H
+# define TYPES_H
 
+# include <stdint.h> /* uint\d+_t */
+# include "cpp.h"
+# include "bool.h"
+
+typedef struct LexerImplementation LexerImplementation;
 typedef struct Lexer Lexer;
+
+typedef struct FormatterImplementation FormatterImplementation;
+typedef struct Formatter Formatter;
 
 typedef enum {
     OPT_TYPE_PTR,
@@ -11,9 +19,6 @@ typedef enum {
     OPT_TYPE_LEXER,
     OPT_TYPE_STRING
 } OptionType;
-
-# include <stdint.h> /* uint\d+_t */
-# include "cpp.h"
 
 # define FL_OPT_EMBED (1<<1)
 
@@ -72,4 +77,4 @@ typedef struct {
 #define OPT_PTR(opt) \
     (opt).ptr
 
-#endif /* !OPTION_H */
+#endif /* TYPES_H */

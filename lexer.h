@@ -2,7 +2,7 @@
 
 # define LEXER_H
 
-# include "option.h"
+# include "types.h"
 # include "darray.h"
 
 /**
@@ -62,7 +62,7 @@ typedef struct LexerInput LexerInput;
 /**
  * Define a lexer (acts as a class)
  */
-typedef struct LexerImplementation {
+struct LexerImplementation {
     /**
      * Official name of the lexer.
      * Should start with an uppercase letter and include only ASCII alphanumeric characters plus underscores
@@ -125,7 +125,7 @@ typedef struct LexerImplementation {
      * Implicit dependencies to other lexers
      */
     const struct LexerImplementation * const *implicit;
-} LexerImplementation;
+};
 
 /**
  * Use a lexer (acts as an instance)
@@ -140,7 +140,5 @@ struct Lexer {
      */
     OptionValue optvals[];
 };
-
-# define SHALL_LEXER_DEFINED
 
 #endif /* !LEXER_H */

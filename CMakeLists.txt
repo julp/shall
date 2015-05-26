@@ -9,7 +9,7 @@ find_package(RE2C 0.13.7 REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(SOURCES shall.c lexer-private.c xtring.c darray.c)# hashtable.c)
+set(SOURCES shall.c lexer-private.c xtring.c darray.c hashtable.c)
 set(FORMATTERS html terminal plain) # xml
 set(C_LEXERS text diff)
 set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
@@ -46,7 +46,7 @@ target_link_libraries(shalltest shall_lib)
 add_executable(shalldoc bin/shalldoc.c $<TARGET_OBJECTS:common>)
 target_link_libraries(shalldoc shall_lib)
 
-set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "shall.h;cpp.h;tokens.h;keywords.h;lexer.h;formatter.h;option.h")
+set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "shall.h;cpp.h;tokens.h;keywords.h;lexer.h;formatter.h;types.h;bool.h")
 
 foreach(target "shall_lib;shall_bin")
     set_target_properties(${target} PROPERTIES OUTPUT_NAME "shall")

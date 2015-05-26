@@ -10,7 +10,7 @@
 #include "cpp.h"
 #include "utils.h"
 #include "tokens.h"
-#include "option.h"
+// #include "option.h"
 #include "lexer.h"
 #include "lexer-private.h"
 #include "formatter.h"
@@ -257,11 +257,6 @@ end:
 }
 
 #else
-
-# ifndef DOXYGEN
-#  define S(x) \
-    x, STR_LEN(x)
-# endif /* !DOXYGEN */
 
 static struct {
     const char *encoding;
@@ -1247,6 +1242,7 @@ SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *s
 
     if (NULL != (fmt = malloc(sizeof(*fmt) + super->data_size/* - sizeof(fmt->data)*/))) {
         fmt->imp = super;
+        hashtable_ascii_cs_init(&fmt->optmap, NULL, NULL, NULL);
         if (NULL != base->options) {
             FormatterOption *fo;
 
@@ -1254,10 +1250,12 @@ SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *s
                 OptionValue *optvalptr;
 
                 if (NULL != (optvalptr = base->get_option_ptr(fmt, 1, fo->offset, fo->name, fo->name_len))) {
+                    hashtable_put(&fmt->optmap, 0, fo->name, optvalptr, NULL);
                     memcpy(optvalptr, &fo->defval, sizeof(fo->defval));
                 }
             }
         }
+#if 0
         if (super != base && NULL != super->options) {
             FormatterOption *fo;
 
@@ -1269,6 +1267,7 @@ SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *s
                 }
             }
         }
+#endif
     }
 
     return fmt;
@@ -1345,6 +1344,7 @@ SHALL_API void formatter_destroy(Formatter *fmt)
             }
         }
     }
+    hashtable_destroy(&fmt->optmap);
     free(fmt);
 }
 
@@ -1371,9 +1371,16 @@ SHALL_API int formatter_set_option_as_string(Formatter *fmt, const char *name, c
     if (NULL != (fo = formatter_option_by_name(fmt->imp, name))) {
         OptionValue *optvalptr;
 
+#if 0
         if (NULL == (optvalptr = fmt->imp->get_option_ptr(fmt, 0, fo->offset, fo->name, fo->name_len))) {
             return OPT_ERR_INVALID_OPTION;
         }
+#else
+        optvalptr = NULL;
+        if (!hashtable_get(&fmt->optmap, name, &optvalptr)) {
+            return OPT_ERR_INVALID_OPTION;
+        }
+#endif
         return parse_option_as_string(optvalptr, fo->type, value, value_len, 1);
     }
 

@@ -2,10 +2,7 @@
 
 # define DARRAY_H
 
-typedef enum {
-    FALSE,
-    TRUE
-} bool;
+# include "bool.h"
 
 typedef struct {
     uint8_t *data;
