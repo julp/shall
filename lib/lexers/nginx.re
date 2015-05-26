@@ -27,20 +27,20 @@ LNUM = [0-9]+;
 SPACE = [ \n\r\t];
 
 <INITIAL> SPACE+ {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> "\\"[\n] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> [\n] {
     BEGIN(INITIAL);
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> [ \n\r\t]+ {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL> [#] {
@@ -59,29 +59,29 @@ SPACE = [ \n\r\t];
         }
         break;
     }
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> [;{}] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_DIRECTIVE> [;{] {
     BEGIN(INITIAL);
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <INITIAL> [^$#;{} \r\n\t][^;{} \n\r\t]* {
     BEGIN(IN_DIRECTIVE);
-    return KEYWORD_BUILTIN;
+    PUSH_TOKEN(KEYWORD_BUILTIN);
 }
 
 <IN_DIRECTIVE> "$"[^;{}() \n\r\t]+ {
-    return NAME_VARIABLE;
+    PUSH_TOKEN(NAME_VARIABLE);
 }
 
 <IN_DIRECTIVE> [^$#;{}() \n\r\t]+ {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_DIRECTIVE> LNUM {
@@ -90,24 +90,24 @@ SPACE = [ \n\r\t];
 
 <INITIAL,IN_DIRECTIVE> '"' {
     BEGIN(IN_DOUBLE_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL,IN_DIRECTIVE> '\'' {
     BEGIN(IN_SINGLE_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_DOUBLE_STRING> '\\'[\\"] {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <IN_SINGLE_STRING> '\\'[\\'] {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <*> [^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 */
 }

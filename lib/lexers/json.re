@@ -26,41 +26,41 @@ DNUM = ([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*);
 EXPONENT_DNUM = ((LNUM|DNUM)[eE][+-]?LNUM);
 
 <INITIAL> "true" | "false" | "null" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <INITIAL> LNUM {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> DNUM | EXPONENT_DNUM {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> '"' {
     BEGIN(IN_STRING);
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> [{}[\],:] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_STRING> "\\" ( [\\"/bfnrt] | "u" [a-zA-Z0-9]{4} ) {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <IN_STRING> '"' {
     BEGIN(INITIAL);
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <IN_STRING> [^] {
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> [^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 */
 }

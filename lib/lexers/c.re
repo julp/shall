@@ -40,87 +40,87 @@ FS = [fFlL];
 IS = [uUlL]*;
 
 <INITIAL> "break" | "case" | "continue" | "default" | "do" | "else" | "extern" | "if" | "for" | "goto" | "return" | "sizeof" | "static" | "switch" | "typedef" | "while" {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL> "NULL" {
-    return NAME_BUILTIN;
+    PUSH_TOKEN(NAME_BUILTIN);
 }
 
 <INITIAL> "auto" | "register" | "volatile" {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL> "char" | "double" | "enum" | "float" | "int" | "long" | "short" | "struct" | "union" | "void" {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL> "const" | "signed" | "unsigned" {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL> L (L | D)* {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL> D+ E FS? {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> D* "." D+ E? FS? {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> D+ "." D* E? FS? {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> "0" 'x' H+ IS? {
-    return NUMBER_HEXADECIMAL;
+    PUSH_TOKEN(NUMBER_HEXADECIMAL);
 }
 
 <INITIAL> "0" D+ IS? {
-    return NUMBER_OCTAL;
+    PUSH_TOKEN(NUMBER_OCTAL);
 }
 
 <INITIAL> D+ IS? {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> "L"? "'" {
     BEGIN(IN_SINGLE_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_SINGLE_STRING> "'" {
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_SINGLE_STRING> [^] {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> "L"? "\"" {
     BEGIN(IN_DOUBLE_STRING);
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <IN_DOUBLE_STRING> "\"" {
     BEGIN(INITIAL);
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <IN_DOUBLE_STRING> [^] {
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> [[\]{}(),;.] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <INITIAL> [?:=&|!~^%<>*/+-] {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <INITIAL> '//' {
@@ -139,29 +139,29 @@ IS = [uUlL]*;
         }
         break;
     }
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> "/*" {
     BEGIN(IN_COMMENT);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> [^] {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL> "..." | ">>" "="? | "<<" "="? | [!=<>|&~^*/%-]"=" | "--" | "++" | "->" {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <*> [^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 */
 }

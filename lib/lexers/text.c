@@ -21,7 +21,7 @@ static int textlex(YYLEX_ARGS) {
         return 0;
     } else {
         ++YYCURSOR;
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
     }
 }
 

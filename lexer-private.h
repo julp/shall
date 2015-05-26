@@ -38,6 +38,9 @@
 
 # define yymore() goto yymore_restart
 
+# define PUSH_TOKEN(type) \
+    return type;
+
 #define PUSH_STATE(new_state) \
     do { \
         darray_push(/*&my*/data->state_stack, &YYSTATE); \

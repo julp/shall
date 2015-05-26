@@ -172,13 +172,13 @@ restart_comment_bracket:
                 }
             }
             if (']' == *YYCURSOR++) {
-                return COMMENT_MULTILINE;
+                PUSH_TOKEN(COMMENT_MULTILINE);
             }
         }
     }
     YYCURSOR = YYLIMIT; // if we reach this point, comment is unterminated
 #endif
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL>bracket_open {
@@ -200,13 +200,13 @@ restart_string_bracket:
                 }
             }
             if (']' == *YYCURSOR++) {
-                return STRING_DOUBLE;
+                PUSH_TOKEN(STRING_DOUBLE);
             }
         }
     }
     YYCURSOR = YYLIMIT; // if we reach this point, comment is unterminated
 #endif
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <IN_BRACKET_STRING,IN_BRACKET_COMMENT>bracket_close {
@@ -221,26 +221,26 @@ restart_string_bracket:
 
 <INITIAL>["] {
     BEGIN(IN_QUOTED_ARGUMENT);
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <IN_QUOTED_ARGUMENT> "\\" [()#" \\$@^trn;] {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <INITIAL,IN_QUOTED_ARGUMENT,IN_BRACKET_STRING,IN_VARIABLE_REFERENCE>"${" {
     PUSH_STATE(IN_VARIABLE_REFERENCE);
-    return SEQUENCE_INTERPOLATED;
+    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <IN_VARIABLE_REFERENCE>"}" {
     POP_STATE();
-    return SEQUENCE_INTERPOLATED;
+    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <IN_QUOTED_ARGUMENT>["] {
     BEGIN(INITIAL);
-    return STRING_DOUBLE;
+    PUSH_TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL>"#" {
@@ -255,7 +255,7 @@ restart_string_bracket:
         }
         break;
     }
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL>identifier space* "(" {
@@ -271,14 +271,14 @@ restart_string_bracket:
     yyless(key.name_len);
 #endif
     if (NULL != bsearch(&key, builtin_commands, ARRAY_SIZE(builtin_commands), sizeof(builtin_commands[0]), named_elements_casecmp)) {
-        return NAME_BUILTIN;
+        PUSH_TOKEN(NAME_BUILTIN);
     } else {
-        return NAME_FUNCTION;
+        PUSH_TOKEN(NAME_FUNCTION);
     }
 }
 
 <INITIAL>[()] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <*>[^] {

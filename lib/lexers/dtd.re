@@ -83,137 +83,137 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 <INITIAL>"<!ELEMENT" S {
     yyless(STR_LEN("<!ELEMENT"));
     BEGIN(IN_ELEMENT);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<!ATTLIST" S {
     yyless(STR_LEN("<!ATTLIST"));
     BEGIN(IN_ATTLIST);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<!DOCTYPE" S {
     yyless(STR_LEN("<!DOCTYPE"));
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<!ENTITY" S {
     yyless(STR_LEN("<!ENTITY"));
     BEGIN(IN_ENTITY);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<!NOTATION" S {
     yyless(STR_LEN("<!NOTATION"));
     BEGIN(IN_NOTATION);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <IN_NOTATION>"PUBLIC" | "SYSTEM" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <INITIAL>'<!--' {
     BEGIN(IN_COMMENT);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT>[^-]'-->' {
     BEGIN(INITIAL);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <*> PEReference {
-    return NAME_ENTITY;
+    PUSH_TOKEN(NAME_ENTITY);
 }
 
 <IN_ENTITY>"SYSTEM" | "PUBLIC" | "NDATA" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <IN_ELEMENT>"EMPTY" | "ANY" | "#PCDATA" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <IN_ENTITY>Name {
-    return NAME_ENTITY;
+    PUSH_TOKEN(NAME_ENTITY);
 }
 
 <IN_ELEMENT>[(),] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_ELEMENT>[|*+?] {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_ELEMENT>Name {
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <IN_ATTLIST>[()] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_ATTLIST>[|] {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_ATTLIST>"CDATA" | "ID" | ("IDREF" "S"?) | "ENTITY" | "ENTITIES" | ("NMTOKEN" "S"?) | "NOTATION" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <IN_ATTLIST>"#IMPLIED" | "#REQUIRED" | "#FIXED" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <IN_ATTLIST>Name {
-    return NAME_ATTRIBUTE;
+    PUSH_TOKEN(NAME_ATTRIBUTE);
 }
 
 <IN_ATTLIST,IN_ENTITY>"'" {
     PUSH_STATE(IN_STRING_SINGLE);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_ATTLIST,IN_ENTITY>'"' {
     PUSH_STATE(IN_STRING_DOUBLE);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_STRING_SINGLE>"'" {
     POP_STATE();
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_STRING_DOUBLE>'"' {
     POP_STATE();
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_ELEMENT,IN_ATTLIST,IN_ENTITY,IN_NOTATION>">" {
     BEGIN(INITIAL);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"]]>" {
     if (--mydata->depth >= 0) {
-        return NAME_TAG;
+        PUSH_TOKEN(NAME_TAG);
     } else {
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
     }
 }
 
 <INITIAL>"<![" S? ("INCLUDE" | "IGNORE" | PEReference) S? "[" {
     ++mydata->depth;
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"]" S? ">" {
     if (NULL != mydata->in_dtd) {
         *mydata->in_dtd = 0;
     }
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <*> [^] {

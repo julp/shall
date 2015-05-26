@@ -35,30 +35,30 @@ static int difflex(YYLEX_ARGS)
         ++YYCURSOR; // skip '\n' for next call
         switch (*YYTEXT) {
             case '+':
-                return GENERIC_INSERTED;
+                PUSH_TOKEN(GENERIC_INSERTED);
             case '-':
-                return GENERIC_DELETED;
+                PUSH_TOKEN(GENERIC_DELETED);
             case '!':
-                return GENERIC_STRONG;
+                PUSH_TOKEN(GENERIC_STRONG);
             case '@':
-                return GENERIC_SUBHEADING;
+                PUSH_TOKEN(GENERIC_SUBHEADING);
             case '=':
-                return GENERIC_HEADING;
+                PUSH_TOKEN(GENERIC_HEADING);
             case 'i':
             case 'I':
                 if (YYLENG >= STR_LEN("index") && 0 == memcmp(YYTEXT + 1, "ndex", STR_LEN("ndex"))) {
-                    return GENERIC_HEADING;
+                    PUSH_TOKEN(GENERIC_HEADING);
                 }
                 break;
             case 'd':
                 if (YYLENG >= STR_LEN("diff") && 0 == memcmp(YYTEXT + 1, "iff", STR_LEN("iff"))) {
-                    return GENERIC_HEADING;
+                    PUSH_TOKEN(GENERIC_HEADING);
                 }
                 break;
         }
     }
 
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 LexerImplementation diff_lexer = {

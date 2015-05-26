@@ -47,20 +47,20 @@ SPACE = [ \f\n\r\t\v];
 EOS = [\000];
 
 <INITIAL> SPACE+ {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> "\\"[\n] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> [\n] {
     BEGIN(INITIAL);
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> [ \f\r\t\v]+ {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL> [#] {
@@ -79,42 +79,42 @@ EOS = [\000];
         }
         break;
     }
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> [^ #\f\n\r\t\v][^ \f\n\r\t\v]* {
     BEGIN(IN_DIRECTIVE);
     if ('<' == YYTEXT[0]) {
-        return NAME_TAG;
+        PUSH_TOKEN(NAME_TAG);
     } else {
-        return KEYWORD_BUILTIN;
+        PUSH_TOKEN(KEYWORD_BUILTIN);
     }
 }
 
 <IN_DIRECTIVE> [^ \f\n\r\t\v\000]+ {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_DIRECTIVE> LNUM {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL,IN_DIRECTIVE> '"' {
     BEGIN(IN_DOUBLE_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL,IN_DIRECTIVE> '\'' {
     BEGIN(IN_SINGLE_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_DOUBLE_STRING> '\\'[\\"] {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <IN_SINGLE_STRING> '\\'[\\'] {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <*> EOS {

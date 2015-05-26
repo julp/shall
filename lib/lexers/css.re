@@ -730,78 +730,78 @@ invalid2 = "'" ([^\n\r\f\\'] | "\\"nl | nonascii | escape)*;
 invalid = invalid1 | invalid2;
 
 <INITIAL>"<!--" {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL>"-->" {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <*> ":" ":"? ident {
-    return KEYWORD_PSEUDO;
+    PUSH_TOKEN(KEYWORD_PSEUDO);
 }
 
 <*>"/*" {
     if (STATE(IN_COMMENT) != YYSTATE) {
         PUSH_STATE(IN_COMMENT);
     }
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL>"{" {
     BEGIN(IN_CONTENT);
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_CONTENT>"}" {
     BEGIN(INITIAL);
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_COMMENT>[^] {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT>"*/" {
     POP_STATE();
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL>[~|^$*]"=" {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_CONTENT>string {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL>[,()] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_CONTENT>[;()] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <IN_CONTENT>"!" w "important" {
-    return TAG_PREPROC;
+    PUSH_TOKEN(TAG_PREPROC);
 }
 
 <INITIAL>[~+>*|[\]] {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_CONTENT>"#" [0-9a-fA-F]{6} {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <IN_CONTENT>ident {
     named_element_t key = { (char *) YYTEXT, YYLENG };
 
     if (NULL != bsearch(&key, builtins, ARRAY_SIZE(builtins), sizeof(builtins[0]), named_elements_cmp)) {
-        return NAME_BUILTIN;
+        PUSH_TOKEN(NAME_BUILTIN);
     }
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <IN_CONTENT>ident ":" {
@@ -810,55 +810,55 @@ invalid = invalid1 | invalid2;
     key.name_len = YYLENG - 1;
     yyless(key.name_len);
     if (NULL != bsearch(&key, attributes, ARRAY_SIZE(attributes), sizeof(attributes[0]), named_elements_cmp)) {
-        return NAME_BUILTIN;
+        PUSH_TOKEN(NAME_BUILTIN);
     } else {
         size_t i;
 
         for (i = 0; i < ARRAY_SIZE(vendor_prefixes); i++) {
             if (0 == strncmp_l(vendor_prefixes[i].name, vendor_prefixes[i].name_len, key.name, key.name_len, vendor_prefixes[i].name_len)) {
-                return KEYWORD_BUILTIN;
+                PUSH_TOKEN(KEYWORD_BUILTIN);
             }
         }
     }
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 // "@page" pseudo_page?
 // "@charset" string
 // "@media" media_list
 <INITIAL>"@" ident {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL>"." ident {
-    return NAME_CLASS;
+    PUSH_TOKEN(NAME_CLASS);
 }
 
 <INITIAL>"#" name {
-    return NAME_FUNCTION;
+    PUSH_TOKEN(NAME_FUNCTION);
 }
 
 <INITIAL>ident {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL,IN_CONTENT>ident "(" {
     yyless(YYLENG - 1);
-    return NAME_FUNCTION;
+    PUSH_TOKEN(NAME_FUNCTION);
 }
 
 <IN_CONTENT>num {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 // CSS2 defines em, ex, px, cm, mm, in, pt, pc, deg, rad, grad, ms, s, hz, khz (in all variants - case and escape character)
 // but CSS3 is wider, unity is simply an "identifier"
 <IN_CONTENT>num ("%" | ident) {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <*>[^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 */
 }

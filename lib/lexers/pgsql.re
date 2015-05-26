@@ -625,60 +625,60 @@ other = .;
  * Needed to highlight oneline comment.
  **/
 <INITIAL> comment {
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> space {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL> xcstart {
     BEGIN(xc);
     yyless(2);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> xcstart {
     yyless(2);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> xcstop {
     BEGIN(INITIAL);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> xcinside {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> op_chars  {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> [*]+ {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 // <xc><<EOF>>
 
 <INITIAL> xbstart {
     BEGIN(xb);
-    return NUMBER_BINARY;
+    PUSH_TOKEN(NUMBER_BINARY);
 }
 
 <xb> quotestop | quotefail {
     yyless(1);
     BEGIN(INITIAL);
-    return NUMBER_BINARY;
+    PUSH_TOKEN(NUMBER_BINARY);
 }
 
 <xb> xbinside {
-    return NUMBER_BINARY;
+    PUSH_TOKEN(NUMBER_BINARY);
 }
 
 <xh> xhinside {
-    return NUMBER_HEXADECIMAL;
+    PUSH_TOKEN(NUMBER_HEXADECIMAL);
 }
 
 // <xh>{quotecontinue} | <xb>{quotecontinue}
@@ -687,13 +687,13 @@ other = .;
 
 <INITIAL> xhstart {
     BEGIN(xh);
-    return NUMBER_HEXADECIMAL;
+    PUSH_TOKEN(NUMBER_HEXADECIMAL);
 }
 
 <xh> quotestop | quotefail {
     yyless(1);
     BEGIN(INITIAL);
-    return NUMBER_HEXADECIMAL;
+    PUSH_TOKEN(NUMBER_HEXADECIMAL);
 }
 
 // <xh><<EOF>>
@@ -708,57 +708,57 @@ other = .;
     } else {
         BEGIN(xe);
     }
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xestart {
     BEGIN(xe);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xusstart {
 //     if (!mydata->standard_conforming_strings)
     BEGIN(xus);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xq,xe> quotestop | quotefail {
     yyless(1);
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xus> quotestop | quotefail {
     yyless(1);
     BEGIN(xusend);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xusend> whitespace {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xusend> other | xustop1 {
     yyless(0);
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xusend> xustop2 {
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xq,xe,xus> xqdouble {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xq,xus> xqinside {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xe> xeinside {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xe> xeunicode {
@@ -771,12 +771,12 @@ other = .;
 #else
 //     BEGIN(xeu);
 #endif
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <xeu> xeunicode {
     BEGIN(xe);
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 // <xeu> .
@@ -785,23 +785,23 @@ other = .;
 // <xe,xeu> xeunicodefail
 
 <xe> xeescape {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <xe> xeoctesc {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <xe> xehexesc {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <xq,xe,xus> quotecontinue {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xe> . {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 // <xq,xe,xus><<EOF>>
@@ -810,12 +810,12 @@ other = .;
     BEGIN(xdolq);
     mydata->dolqstart_len = YYCURSOR - YYTEXT;
     mydata->dolqstart = strndup((char *) YYTEXT, mydata->dolqstart_len);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> dolqfailed {
     yyless(1);
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <xdolq> dolqdelim {
@@ -826,112 +826,112 @@ other = .;
     } else {
         yyless((YYCURSOR - YYTEXT) - 1);
     }
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xdolq> dolqinside {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xdolq> dolqfailed {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xdolq> . {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 // <xdolq><<EOF>>
 
 <INITIAL> xdstart {
     BEGIN(xd);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xuistart {
     BEGIN(xui);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xd> xdstop {
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xui> dquote {
     yyless(1);
     BEGIN(xuiend);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xuiend> whitespace {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <xuiend> other | xustop1 {
     yyless(0);
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xuiend> xustop2 {
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xd,xui> xddouble  {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <xd,xui> xdinside {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 // <xd,xui><<EOF>>
 
 <INITIAL> xufailed {
     yyless(1);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> typecast | dot_dot | colon_equals | equals_greater | less_equals | greater_equals | less_greater | not_equals | self {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <INITIAL> operator {
     // TODO: stricter
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <INITIAL> param {
-    return NAME_VARIABLE;
+    PUSH_TOKEN(NAME_VARIABLE);
 }
 
 <INITIAL> integer {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> decimal {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> decimalfail {
     yyless((YYCURSOR - YYTEXT) - 2);
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> real {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> realfail1 {
     yyless((YYCURSOR - YYTEXT) - 1);
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> realfail2 {
     yyless((YYCURSOR - YYTEXT) - 2);
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> identifier {
@@ -948,12 +948,12 @@ other = .;
         }
         return match->type;
     } else {
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
     }
 }
 
 <INITIAL> other {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 // <<EOF>>

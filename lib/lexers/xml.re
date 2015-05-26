@@ -153,30 +153,30 @@ NDataDecl = S "NDATA" S Name; // [76]
 
 <INITIAL>'<!--' {
     BEGIN(IN_COMMENT);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT>[^-]'-->' {
     BEGIN(INITIAL);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT>[^] {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL> CDStart {
     BEGIN(IN_CDATA);
-    return TAG_PREPROC;
+    PUSH_TOKEN(TAG_PREPROC);
 }
 
 <IN_CDATA> CDEnd {
     BEGIN(INITIAL);
-    return TAG_PREPROC;
+    PUSH_TOKEN(TAG_PREPROC);
 }
 
 <IN_CDATA>[^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
@@ -186,78 +186,78 @@ NDataDecl = S "NDATA" S Name; // [76]
 
 <INITIAL>"<!DOCTYPE" {
     PUSH_STATE(IN_TAG);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<!" {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL>"<?" Name {
     PUSH_STATE(IN_PREPROC);
-    return TAG_PREPROC;
+    PUSH_TOKEN(TAG_PREPROC);
 }
 
 <INITIAL> "<" Name {
     PUSH_STATE(IN_TAG);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL> ETag {
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <IN_TAG,IN_PREPROC> S {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_TAG>">" {
     //BEGIN(INITIAL);
     POP_STATE();
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <IN_PREPROC> "?>" {
     //BEGIN(INITIAL);
     POP_STATE();
-    return TAG_PREPROC;
+    PUSH_TOKEN(TAG_PREPROC);
 }
 
 <IN_TAG,IN_PREPROC> Name Eq {
     PUSH_STATE(IN_ATTRIBUTE);
-    return NAME_ATTRIBUTE;
+    PUSH_TOKEN(NAME_ATTRIBUTE);
 }
 
 <IN_ATTRIBUTE> "'" {
     //PUSH_STATE(IN_SINGLE_QUOTES);
     BEGIN(IN_SINGLE_QUOTES);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_SINGLE_QUOTES> "'" {
     POP_STATE();
     //POP_STATE();
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_ATTRIBUTE> '"' {
     //PUSH_STATE(IN_DOUBLE_QUOTES);
     BEGIN(IN_DOUBLE_QUOTES);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_DOUBLE_QUOTES> '"' {
     POP_STATE();
     //POP_STATE();
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_DOUBLE_QUOTES,IN_SINGLE_QUOTES> [^] {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL,IN_SINGLE_QUOTES,IN_DOUBLE_QUOTES> EntityRef {
-    return NAME_ENTITY;
+    PUSH_TOKEN(NAME_ENTITY);
 }
 
 <INITIAL>[^] {
@@ -272,10 +272,10 @@ fallback:
         dtddata->in_dtd = &mydata->in_dtd;
         return dtd_lexer.yylex(yy, (LexerData *) dtddata);
 #else
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
 #endif
     } else {
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
     }
 }
 */

@@ -245,25 +245,25 @@ SPACE = [ \f\n\r\t\v]+;
 // return action/keyword?
 
 <INITIAL> (LNUM | DNUM) ("ms" | [smhdwy]) {
-    return LITERAL_DURATION;
+    PUSH_TOKEN(LITERAL_DURATION);
 }
 
 <INITIAL> LNUM [KMGT]? 'B' {
-    return LITERAL_SIZE;
+    PUSH_TOKEN(LITERAL_SIZE);
 }
 
 <INITIAL> "/*" {
     BEGIN(IN_COMMENT);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> [^] {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL> "//" | "#" {
@@ -282,7 +282,7 @@ SPACE = [ \f\n\r\t\v]+;
         }
         break;
     }
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 // vcl statement really expects a float
@@ -291,28 +291,28 @@ SPACE = [ \f\n\r\t\v]+;
     // NOTE: don't use strtod to parse version number as it depends on locale for decimal separator
     yyless(STR_LEN("vcl"));
     mydata->version = 4;
-    return KEYWORD_DECLARATION;
+    PUSH_TOKEN(KEYWORD_DECLARATION);
 }
 
 <INITIAL> "sub" {
     data->next_label = FUNCTION;
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL> "remove" {
     if (mydata->version < 4) {
-        return KEYWORD;
+        PUSH_TOKEN(KEYWORD);
     } else {
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
     }
 }
 
 <INITIAL> "set" | "unset" | "include" | "import" | "if" | "else" | "elseif" | "elif" | "elsif" {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <INITIAL> "true" | "false" {
-    return KEYWORD_CONSTANT;
+    PUSH_TOKEN(KEYWORD_CONSTANT);
 }
 
 <INITIAL> [a-zA-Z_.-]+ {
@@ -325,9 +325,9 @@ SPACE = [ \f\n\r\t\v]+;
         for (i = 0; i < ARRAY_SIZE(subroutines); i++) {
             if (0 == strcmp_l(subroutines[i].name, subroutines[i].name_len, (char *) YYTEXT, YYLENG)) {
                 if (mydata->version >= subroutines[i].min_version && mydata->version < subroutines[i].max_version) {
-                    return NAME_FUNCTION;
+                    PUSH_TOKEN(NAME_FUNCTION);
                 } else {
-                    return IGNORABLE;
+                    PUSH_TOKEN(IGNORABLE);
                 }
             }
         }
@@ -337,50 +337,50 @@ SPACE = [ \f\n\r\t\v]+;
 
             if (NULL != (match = bsearch(&key, variables, ARRAY_SIZE(variables), sizeof(variables[0]), varnish_named_elements_cmp))) {
                 if (mydata->version >= match->min_version && mydata->version < match->max_version) {
-                    return NAME_VARIABLE;
+                    PUSH_TOKEN(NAME_VARIABLE);
                 } else {
-                    return IGNORABLE;
+                    PUSH_TOKEN(IGNORABLE);
                 }
             }
         }
         for (i = 0; i < ARRAY_SIZE(functions); i++) {
             if (0 == strcmp_l(functions[i].name, functions[i].name_len, (char *) YYTEXT, YYLENG)) {
-                return NAME_FUNCTION;
+                PUSH_TOKEN(NAME_FUNCTION);
             }
         }
     }
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL> [{}();.,] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 <INITIAL> "++" | "--" | "&&" | "||" | [<=>!*/+-]"=" | "<<" | ">>" | "!~" | [-+*/%><=!&|~] {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <INITIAL> LNUM {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> DNUM {
-    return NUMBER_FLOAT;
+    PUSH_TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> '{"' {
     BEGIN(IN_LONG_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_LONG_STRING> '"}' {
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> "C{" {
     BEGIN(IN_INLINE_C);
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <IN_INLINE_C> [^] {
@@ -388,35 +388,35 @@ SPACE = [ \f\n\r\t\v]+;
     // TODO
     // pass it to C lexer
 #else
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 #endif
 }
 
 <IN_INLINE_C> "}C" {
     BEGIN(INITIAL);
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 <INITIAL> '"' {
     BEGIN(IN_STRING);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_STRING> '\\'[\\"nt] {
-    return ESCAPED_CHAR;
+    PUSH_TOKEN(ESCAPED_CHAR);
 }
 
 <IN_STRING> '"' {
     BEGIN(INITIAL);
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <IN_STRING> [^] {
-    return STRING_SINGLE;
+    PUSH_TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> [^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 */
 }

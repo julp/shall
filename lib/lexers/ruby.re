@@ -115,84 +115,84 @@ re2c:yyfill:check = 0;
 IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 
 <IN_RUBY> '#' .* {
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <IN_RUBY> "0" 'b' [01]+ ("_" [01]+)* {
-    return NUMBER_BINARY;
+    PUSH_TOKEN(NUMBER_BINARY);
 }
 
 <IN_RUBY> ("0" 'o' | "0" "_"?) [0-7]+ ("_" [0-7]+)* {
-    return NUMBER_OCTAL;
+    PUSH_TOKEN(NUMBER_OCTAL);
 }
 
 <IN_RUBY> ("0" 'd' [0-9]+ | [1-9] [0-9]*) ("_" [0-9]+)* {
-    return NUMBER_DECIMAL;
+    PUSH_TOKEN(NUMBER_DECIMAL);
 }
 
 <IN_RUBY> "0" 'x' [0-9a-fA-F]+ ("_" [0-9a-fA-F]+)* {
-    return NUMBER_HEXADECIMAL;
+    PUSH_TOKEN(NUMBER_HEXADECIMAL);
 }
 
 <IN_RUBY> "$-" [0adFiIlpvw] {
-    return NAME_VARIABLE_GLOBAL;
+    PUSH_TOKEN(NAME_VARIABLE_GLOBAL);
 }
 
 <IN_RUBY> "$" [0-9_~*$?!@/\\;,.=:<>"&`'+-] {
-    return NAME_VARIABLE_GLOBAL;
+    PUSH_TOKEN(NAME_VARIABLE_GLOBAL);
 }
 
 <IN_RUBY> "@"{1,2} IDENTIFIER {
     if ('@' == YYTEXT[1]) {
-        return NAME_VARIABLE_CLASS;
+        PUSH_TOKEN(NAME_VARIABLE_CLASS);
     } else {
-        return NAME_VARIABLE_INSTANCE;
+        PUSH_TOKEN(NAME_VARIABLE_INSTANCE);
     }
 }
 
 <IN_RUBY> "::" {
-    return OPERATOR; // TODO
+    PUSH_TOKEN(OPERATOR); // TODO
 }
 
 <IN_RUBY> "=>" {
-    return OPERATOR; // TODO
+    PUSH_TOKEN(OPERATOR); // TODO
 }
 
 <IN_RUBY> "->" {
-    return OPERATOR; // TODO
+    PUSH_TOKEN(OPERATOR); // TODO
 }
 
 <IN_RUBY> "**" | "<=>" | [<>!=]"=" | "&&" | "||" | [=!]"~" | ".." | "..." | ">>" | "<<" {
     // ** n'est pas l'opérateur de puissance mais de "splat" sur les arguments d'une méthode
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_RUBY> [?:=!~&|^<>*+/-] {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_RUBY> "self" {
-    return NAME_BUILTIN_PSEUDO;
+    PUSH_TOKEN(NAME_BUILTIN_PSEUDO);
 }
 
 <IN_RUBY> "BEGIN" | "END" | "alias" | "begin" | "break" | "case" | "class" | "def" | "defined?" | "do" | "else" | "elsif" | "end" | "ensure" | "for" | "if" | "in" | "module" | "next" | "redo" | "rescue" | "retry" | "return" | "super" | "then" | "undef" | "unless" | "until" | "when" | "while" | "yield" {
-    return KEYWORD;
+    PUSH_TOKEN(KEYWORD);
 }
 
 <IN_RUBY> "__ENCODING__" | "__FILE__" | "__LINE__" {
-    return NAME_BUILTIN_PSEUDO;
+    PUSH_TOKEN(NAME_BUILTIN_PSEUDO);
 }
 
 <IN_RUBY> "false" | "true" | "nil" | "FALSE" | "TRUE" | "NIL" {
-    return KEYWORD_BUILTIN;
+    PUSH_TOKEN(KEYWORD_BUILTIN);
 }
 
 <IN_RUBY> "require" {
-    return NAME_BUILTIN_PSEUDO;
+    PUSH_TOKEN(NAME_BUILTIN_PSEUDO);
 }
 
 <IN_RUBY> "and" | "or" | "not" {
-    return OPERATOR;
+    PUSH_TOKEN(OPERATOR);
 }
 
 <IN_RUBY> "%" [qQwWiIxrs]? [^a-zA-Z0-9] {
@@ -220,7 +220,7 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
         case '>':
             if(mydata->erb) {
                 BEGIN(INITIAL);
-                return NAME_TAG;
+                PUSH_TOKEN(NAME_TAG);
             }
         default:
             q = YYTEXT[1];
@@ -281,27 +281,27 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 }
 
 <IN_RUBY> [;.{}[\]] {
-    return PUNCTUATION;
+    PUSH_TOKEN(PUNCTUATION);
 }
 
 // TODO: BOL
 <IN_RUBY> "=begin" {
     BEGIN(IN_COMMENT);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 // TODO: BOL
 <IN_COMMENT> "=end" {
     BEGIN(IN_RUBY);
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> [^] {
-    return COMMENT_MULTILINE;
+    PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_RUBY> [^] {
-    return IGNORABLE;
+    PUSH_TOKEN(IGNORABLE);
 }
 
 // TODO: pas plus d'un ':' consécutif sinon c'est :: pour la résolution de portée
@@ -309,17 +309,17 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     if (':' == *YYCURSOR) {
         yyless((YYCURSOR - YYTEXT) - 1);
         if (*YYTEXT >= 'A' && *YYTEXT <= 'Z') {
-            return NAME_CLASS;
+            PUSH_TOKEN(NAME_CLASS);
         } else {
-            return NAME_VARIABLE;
+            PUSH_TOKEN(NAME_VARIABLE);
         }
     } else {
-        return STRING_INTERNED;
+        PUSH_TOKEN(STRING_INTERNED);
     }
 }
 
 <IN_RUBY> ':' IDENTIFIER {
-    return STRING_INTERNED;
+    PUSH_TOKEN(STRING_INTERNED);
 }
 
 // un identifiant peut encore se terminer par '=' ?
@@ -328,9 +328,9 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     // - si la première lettre est une majuscule, c'est une constante
     // - si finit par '!' ou '?' c'est un id de méthode ?
     if (*YYTEXT >= 'A' && *YYTEXT <= 'Z') {
-        return NAME_VARIABLE_CLASS;
+        PUSH_TOKEN(NAME_VARIABLE_CLASS);
     } else {
-        return NAME_FUNCTION;
+        PUSH_TOKEN(NAME_FUNCTION);
     }
 }
 
@@ -345,12 +345,12 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 }
 
 <IN_ERB_COMMENT> [^] {
-    return COMMENT_SINGLE;
+    PUSH_TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> "<%" "="? {
     BEGIN(IN_RUBY);
-    return NAME_TAG;
+    PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL> [^] {
@@ -358,7 +358,7 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 
     secondary = LEXER_UNWRAP(mydata->secondary);
     if (NULL == secondary) {
-        return IGNORABLE;
+        PUSH_TOKEN(IGNORABLE);
     } else {
         YYCURSOR = YYTEXT;
 
