@@ -9,22 +9,24 @@ find_package(RE2C 0.13.7 REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(SOURCES shall.c lexer-private.c xtring.c darray.c hashtable.c)
+set(SOURCES lib/shall.c lexer-private.c xtring.c darray.c hashtable.c)
 set(FORMATTERS html terminal plain) # xml
 set(C_LEXERS text diff)
 set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
 
 foreach(lexer ${C_LEXERS})
-    list(APPEND SOURCES "lexers/${lexer}.c")
+    list(APPEND SOURCES "lib/lexers/${lexer}.c")
 endforeach(lexer)
 
+set(RE2C_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/genlexers/")
+file(MAKE_DIRECTORY "${RE2C_OUTPUT_DIRECTORY}")
 foreach(lexer ${RE2C_LEXERS})
-    list(APPEND SOURCES "lexers/${lexer}.c")
-    RE2C_TARGET(NAME "${lexer}" INPUT "lexers/${lexer}.re" OUTPUT "lexers/${lexer}.c" OPTIONS "-cd8" DEPENDS "lexer-private.h")
+    list(APPEND SOURCES "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c")
+    RE2C_TARGET(NAME "${lexer}" INPUT "lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "lexer-private.h")
 endforeach(lexer)
 
 foreach(fmt ${FORMATTERS})
-    list(APPEND SOURCES "formatters/${fmt}.c")
+    list(APPEND SOURCES "lib/formatters/${fmt}.c")
 endforeach(fmt)
 
 add_library(common OBJECT EXCLUDE_FROM_ALL utils.c)
@@ -53,27 +55,27 @@ foreach(target "shall_lib;shall_bin")
 endforeach(target)
 
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lexers/README.md
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/shalldoc --lexers ${CMAKE_CURRENT_SOURCE_DIR}/lexers/README.md
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lib/lexers/README.md
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/shalldoc --lexers ${CMAKE_CURRENT_SOURCE_DIR}/lib/lexers/README.md
     DEPENDS shalldoc
     COMMENT "Build documentation (shalldoc) for lexers"
 )
 add_custom_target(
     lexers_doc
     ALL
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lexers/README.md
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/lexers/README.md
 )
 
 add_custom_command(
-    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/formatters/README.md
-    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/shalldoc --formatters ${CMAKE_CURRENT_SOURCE_DIR}/formatters/README.md
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/lib/formatters/README.md
+    COMMAND ${CMAKE_CURRENT_BINARY_DIR}/shalldoc --formatters ${CMAKE_CURRENT_SOURCE_DIR}/lib/formatters/README.md
     DEPENDS shalldoc
     COMMENT "Build documentation (shalldoc) for formatters"
 )
 add_custom_target(
     formatters_doc
     ALL
-    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/formatters/README.md
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/lib/formatters/README.md
 )
 
 add_custom_command(
@@ -91,7 +93,7 @@ add_custom_target(
 # find_program(DOXYGEN_EXECUTABLE doxygen)
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
-    add_custom_target(api_doc ALL doxygen ${CMAKE_SOURCE_DIR}/doxygen.conf DEPENDS ${CMAKE_SOURCE_DIR}/shall.c ${CMAKE_SOURCE_DIR}/shall.h ${CMAKE_SOURCE_DIR}/doc.h) 
+    add_custom_target(api_doc ALL doxygen ${CMAKE_SOURCE_DIR}/doxygen.conf DEPENDS ${CMAKE_SOURCE_DIR}/lib/shall.c ${CMAKE_SOURCE_DIR}/shall.h ${CMAKE_SOURCE_DIR}/doc.h)
 endif(DOXYGEN_FOUND)
 
 install(
