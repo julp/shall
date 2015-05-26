@@ -818,6 +818,7 @@ SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
         if (NULL != imp->init) {
             imp->init((LexerData *) lexer->optvals);
         }
+#ifdef TEST
         if (NULL != imp->implicit) {
             const LexerImplementation * const *dep;
 
@@ -825,6 +826,7 @@ SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
 // debug("%s depends on %s", imp->name, (*dep)->name);
             }
         }
+#endif /* TEST */
     }
 
     return lexer;
@@ -1370,7 +1372,7 @@ SHALL_API int formatter_set_option_as_string(Formatter *fmt, const char *name, c
     if (NULL != (fo = formatter_option_by_name(fmt->imp, name))) {
         OptionValue *optvalptr;
 
-#if 0
+#ifndef TEST
         if (NULL == (optvalptr = fmt->imp->get_option_ptr(fmt, 0, fo->offset, fo->name, fo->name_len))) {
             return OPT_ERR_INVALID_OPTION;
         }
