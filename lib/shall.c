@@ -10,7 +10,6 @@
 #include "cpp.h"
 #include "utils.h"
 #include "tokens.h"
-// #include "option.h"
 #include "lexer.h"
 #include "lexer-private.h"
 #include "formatter.h"

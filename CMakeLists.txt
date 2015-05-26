@@ -2,10 +2,15 @@ cmake_minimum_required(VERSION 2.8.8)
 
 project(shall C)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -DDEBUG -DTEST -Wall -Wextra -std=gnu99 -Wwrite-strings -Wstrict-prototypes -Wuninitialized -Wunreachable-code -Wno-comment -Wnonnull -Wunreachable-code")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99 -Wwrite-strings -Wstrict-prototypes -Wuninitialized -Wunreachable-code -Wno-comment -Wnonnull -Wunreachable-code")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(RE2C 0.13.7 REQUIRED)
+
+message(CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    add_definitions(-DDEBUG -DTEST)
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -90,7 +95,6 @@ add_custom_target(
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/bindings/ruby/doc/shall.rb
 )
 
-# find_program(DOXYGEN_EXECUTABLE doxygen)
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
     add_custom_target(api_doc ALL doxygen ${CMAKE_SOURCE_DIR}/doxygen.conf DEPENDS ${CMAKE_SOURCE_DIR}/lib/shall.c ${CMAKE_SOURCE_DIR}/shall.h ${CMAKE_SOURCE_DIR}/doc.h)
