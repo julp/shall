@@ -213,8 +213,8 @@ static int varnish_named_elements_cmp(const void *a, const void *b)
 {
     const varnish_named_element_t *na, *nb;
 
-    na = (const named_element_t *) a; /* key */
-    nb = (const named_element_t *) b;
+    na = (const varnish_named_element_t *) a; /* key */
+    nb = (const varnish_named_element_t *) b;
     if (nb->starts_with) {
         return strncmp_l(na->name, na->name_len, nb->name, nb->name_len, nb->name_len);
     } else {
