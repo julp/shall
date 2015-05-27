@@ -217,7 +217,7 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <*> [^] {
-    return default_token_type[YYSTATE];
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
 }

@@ -247,7 +247,7 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
             break;
     }
     BEGIN(IN_PERCENT_STRING);
-    return string_map[mydata->string_type].type;
+    PUSH_TOKEN(string_map[mydata->string_type].type);
 }
 
 <IN_RUBY> [/] {
@@ -255,21 +255,21 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     BEGIN(IN_PERCENT_STRING);
     mydata->quote_char = *YYTEXT;
     mydata->string_type = str_regexp;
-    return string_map[mydata->string_type].type;
+    PUSH_TOKEN(string_map[mydata->string_type].type);
 }
 
 <IN_RUBY> ["] {
     mydata->quote_char = '"';
     mydata->string_type = str_dquote;
     BEGIN(IN_PERCENT_STRING);
-    return string_map[mydata->string_type].type;
+    PUSH_TOKEN(string_map[mydata->string_type].type);
 }
 
 <IN_RUBY> ['] {
     mydata->quote_char = '\'';
     mydata->string_type = str_squote;
     BEGIN(IN_PERCENT_STRING);
-    return string_map[mydata->string_type].type;
+    PUSH_TOKEN(string_map[mydata->string_type].type);
 }
 
 <IN_PERCENT_STRING> [^] {
@@ -277,7 +277,7 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     if (mydata->quote_char == *YYTEXT) {
         BEGIN(IN_RUBY);
     }
-    return string_map[mydata->string_type].type;
+    PUSH_TOKEN(string_map[mydata->string_type].type);
 }
 
 <IN_RUBY> [;.{}[\]] {

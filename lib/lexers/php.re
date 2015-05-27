@@ -546,7 +546,7 @@ debug("[ERR] %d", __LINE__);
                     if (!case_insentive[keywords[i].type] && 0 != strcmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
                         break;
                     } else {
-                        return keywords[i].type;
+                        PUSH_TOKEN(keywords[i].type);
                     }
                 }
             }
@@ -659,7 +659,7 @@ debug("[ERR] %d", __LINE__);
         }
     }
 
-    return default_token_type[YYSTATE];
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 
 <ST_HEREDOC,ST_NOWDOC>ANY_CHAR {
@@ -692,7 +692,7 @@ debug("[ERR] %d", __LINE__);
                             BEGIN(ST_END_HEREDOC);
                         }
 //                         goto nowdoc_scan_done;
-                        return default_token_type[YYSTATE];
+                        PUSH_TOKEN(default_token_type[YYSTATE]);
                     }
                 }
                 if (STATE(ST_HEREDOC) == YYSTATE) {
@@ -724,7 +724,7 @@ debug("[ERR] %d", __LINE__);
     }
 
 // nowdoc_scan_done:
-    return default_token_type[YYSTATE];
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 
 <ST_END_HEREDOC,ST_END_NOWDOC>ANY_CHAR {
@@ -737,7 +737,7 @@ debug("[ERR] %d", __LINE__);
     mydata->doclabel_len = 0;
 
     BEGIN(ST_IN_SCRIPTING);
-    return default_token_type[old_state];
+    PUSH_TOKEN(default_token_type[old_state]);
 }
 
 <ST_DOUBLE_QUOTES>("\\0"[0-9]{2}) | ("\\" 'x' [0-9A-Fa-f]{2}) | ("\\"[$"efrntv\\]) {
@@ -802,7 +802,7 @@ not_php:
 }
 
 <*>ANY_CHAR { // should be the last "rule"
-    return default_token_type[YYSTATE];
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
 }

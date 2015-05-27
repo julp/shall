@@ -946,7 +946,7 @@ other = .;
                 *p = ascii_toupper((int) *p);
             }
         }
-        return match->type;
+        PUSH_TOKEN(match->type);
     } else {
         PUSH_TOKEN(IGNORABLE);
     }

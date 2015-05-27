@@ -216,7 +216,7 @@ restart_string_bracket:
     if (YYLENG == mydata->bracket_len) {
         BEGIN(INITIAL);
     }
-    return default_token_type[old_state];
+    PUSH_TOKEN(default_token_type[old_state]);
 }
 
 <INITIAL>["] {
@@ -282,7 +282,7 @@ restart_string_bracket:
 }
 
 <*>[^] {
-    return default_token_type[YYSTATE];
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
 }
