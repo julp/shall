@@ -5,33 +5,46 @@ project(shall C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99 -Wwrite-strings -Wstrict-prototypes -Wuninitialized -Wunreachable-code -Wno-comment -Wnonnull -Wunreachable-code")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+
+get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
+get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
+if("${srcdir}" STREQUAL "${bindir}")
+    message("Don't build ${CMAKE_PROJECT_NAME} into its source directory")
+    message("Use a temporary directory instead:")
+    message("  mkdir -p /my/tmp/build/path/")
+    message("  cd /my/tmp/build/path/")
+    message("  cmake /path/to/shall/sources # your extra arguments")
+    message(FATAL_ERROR "")
+endif("${srcdir}" STREQUAL "${bindir}")
+
 find_package(RE2C 0.13.7 REQUIRED)
 
-message(CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE})
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG -DTEST)
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(SOURCES lib/shall.c lexer-private.c xtring.c darray.c hashtable.c)
+set(SOURCES lib/shall.c lib/lexer.c xtring.c darray.c hashtable.c)
 set(FORMATTERS html terminal plain) # xml
-set(C_LEXERS text diff)
-set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
+# set(C_LEXERS text diff)
+# set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
+set(C_LEXERS "")
+set(RE2C_LEXERS cmake dtd xml)
 
 foreach(lexer ${C_LEXERS})
-    list(APPEND SOURCES "lib/lexers/${lexer}.c")
+    list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.c")
 endforeach(lexer)
 
 set(RE2C_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/genlexers/")
 file(MAKE_DIRECTORY "${RE2C_OUTPUT_DIRECTORY}")
 foreach(lexer ${RE2C_LEXERS})
     list(APPEND SOURCES "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c")
-    RE2C_TARGET(NAME "${lexer}" INPUT "lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "lexer-private.h")
+    RE2C_TARGET(NAME "${lexer}" INPUT "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "lexer.h")
 endforeach(lexer)
 
 foreach(fmt ${FORMATTERS})
-    list(APPEND SOURCES "lib/formatters/${fmt}.c")
+    list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/formatters/${fmt}.c")
 endforeach(fmt)
 
 add_library(common OBJECT EXCLUDE_FROM_ALL utils.c)
