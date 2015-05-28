@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include "lexer.h"
-#include "lexer-private.h"
 #include "utils.h"
 
 int named_elements_cmp(const void *a, const void *b)
