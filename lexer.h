@@ -39,6 +39,9 @@
 
 # define yymore() goto yymore_restart
 
+# define TOKEN(type) \
+    cb(EVENT_TOKEN, cb_data, type); \
+
 # define PUSH_TOKEN(type) \
     cb(EVENT_TOKEN, cb_data, type); \
     continue;

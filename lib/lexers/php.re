@@ -30,6 +30,8 @@
 #include "tokens.h"
 #include "lexer.h"
 
+extern const LexerImplementation annotations_lexer;
+
 typedef struct {
     LexerData data;
     int short_tags ALIGNED(sizeof(OptionValue));
@@ -482,8 +484,22 @@ debug("[ERR] %d", __LINE__);
 }
 
 <ST_IN_SCRIPTING>"/*" | "/**" WHITESPACE {
+#if 0
     BEGIN(ST_COMMENT_MULTI);
     PUSH_TOKEN(COMMENT_MULTILINE);
+#else
+    YYCTYPE *end;
+
+    if (YYCURSOR > YYLIMIT) {
+        DONE;
+    }
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
+        YYCURSOR = YYLIMIT;
+    } else {
+        YYCURSOR = end;
+    }
+    REPLAY(YYTEXT, YYCURSOR, &annotations_lexer, NULL);
+#endif
 }
 
 <ST_COMMENT_MULTI>"*/" {
@@ -854,21 +870,21 @@ break;
                         // '<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">"
                         if (0 == STRNCASECMP("cript")) {
                             ptr += STR_LEN("cript");
-                            if (IS_SPACE(*ptr)) {
+                            if (ptr < YYLIMIT && IS_SPACE(*ptr)) {
                                 ++ptr;
-                                while (IS_SPACE(*ptr)) {
+                                while (ptr < YYLIMIT && IS_SPACE(*ptr)) {
                                     ++ptr;
                                 }
                                 if (0 == STRNCASECMP("language")) {
                                     ptr += STR_LEN("language");
-                                    while (IS_SPACE(*ptr)) {
+                                    while (ptr < YYLIMIT && IS_SPACE(*ptr)) {
                                         ++ptr;
                                     }
                                     if ('=' == *ptr) {
                                         YYCTYPE quote;
 
                                         ++ptr;
-                                        while (IS_SPACE(*ptr)) {
+                                        while (ptr < YYLIMIT && IS_SPACE(*ptr)) {
                                             ++ptr;
                                         }
                                         quote = *ptr;
@@ -883,7 +899,7 @@ break;
                                                 if (quote) {
                                                     ++ptr;
                                                 }
-                                                while (IS_SPACE(*ptr)) {
+                                                while (ptr < YYLIMIT && IS_SPACE(*ptr)) {
                                                     ++ptr;
                                                 }
                                                 if ('>' == *ptr) {

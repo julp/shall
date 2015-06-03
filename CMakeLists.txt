@@ -27,7 +27,7 @@ include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES lib/shall.c lib/lexer.c xtring.c darray.c hashtable.c)
 set(FORMATTERS html terminal plain)
-set(C_LEXERS text diff)
+set(C_LEXERS annotations diff text)
 set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
 
 foreach(lexer ${C_LEXERS})

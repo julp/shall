@@ -3,6 +3,9 @@
 
 #include "tokens.h"
 #include "lexer.h"
+#include "utils.h"
+
+extern const LexerImplementation annotations_lexer;
 
 enum {
     STATE(INITIAL),
@@ -143,8 +146,22 @@ IS = [uUlL]*;
 }
 
 <INITIAL> "/*" {
+#if 0
     BEGIN(IN_COMMENT);
     PUSH_TOKEN(COMMENT_MULTILINE);
+#else
+    YYCTYPE *end;
+
+    if (YYCURSOR > YYLIMIT) {
+        DONE;
+    }
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
+        YYCURSOR = YYLIMIT;
+    } else {
+        YYCURSOR = end;
+    }
+    REPLAY(YYTEXT, YYCURSOR, &annotations_lexer, NULL);
+#endif
 }
 
 <IN_COMMENT> "*/" {
