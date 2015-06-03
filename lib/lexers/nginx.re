@@ -3,7 +3,6 @@
 
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 enum {
     STATE(INITIAL),
@@ -19,9 +18,11 @@ enum {
  * - pour l'interpolation, lever toute ambiguité notamment, le nom d'une variable peut être entourée d'accolades
  **/
 static int nginxlex(YYLEX_ARGS) {
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 LNUM = [0-9]+;
 SPACE = [ \n\r\t];
@@ -110,6 +111,8 @@ SPACE = [ \n\r\t];
     PUSH_TOKEN(IGNORABLE);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation nginx_lexer = {
@@ -124,5 +127,6 @@ LexerImplementation nginx_lexer = {
     NULL,
     nginxlex,
     sizeof(LexerData),
+    NULL,
     NULL
 };

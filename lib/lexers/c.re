@@ -3,13 +3,19 @@
 
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 enum {
     STATE(INITIAL),
     STATE(IN_COMMENT),
     STATE(IN_SINGLE_STRING),
     STATE(IN_DOUBLE_STRING)
+};
+
+static int default_token_type[] = {
+    IGNORABLE,         // INITIAL
+    COMMENT_MULTILINE, // IN_COMMENT
+    STRING_SINGLE,     // IN_SINGLE_STRING
+    STRING_DOUBLE,     // IN_DOUBLE_STRING
 };
 
 #if 0
@@ -28,9 +34,11 @@ static int canalyse(const char *src, size_t src_len)
  * - C99 types? (conditionnal? - on option)
  **/
 static int clex(YYLEX_ARGS) {
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 D = [0-9];
 L = [a-zA-Z_];
@@ -97,10 +105,6 @@ IS = [uUlL]*;
     PUSH_TOKEN(STRING_SINGLE);
 }
 
-<IN_SINGLE_STRING> [^] {
-    PUSH_TOKEN(STRING_SINGLE);
-}
-
 <INITIAL> "L"? "\"" {
     BEGIN(IN_DOUBLE_STRING);
     PUSH_TOKEN(STRING_DOUBLE);
@@ -108,10 +112,6 @@ IS = [uUlL]*;
 
 <IN_DOUBLE_STRING> "\"" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_DOUBLE);
-}
-
-<IN_DOUBLE_STRING> [^] {
     PUSH_TOKEN(STRING_DOUBLE);
 }
 
@@ -147,10 +147,6 @@ IS = [uUlL]*;
     PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
-<IN_COMMENT> [^] {
-    PUSH_TOKEN(COMMENT_MULTILINE);
-}
-
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
     PUSH_TOKEN(COMMENT_MULTILINE);
@@ -161,9 +157,11 @@ IS = [uUlL]*;
 }
 
 <*> [^] {
-    PUSH_TOKEN(IGNORABLE);
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation c_lexer = {
@@ -178,5 +176,6 @@ LexerImplementation c_lexer = {
     NULL,
     clex,
     sizeof(LexerData),
+    NULL,
     NULL
 };

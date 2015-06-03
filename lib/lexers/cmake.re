@@ -4,7 +4,6 @@
 #include "tokens.h"
 #include "utils.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 typedef struct {
     LexerData data;
@@ -144,9 +143,11 @@ static int cmakelex(YYLEX_ARGS) {
     CMakeLexerData *mydata;
 
     mydata = (CMakeLexerData *) data;
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 space = [ \t]; // cmake defines it as [ \t]+ but uses a quantifier in its rules
 bracket_open = "[" "="* "[";
@@ -285,6 +286,8 @@ restart_string_bracket:
     PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation cmake_lexer = {
@@ -299,5 +302,6 @@ LexerImplementation cmake_lexer = {
     NULL,
     cmakelex,
     sizeof(CMakeLexerData),
+    NULL,
     NULL
 };

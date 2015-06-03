@@ -43,15 +43,33 @@
     cb(EVENT_TOKEN, cb_data, type); \
     continue;
 
+# define PUSH(limp, ldata) \
+    do { \
+        cb(EVENT_PUSH, cb_data, limp, ldata); \
+        continue; \
+    } while (0);
+
+# define DONE \
+    do { \
+        cb(EVENT_DONE, cb_data); \
+        return 1; \
+    } while (0);
+
+# define REPLAY(cursor, limit, limp, ldata) \
+    do { \
+        cb(EVENT_REPLAY, cb_data, cursor, limit, limp, ldata); \
+        continue; \
+    } while (0);
+
 #define PUSH_STATE(new_state) \
     do { \
-        darray_push(/*&my*/data->state_stack, &YYSTATE); \
+        darray_push(data->state_stack, &YYSTATE); \
         BEGIN(new_state); \
     } while (0);
 
 #define POP_STATE() \
     do { \
-        darray_pop(/*&my*/data->state_stack, &YYSTATE); \
+        darray_pop(data->state_stack, &YYSTATE); \
     } while (0);
 
 /*
@@ -102,9 +120,10 @@ struct LexerInput {
     (NULL == OPT_LEXUWF(optval) ? (Lexer *) OPT_LEXPTR(optval) : (OPT_LEXUWF(optval)(OPT_LEXPTR(optval))))
 
 typedef enum {
-    EVENT_DONE, // nothing
-    EVENT_PUSH, // const LexerImplementation *
-    EVENT_TOKEN // int type
+    EVENT_DONE,  // nothing
+    EVENT_PUSH,  // const LexerImplementation *, LexerData * (can be NULL)
+    EVENT_TOKEN, // int type
+    EVENT_REPLAY // YYCTYPE *, const LexerImplementation *, LexerData * (can be NULL)
 } event_t;
 
 typedef void envent_cb_t(event_t, void *, ...);
@@ -248,7 +267,10 @@ struct Lexer {
 void reset_lexer(LexerData *);
 
 #define YYSTRNCMP(x) \
-    strncmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG, STR_LEN(x))
+    strcmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)
+
+#define YYSTRNCASECMP(x) \
+    ascii_strcasecmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)
 
 #define NE(s) { s, STR_LEN(s) }
 

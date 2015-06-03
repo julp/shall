@@ -135,6 +135,8 @@ const FormatterImplementation _termfmt = {
     terminal_start_token,
     terminal_end_token,
     terminal_write_token,
+    NULL,
+    NULL,
     sizeof(FormatterData),
     NULL
 };

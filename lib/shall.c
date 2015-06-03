@@ -6,12 +6,12 @@
 #include <string.h>
 #include <fnmatch.h>
 #include <limits.h>
+#include <stdarg.h>
 
 #include "cpp.h"
 #include "utils.h"
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 #include "formatter.h"
 #include "shall.h"
 
@@ -20,36 +20,36 @@ extern const LexerImplementation apache_lexer;
 extern const LexerImplementation c_lexer;
 extern const LexerImplementation cmake_lexer;
 extern const LexerImplementation css_lexer;
-extern const LexerImplementation dtd_lexer;
 extern const LexerImplementation diff_lexer;
+extern const LexerImplementation dtd_lexer;
+extern const LexerImplementation erb_lexer;
 extern const LexerImplementation json_lexer;
 extern const LexerImplementation nginx_lexer;
 extern const LexerImplementation php_lexer;
-extern const LexerImplementation erb_lexer;
+extern const LexerImplementation postgresql_lexer;
 extern const LexerImplementation ruby_lexer;
 extern const LexerImplementation text_lexer;
 extern const LexerImplementation varnish_lexer;
 extern const LexerImplementation xml_lexer;
-extern const LexerImplementation postgresql_lexer;
 #endif /* !DOXYGEN */
 
 // only final/public lexers
 static const LexerImplementation *available_lexers[] = {
-    &php_lexer,
-    &erb_lexer,
-    &ruby_lexer,
-    &xml_lexer,
-    &dtd_lexer,
+    &apache_lexer,
     &c_lexer,
     &cmake_lexer,
     &css_lexer,
     &diff_lexer,
+    &dtd_lexer,
+    &erb_lexer, // provided by ruby lexer
     &json_lexer,
     &nginx_lexer,
-    &apache_lexer,
-    &varnish_lexer,
+    &php_lexer,
     &postgresql_lexer,
-    &text_lexer // may be a good idea to keep it last
+    &ruby_lexer,
+    &text_lexer, // may be a good idea to keep it last?
+    &varnish_lexer,
+    &xml_lexer,
 };
 
 /**
@@ -785,6 +785,16 @@ SHALL_API const LexerImplementation *lexer_implementation(Lexer *lexer)
     return lexer->imp;
 }
 
+static int lexer_data_init(LexerData *data, size_t data_size)
+{
+    bzero(data, data_size);
+    if (NULL != (data->state_stack = malloc(sizeof(*data->state_stack)))) {
+        darray_init(data->state_stack, 0, sizeof(data->state));
+    }
+
+    return NULL != data->state_stack;
+}
+
 /**
  * Creates a new lexer from a lexer implementation
  *
@@ -800,13 +810,20 @@ SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
         LexerData *data;
 
         lexer->imp = imp;
-        bzero(lexer->optvals, imp->data_size);
         data = (LexerData *) &lexer->optvals;
+#if 0
+        bzero(data, imp->data_size);
         if (NULL == (data->state_stack = malloc(sizeof(*data->state_stack)))) {
             free(lexer);
             return NULL;
         }
         darray_init(data->state_stack, 0, sizeof(data->state));
+#else
+        if (!lexer_data_init(data, imp->data_size)) {
+            free(lexer);
+            return NULL;
+        }
+#endif
         if (NULL != imp->options) {
             LexerOption *lo;
 
@@ -1243,7 +1260,9 @@ SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *s
 
     if (NULL != (fmt = malloc(sizeof(*fmt) + super->data_size/* - sizeof(fmt->data)*/))) {
         fmt->imp = super;
-        hashtable_ascii_cs_init(&fmt->optmap, NULL, NULL, NULL);
+#ifdef TEST
+        hashtable_ascii_cs_init(&fmt->optmap, NULL, NULL, NULL); // we need to strdup keys to make sure that they still exists after?
+#endif
         if (NULL != base->options) {
             FormatterOption *fo;
 
@@ -1251,7 +1270,9 @@ SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *s
                 OptionValue *optvalptr;
 
                 if (NULL != (optvalptr = base->get_option_ptr(fmt, 1, fo->offset, fo->name, fo->name_len))) {
+#ifdef TEST
                     hashtable_put(&fmt->optmap, 0, fo->name, optvalptr, NULL);
+#endif
                     memcpy(optvalptr, &fo->defval, sizeof(fo->defval));
                 }
             }
@@ -1345,7 +1366,9 @@ SHALL_API void formatter_destroy(Formatter *fmt)
             }
         }
     }
+#ifdef TEST
     hashtable_destroy(&fmt->optmap);
+#endif
     free(fmt);
 }
 
@@ -1450,6 +1473,116 @@ SHALL_API int formatter_get_option(Formatter *fmt, const char *name, OptionValue
 
 /* ========== Highlighting ========== */
 
+typedef struct {
+    LexerInput *yy;
+    String *buffer;
+    Formatter *fmt;
+    int prev_token;
+} xxx;
+
+static void handle_event(event_t event, void *data, ...)
+{
+    xxx *x;
+    va_list ap;
+
+    x = (xxx *) data;
+    va_start(ap, data);
+// debug("%s %d", __func__, event);
+    switch (event) {
+        case EVENT_DONE:
+        {
+// debug("DONE");
+            if (-1 != x->prev_token) {
+                x->fmt->imp->end_token(x->prev_token, x->buffer, &x->fmt->optvals);
+            }
+            break;
+        }
+        case EVENT_PUSH:
+        {
+            LexerData *data;
+            const LexerImplementation *imp;
+
+            imp = va_arg(ap, const LexerImplementation *);
+// debug("PUSH %s", imp->name);
+            if (NULL == (data = va_arg(ap, LexerData *))) {
+                data = malloc(imp->data_size);
+                lexer_data_init(data, imp->data_size);
+            } else {
+                reset_lexer(data);
+            }
+            if (NULL != x->fmt->imp->start_lexing) {
+                x->fmt->imp->start_lexing(imp->name, x->buffer, &x->fmt->optvals);
+            }
+            x->prev_token = -1;
+            imp->yylex(x->yy, data, handle_event, x);
+// debug("POP %s", imp->name);
+            // lexer emit a DONE here
+//             free(data);
+            if (NULL != x->fmt->imp->end_lexing) {
+                x->fmt->imp->end_lexing(imp->name, x->buffer, &x->fmt->optvals);
+            }
+            x->prev_token = -1;
+            break;
+        }
+        case EVENT_REPLAY:
+        {
+            LexerData *data;
+            const LexerImplementation *imp;
+            YYCTYPE *saved_limit/*, *saved_cursor*/;
+
+//             saved_cursor = x->yy->cursor;
+//             if (x->yy->cursor < x->yy->limit) {
+                saved_limit = x->yy->limit;
+                x->yy->cursor = va_arg(ap, YYCTYPE *);
+                x->yy->limit = va_arg(ap, YYCTYPE *);
+// //             if (x->yy->cursor < x->yy->limit) {
+// debug("REPLAY (%d) >%.*s<", x->yy->limit - x->yy->cursor, x->yy->limit - x->yy->cursor, x->yy->cursor);
+                imp = va_arg(ap, const LexerImplementation *);
+                if (NULL == (data = va_arg(ap, LexerData *))) {
+                    data = malloc(imp->data_size);
+                    lexer_data_init(data, imp->data_size);
+                }/* else {
+                    reset_lexer(data);
+                }*/
+                if (NULL != x->fmt->imp->start_lexing) {
+                    x->fmt->imp->start_lexing(imp->name, x->buffer, &x->fmt->optvals);
+                }
+                imp->yylex(x->yy, data, handle_event, x);
+                if (NULL != x->fmt->imp->end_lexing) {
+                    x->fmt->imp->end_lexing(imp->name, x->buffer, &x->fmt->optvals);
+                }
+//                 x->fmt->imp->end_lexing(imp->name);
+//                 x->yy->cursor = saved_cursor;
+//                 x->yy->yytext = x->yy->cursor;
+                x->yy->limit = saved_limit;
+                x->yy->yytext = x->yy->cursor;
+// debug("AFTER REPLAY (%d) >%.*s<", x->yy->limit - x->yy->cursor, x->yy->limit - x->yy->cursor, x->yy->cursor);
+//             }
+            break;
+        }
+        case EVENT_TOKEN:
+        {
+            int yyleng, token;
+
+            token = va_arg(ap, int);
+            yyleng = x->yy->cursor - x->yy->yytext;
+            if (x->prev_token != token) {
+                if (x->prev_token != -1) {
+                    x->fmt->imp->end_token(x->prev_token, x->buffer, &x->fmt->optvals);
+                }
+                x->fmt->imp->start_token(token, x->buffer, &x->fmt->optvals);
+            }
+            x->fmt->imp->write_token(x->buffer, (char *) x->yy->yytext, yyleng, &x->fmt->optvals);
+            x->prev_token = token;
+            break;
+        }
+        default:
+            assert(0);
+            break;
+    }
+    va_end(ap);
+}
+
 /**
  * Highlight string according to given lexer and formatter
  *
@@ -1493,6 +1626,30 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
     }
     yy.cursor = (YYCTYPE *) src;
     yy.limit = (YYCTYPE *) src + src_len;
+#if 1
+    {
+        xxx x;
+
+        x.buffer = buffer;
+        x.fmt = fmt;
+        x.prev_token = prev;
+        x.yy = &yy;
+#if 0
+        HashTable lexers;
+        {
+            Lexer *secondary;
+
+            secondary = NULL;
+            hashtable_init(&lexers);
+            if (OPT_TYPE_LEXER == lexer_get_option(lexer, "secondary", &secondary) && NULL != secondary) {
+                hashtable_direct_put(&lexers, 0, secondary->imp, (LexerData *) secondary->optvals, NULL);
+            }
+            x.lexers = &lexers;
+        }
+#endif
+        lexer->imp->yylex(&yy, (LexerData *) lexer->optvals, handle_event, &x);
+    }
+#else
     // TODO: prendre le token avant de rencontrer la fin
     // YYFILL ne doit pas permettre de prendre en compte le type du token au début sur un token de plusieurs caractères
     while ((token = lexer->imp->yylex(&yy, (LexerData *) lexer->optvals)) > 0) {
@@ -1507,12 +1664,13 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
                 fmt->imp->start_token(token, buffer, &fmt->optvals);
 //             }
         }
-        fmt->imp->write_token(buffer, yy.yytext, yyleng, &fmt->optvals);
+        fmt->imp->write_token(buffer, (char *) yy.yytext, yyleng, &fmt->optvals);
         prev = token;
     }
-    if (prev != -1/* && prev != IGNORABLE*/) {
-        fmt->imp->end_token(token, buffer, &fmt->optvals);
+    if (-1 != prev/* && IGNORABLE != prev*/) {
+        fmt->imp->end_token(prev, buffer, &fmt->optvals);
     }
+#endif
     if (NULL != fmt->imp->end_document) {
         fmt->imp->end_document(buffer, &fmt->optvals);
     }

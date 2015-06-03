@@ -68,6 +68,8 @@ const FormatterImplementation _plainfmt = {
     start_token,
     end_token,
     write_token,
+    NULL,
+    NULL,
     sizeof(FormatterData),
     NULL
 };

@@ -1,0 +1,9 @@
+--TEST--
+PostgreSQL uppercase option
+--LEXER--
+pgsql
+uppercase_keywords=on
+--SOURCE--
+select
+--EXPECT--
+KEYWORD: SELECT

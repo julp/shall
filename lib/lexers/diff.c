@@ -4,7 +4,6 @@
 #include "cpp.h"
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 static int diffanalyse(const char *src, size_t src_len)
 {
@@ -24,41 +23,43 @@ static int diffanalyse(const char *src, size_t src_len)
 static int difflex(YYLEX_ARGS)
 {
     (void) data;
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 
-    while (YYCURSOR < YYLIMIT && '\n' != *YYCURSOR) {
-        ++YYCURSOR;
-    }
-    if ('\n' != *YYCURSOR) {
-        return 0;
-    } else {
-        ++YYCURSOR; // skip '\n' for next call
-        switch (*YYTEXT) {
-            case '+':
-                PUSH_TOKEN(GENERIC_INSERTED);
-            case '-':
-                PUSH_TOKEN(GENERIC_DELETED);
-            case '!':
-                PUSH_TOKEN(GENERIC_STRONG);
-            case '@':
-                PUSH_TOKEN(GENERIC_SUBHEADING);
-            case '=':
-                PUSH_TOKEN(GENERIC_HEADING);
-            case 'i':
-            case 'I':
-                if (YYLENG >= STR_LEN("index") && 0 == memcmp(YYTEXT + 1, "ndex", STR_LEN("ndex"))) {
-                    PUSH_TOKEN(GENERIC_HEADING);
-                }
-                break;
-            case 'd':
-                if (YYLENG >= STR_LEN("diff") && 0 == memcmp(YYTEXT + 1, "iff", STR_LEN("iff"))) {
-                    PUSH_TOKEN(GENERIC_HEADING);
-                }
-                break;
+        while (YYCURSOR < YYLIMIT && '\n' != *YYCURSOR) {
+            ++YYCURSOR;
         }
+        if ('\n' != *YYCURSOR) {
+            DONE;
+        } else {
+            ++YYCURSOR; // skip '\n' for next call
+            switch (*YYTEXT) {
+                case '+':
+                    PUSH_TOKEN(GENERIC_INSERTED);
+                case '-':
+                    PUSH_TOKEN(GENERIC_DELETED);
+                case '!':
+                    PUSH_TOKEN(GENERIC_STRONG);
+                case '@':
+                    PUSH_TOKEN(GENERIC_SUBHEADING);
+                case '=':
+                    PUSH_TOKEN(GENERIC_HEADING);
+                case 'i':
+                case 'I':
+                    if (YYLENG >= STR_LEN("index") && 0 == memcmp(YYTEXT + 1, "ndex", STR_LEN("ndex"))) {
+                        PUSH_TOKEN(GENERIC_HEADING);
+                    }
+                    break;
+                case 'd':
+                    if (YYLENG >= STR_LEN("diff") && 0 == memcmp(YYTEXT + 1, "iff", STR_LEN("iff"))) {
+                        PUSH_TOKEN(GENERIC_HEADING);
+                    }
+                    break;
+            }
+        }
+        PUSH_TOKEN(IGNORABLE);
     }
-
-    PUSH_TOKEN(IGNORABLE);
+    DONE;
 }
 
 LexerImplementation diff_lexer = {
@@ -73,5 +74,6 @@ LexerImplementation diff_lexer = {
     diffanalyse,
     difflex,
     sizeof(LexerData),
+    NULL,
     NULL
 };

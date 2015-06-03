@@ -2,6 +2,12 @@
 #include <stddef.h>
 
 #include "utils.h"
+// #include "cpp.h"
+
+#ifndef MIN
+# define MIN(a, b) \
+    ((a) <= (b) ? (a) : (b))
+#endif /* !MIN */
 
 /*
 static const unsigned char lower[] = {
@@ -80,7 +86,7 @@ int ascii_strcasecmp_l(
         } else {
             min_len = str1_len;
         }
-        while (min_len--) {
+        while (0 != min_len--) {
             c1 = ascii_toupper(*(unsigned char *) str1++);
             c2 = ascii_toupper(*(unsigned char *) str2++);
             if (c1 != c2) {
@@ -90,6 +96,31 @@ int ascii_strcasecmp_l(
     }
 
     return str1_len - str2_len;
+}
+
+int ascii_strncasecmp_l(
+    const char *str1, size_t str1_len,
+    const char *str2, size_t str2_len,
+    size_t n
+) {
+    int c1, c2;
+
+    if (str1 != str2 && 0 != n) {
+        size_t min_len;
+
+        min_len =  MIN(n, MIN(str1_len, str2_len));
+        do {
+            if ('\0' == *str1) {
+                return 0;
+            }
+            c1 = ascii_toupper(*(unsigned char *) str1++);
+            c2 = ascii_toupper(*(unsigned char *) str2++);
+        } while (c1 == c2 && 0 != --min_len);
+
+        return (unsigned char) c1 - (unsigned char) c2;
+    }
+
+    return 0;
 }
 
 int strcmp_l(
@@ -104,7 +135,7 @@ int strcmp_l(
         } else {
             min_len = str1_len;
         }
-        while (min_len--/* > 0*/) {
+        while (0 != min_len--) {
             if (*str1 != *str2) {
                 return (unsigned char) *str1 - (unsigned char) *str2;
             }
@@ -115,21 +146,16 @@ int strcmp_l(
     return str1_len - str2_len;
 }
 
-#ifndef MIN
-# define MIN(a, b) \
-    ((a) <= (b) ? (a) : (b))
-#endif /* !MIN */
-
 int strncmp_l(
     const char *str1, size_t str1_len,
     const char *str2, size_t str2_len,
     size_t n
 ) {
-    if (str1 != str2 && n/* > 0*/) {
+    if (str1 != str2 && 0 != n) {
         size_t min_len;
 
         min_len =  MIN(n, MIN(str1_len, str2_len));
-        while (min_len-- > 0) {
+        while (0 != min_len--) {
             if (*str1 != *str2) {
                 return *(const unsigned char *) str1 - *(const unsigned char *) str2;
             }
@@ -140,4 +166,26 @@ int strncmp_l(
     }
 
     return 0;
+}
+
+char *memstr(const char *haystack, const char *needle, size_t needle_len, const char * /*const*/ haystack_end)
+{
+    char *m;
+
+    m = NULL;
+    if (needle_len <= (size_t) (haystack_end - haystack)) {
+        if (1 == needle_len) {
+            m = (char *) memchr(haystack, needle[0], haystack_end - haystack);
+        } else {
+            const char *p;
+
+            p = haystack;
+            haystack_end -= needle_len;
+            while (p <= haystack_end && NULL != (m = (char *) memchr(p, needle[0], haystack_end - p + 1)) && 0 != memcmp(needle + 1, m + 1, needle_len - 1)) {
+                ++p;
+            }
+        }
+    }
+
+    return m;
 }

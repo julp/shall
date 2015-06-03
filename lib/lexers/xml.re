@@ -4,7 +4,8 @@
 #include "cpp.h"
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
+
+extern const LexerImplementation dtd_lexer;
 
 enum {
     STATE(INITIAL),
@@ -16,18 +17,6 @@ enum {
     STATE(IN_SINGLE_QUOTES),
     STATE(IN_DOUBLE_QUOTES),
 };
-
-typedef struct {
-    LexerData data;
-    int *in_dtd; // if not NULL, this is &XMLLexerData.in_dtd of parent lexer
-    /* ... */ // voluntarily to keep it opaque
-} DTDLexerData;
-
-typedef struct {
-    LexerData data;
-    int in_dtd;
-    char dtddata[1024]; // TODO and voluntarily to keep it opaque
-} XMLLexerData;
 
 static int xmlanalyse(const char *src, size_t src_len)
 {
@@ -41,6 +30,17 @@ static int xmlanalyse(const char *src, size_t src_len)
     return 0;
 }
 
+static int default_token_type[] = {
+    IGNORABLE,         // INITIAL
+    IGNORABLE,         // IN_TAG
+    IGNORABLE,         // IN_PREPROC
+    COMMENT_MULTILINE, // IN_COMMENT
+    IGNORABLE,         // IN_CDATA
+    IGNORABLE,         // IN_ATTRIBUTE
+    STRING_SINGLE,     // IN_SINGLE_QUOTES
+    STRING_SINGLE,     // IN_DOUBLE_QUOTES
+};
+
 /**
  * NOTE:
  * - ' = case insensitive (ASCII letters only)
@@ -48,16 +48,12 @@ static int xmlanalyse(const char *src, size_t src_len)
  * (for re2c, by default, without --case-inverted or --case-insensitive)
  **/
 static int xmllex(YYLEX_ARGS) {
-    XMLLexerData *mydata;
-
-    mydata = (XMLLexerData *) data;
-    YYTEXT = YYCURSOR;
-    if (mydata->in_dtd) {
-        ++YYCURSOR;
-        goto fallback;
-    }
+debug("%s", __func__);
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 // as defined by http://www.w3.org/TR/REC-xml/#charsets
 
@@ -161,10 +157,6 @@ NDataDecl = S "NDATA" S Name; // [76]
     PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
-<IN_COMMENT>[^] {
-    PUSH_TOKEN(COMMENT_MULTILINE);
-}
-
 <INITIAL> CDStart {
     BEGIN(IN_CDATA);
     PUSH_TOKEN(TAG_PREPROC);
@@ -175,16 +167,16 @@ NDataDecl = S "NDATA" S Name; // [76]
     PUSH_TOKEN(TAG_PREPROC);
 }
 
-<IN_CDATA>[^] {
-    PUSH_TOKEN(IGNORABLE);
-}
-
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
-    mydata->in_dtd = 1;
-    goto fallback;
+    yyless(0);
+    PUSH(&dtd_lexer, NULL);
 }
 
-<INITIAL>"<!DOCTYPE" {
+// "<!DOCTYPE" S Name (S ExternalID)? S? ">"
+<INITIAL>"<!DOCTYPE" S {
+debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
+    yyless(STR_LEN("<!DOCTYPE")); // cette ligne fait tout foirer ?
+debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     PUSH_STATE(IN_TAG);
     PUSH_TOKEN(NAME_TAG);
 }
@@ -228,6 +220,10 @@ NDataDecl = S "NDATA" S Name; // [76]
     PUSH_TOKEN(NAME_ATTRIBUTE);
 }
 
+/*<IN_TAG> Name {
+    PUSH_TOKEN(NAME_ATTRIBUTE);
+}*/
+
 <IN_ATTRIBUTE> "'" {
     //PUSH_STATE(IN_SINGLE_QUOTES);
     BEGIN(IN_SINGLE_QUOTES);
@@ -252,33 +248,16 @@ NDataDecl = S "NDATA" S Name; // [76]
     PUSH_TOKEN(STRING_SINGLE);
 }
 
-<IN_DOUBLE_QUOTES,IN_SINGLE_QUOTES> [^] {
-    PUSH_TOKEN(STRING_SINGLE);
-}
-
 <INITIAL,IN_SINGLE_QUOTES,IN_DOUBLE_QUOTES> EntityRef {
     PUSH_TOKEN(NAME_ENTITY);
 }
 
-<INITIAL>[^] {
-fallback:
-    if (mydata->in_dtd) {
-#if 0
-        extern const LexerImplementation dtd_lexer;
-        DTDLexerData *dtddata;
-
-        YYCURSOR = YYTEXT;
-        dtddata = (DTDLexerData *) &mydata->dtddata;
-        dtddata->in_dtd = &mydata->in_dtd;
-        return dtd_lexer.yylex(yy, (LexerData *) dtddata);
-#else
-        PUSH_TOKEN(IGNORABLE);
-#endif
-    } else {
-        PUSH_TOKEN(IGNORABLE);
-    }
+<*>[^] {
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
+    }
+    DONE;
 }
 
 extern const LexerImplementation dtd_lexer;
@@ -294,7 +273,7 @@ LexerImplementation xml_lexer = {
     NULL,
     xmlanalyse,
     xmllex,
-    sizeof(XMLLexerData),
+    sizeof(LexerData),
     NULL,
     (const LexerImplementation * const []) { &dtd_lexer, NULL }
 };

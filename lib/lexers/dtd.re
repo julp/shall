@@ -5,7 +5,6 @@
 #include "tokens.h"
 #include "lexer.h"
 #include "utils.h"
-#include "lexer-private.h"
 
 #if 0
 "<!ELEMENT" <espace> <nom> <espace> <"EMPTY" ou "ANY" ou une liste qui commence par "(" et finit par ")"> <espace optionnel> ">"
@@ -55,17 +54,19 @@ static int default_token_type[] = {
 
 typedef struct {
     LexerData data;
-    int *in_dtd; // if not NULL, this is &XMLLexerData.in_dtd of parent lexer
     int depth;
 } DTDLexerData;
 
 static int dtdlex(YYLEX_ARGS) {
     DTDLexerData *mydata;
 
+debug("%s", __func__);
     mydata = (DTDLexerData *) data;
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 S = [ \n\r\t]+; // [2]
 NameStartChar = ':' | [A-Z] | '_' | [a-z] | [\xC0-\xD6] | [\xD8-\xF6] | [\u00F8-\u02FF] | [\u0370-\u037D] | [\u037F-\u1FFF] | [\u200C-\u200D] | [\u2070-\u218F] | [\u2C00-\u2FEF] | [\u3001-\uD7FF] | [\uF900-\uFDCF] | [\uFDF0-\uFFFD] | [\U00010000-\U000EFFFF]; // [4]
@@ -93,6 +94,7 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <INITIAL>"<!DOCTYPE" S {
+    debug("%s: <!DOCTYPE", __func__);
     yyless(STR_LEN("<!DOCTYPE"));
     PUSH_TOKEN(NAME_TAG);
 }
@@ -210,16 +212,18 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <INITIAL>"]" S? ">" {
-    if (NULL != mydata->in_dtd) {
-        *mydata->in_dtd = 0;
-    }
-    PUSH_TOKEN(NAME_TAG);
+debug("%s: ]>", __func__);
+    //PUSH_TOKEN(NAME_TAG);
+    cb(EVENT_TOKEN, cb_data, NAME_TAG);
+    DONE;
 }
 
 <*> [^] {
     PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation dtd_lexer = {
@@ -234,5 +238,6 @@ LexerImplementation dtd_lexer = {
     NULL,
     dtdlex,
     sizeof(DTDLexerData),
+    NULL,
     NULL
 };

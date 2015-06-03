@@ -484,7 +484,7 @@ void string_append_string_len_dump(String *str, const char *src, size_t src_len)
                     break;
                 default:
                 {
-                    if (!isprint(*p)) {
+                    if (!isprint(*p)) { // TODO: UTF-8 compliant
                         sprintf(q, replacement, *p);
 //                         snprintf(q, replacement_size, replacement, *p);
                         q += replacement_len;

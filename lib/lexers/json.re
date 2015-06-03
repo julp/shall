@@ -3,7 +3,6 @@
 
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 enum {
     STATE(INITIAL),
@@ -17,9 +16,11 @@ enum {
  * (for re2c, by default, without --case-inverted or --case-insensitive)
  **/
 static int jsonlex(YYLEX_ARGS) {
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 LNUM = [0-9]+;
 DNUM = ([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*);
@@ -63,6 +64,8 @@ EXPONENT_DNUM = ((LNUM|DNUM)[eE][+-]?LNUM);
     PUSH_TOKEN(IGNORABLE);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation json_lexer = {
@@ -77,5 +80,6 @@ LexerImplementation json_lexer = {
     NULL,
     jsonlex,
     sizeof(LexerData),
+    NULL,
     NULL
 };

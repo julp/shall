@@ -4,7 +4,7 @@
 
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
+#include "utils.h"
 
 enum {
     STATE(INITIAL),
@@ -49,7 +49,6 @@ static struct {
 typedef struct {
     LexerData data;
     OptionValue secondary;
-//     Lexer *secondary ALIGNED(sizeof(OptionValue));
     int erb;
     int quote_char;
     enum string_type string_type;
@@ -57,12 +56,11 @@ typedef struct {
 
 static void rubyinit(LexerData *data)
 {
-    RubyLexerData *mydata;
+//     RubyLexerData *mydata;
 
     BEGIN(IN_RUBY);
-    mydata = (RubyLexerData *) data;
-    mydata->erb = 0; // implicit
-//     mydata->secondary = NULL; // already done
+//     mydata = (RubyLexerData *) data;
+//     mydata->erb = 0; // implicit
 }
 
 static void erbinit(LexerData *data)
@@ -72,7 +70,6 @@ static void erbinit(LexerData *data)
     BEGIN(INITIAL);
     mydata = (RubyLexerData *) data;
     mydata->erb = 1;
-//     mydata->secondary = NULL; // already done
 }
 
 #if 0
@@ -106,9 +103,11 @@ static int rubylex(YYLEX_ARGS) {
     RubyLexerData *mydata;
 
     mydata = (RubyLexerData *) data;
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 // awkward, an identifier in MRI can be composed of any codepoint > 127
 // is_identchar is defined as rb_enc_isalnum((unsigned char)(*(p)),(enc)) || (*(p)) == '_' || !ISASCII(*(p));
@@ -336,12 +335,12 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 
 <INITIAL> "<%#" {
     BEGIN(IN_ERB_COMMENT);
-    return COMMENT_SINGLE/*NAME_TAG*/;
+    PUSH_TOKEN(COMMENT_SINGLE);/*NAME_TAG*/
 }
 
 <IN_ERB_COMMENT> "%>" {
     BEGIN(INITIAL);
-    return COMMENT_SINGLE/*NAME_TAG*/;
+    PUSH_TOKEN(COMMENT_SINGLE);/*NAME_TAG*/
 }
 
 <IN_ERB_COMMENT> [^] {
@@ -354,18 +353,27 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 }
 
 <INITIAL> [^] {
+    YYCTYPE *end;
     Lexer *secondary;
 
+    if (YYCURSOR > YYLIMIT) {
+        DONE;
+    }
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "<%", STR_LEN("<%"), (const char *) YYLIMIT))) {
+        YYCURSOR = YYLIMIT;
+    } else {
+        YYCURSOR = end;
+    }
     secondary = LEXER_UNWRAP(mydata->secondary);
     if (NULL == secondary) {
         PUSH_TOKEN(IGNORABLE);
     } else {
-        YYCURSOR = YYTEXT;
-
-        return secondary->imp->yylex(yy, (LexerData *) secondary->optvals);
+        REPLAY(YYTEXT, YYCURSOR, secondary->imp, (LexerData *) secondary->optvals);
     }
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation ruby_lexer = {
@@ -380,6 +388,7 @@ LexerImplementation ruby_lexer = {
     NULL,
     rubylex,
     sizeof(RubyLexerData),
+    NULL,
     NULL
 };
 
@@ -398,5 +407,6 @@ LexerImplementation erb_lexer = {
     (/*const*/ LexerOption /*const*/ []) {
         { "secondary", OPT_TYPE_LEXER, offsetof(RubyLexerData, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
-    }
+    },
+    NULL
 };

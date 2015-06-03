@@ -6,14 +6,21 @@
 #include "utils.h"
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
+
+extern const LexerImplementation c_lexer;
 
 enum {
     STATE(INITIAL),
     STATE(IN_COMMENT),
     STATE(IN_STRING),
-    STATE(IN_INLINE_C),
     STATE(IN_LONG_STRING),
+};
+
+static int default_token_type[] = {
+    IGNORABLE,         // INITIAL
+    COMMENT_MULTILINE, // IN_COMMENT
+    STRING_SINGLE,     // IN_STRING
+    STRING_SINGLE,     // IN_LONG_STRING
 };
 
 static int varnishanalyse(const char *src, size_t src_len)
@@ -226,9 +233,11 @@ static int varnishlex(YYLEX_ARGS) {
     VarnishLexerData *mydata;
 
     mydata = (VarnishLexerData *) data;
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 LNUM = [0-9]+;
 DNUM = ([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*);
@@ -259,10 +268,6 @@ SPACE = [ \f\n\r\t\v]+;
 
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
-}
-
-<IN_COMMENT> [^] {
     PUSH_TOKEN(COMMENT_MULTILINE);
 }
 
@@ -317,18 +322,21 @@ SPACE = [ \f\n\r\t\v]+;
 
 <INITIAL> [a-zA-Z_.-]+ {
     size_t i;
+    int type;
     int next_label;
 
+    type = IGNORABLE;
     next_label = data->next_label;
     data->next_label = 0;
     if (FUNCTION == next_label) {
         for (i = 0; i < ARRAY_SIZE(subroutines); i++) {
             if (0 == strcmp_l(subroutines[i].name, subroutines[i].name_len, (char *) YYTEXT, YYLENG)) {
                 if (mydata->version >= subroutines[i].min_version && mydata->version < subroutines[i].max_version) {
-                    PUSH_TOKEN(NAME_FUNCTION);
-                } else {
-                    PUSH_TOKEN(IGNORABLE);
-                }
+                    type = NAME_FUNCTION;
+                }/* else {
+                    type = IGNORABLE;
+                }*/
+                break;
             }
         }
     } else {
@@ -337,19 +345,20 @@ SPACE = [ \f\n\r\t\v]+;
 
             if (NULL != (match = bsearch(&key, variables, ARRAY_SIZE(variables), sizeof(variables[0]), varnish_named_elements_cmp))) {
                 if (mydata->version >= match->min_version && mydata->version < match->max_version) {
-                    PUSH_TOKEN(NAME_VARIABLE);
-                } else {
-                    PUSH_TOKEN(IGNORABLE);
-                }
+                    type = NAME_VARIABLE;
+                }/* else {
+                    type = IGNORABLE;
+                }*/
             }
         }
         for (i = 0; i < ARRAY_SIZE(functions); i++) {
             if (0 == strcmp_l(functions[i].name, functions[i].name_len, (char *) YYTEXT, YYLENG)) {
-                PUSH_TOKEN(NAME_FUNCTION);
+                type = NAME_FUNCTION;
+                break;
             }
         }
     }
-    PUSH_TOKEN(IGNORABLE);
+    PUSH_TOKEN(type);
 }
 
 <INITIAL> [{}();.,] {
@@ -379,22 +388,26 @@ SPACE = [ \f\n\r\t\v]+;
 }
 
 <INITIAL> "C{" {
-    BEGIN(IN_INLINE_C);
-    PUSH_TOKEN(IGNORABLE);
-}
+    YYCTYPE *end;
 
-<IN_INLINE_C> [^] {
-#if 0
-    // TODO
-    // pass it to C lexer
-#else
-    PUSH_TOKEN(IGNORABLE);
-#endif
-}
-
-<IN_INLINE_C> "}C" {
-    BEGIN(INITIAL);
-    PUSH_TOKEN(IGNORABLE);
+    // handle "C{"
+    cb(EVENT_TOKEN, cb_data, IGNORABLE);
+    // send text between "C{" and "}C" to C lexer
+    YYTEXT += STR_LEN("C{");
+    YYCURSOR += STR_LEN("C{");
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
+        YYCURSOR = YYLIMIT;
+    } else {
+        YYCURSOR = end;
+    }
+    cb(EVENT_REPLAY, cb_data, YYTEXT, YYCURSOR, &c_lexer, NULL);
+    // handle "}C"
+    if (NULL != end) {
+        YYTEXT = YYCURSOR;
+        YYCURSOR += STR_LEN("}C");
+        cb(EVENT_TOKEN, cb_data, IGNORABLE);
+    }
+    continue;
 }
 
 <INITIAL> '"' {
@@ -411,14 +424,12 @@ SPACE = [ \f\n\r\t\v]+;
     PUSH_TOKEN(STRING_SINGLE);
 }
 
-<IN_STRING> [^] {
-    PUSH_TOKEN(STRING_SINGLE);
-}
-
-<INITIAL> [^] {
-    PUSH_TOKEN(IGNORABLE);
+<*> [^] {
+    PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation varnish_lexer = {
@@ -436,5 +447,6 @@ LexerImplementation varnish_lexer = {
     (/*const*/ LexerOption /*const*/ []) {
         { "version", OPT_TYPE_INT, offsetof(VarnishLexerData, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },
         END_OF_LEXER_OPTIONS
-    }
+    },
+    (const LexerImplementation * const []) { &c_lexer, NULL }
 };

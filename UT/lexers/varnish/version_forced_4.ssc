@@ -4,7 +4,6 @@ Varnish version forced to 4
 varnish
 version=4
 --SOURCE--
-bereq.method;
+bereq.method
 --EXPECT--
 NAME_VARIABLE: bereq.method
-PUNCTUATION: ;

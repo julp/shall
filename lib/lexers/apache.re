@@ -3,13 +3,13 @@
 
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 enum {
     STATE(INITIAL),
     STATE(IN_DIRECTIVE),
     STATE(IN_SINGLE_STRING),
     STATE(IN_DOUBLE_STRING),
+    STATE(X)
 };
 
 /*
@@ -37,7 +37,8 @@ static char *find_ending_var(GlobalState *yy, char *start, char *end)
  * - expressions ? (SetEnvIfExpr, If, ElseIf, RewriteCond expr, Require expr, SSLRequire)
  **/
 static int apachelex(YYLEX_ARGS) {
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
 re2c:yyfill:enable = 0;
@@ -82,6 +83,16 @@ EOS = [\000];
     PUSH_TOKEN(COMMENT_SINGLE);
 }
 
+<*> "${" {
+    PUSH_STATE(X);
+    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+}
+
+<X> "}" {
+    POP_STATE();
+    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+}
+
 <INITIAL> [^ #\f\n\r\t\v][^ \f\n\r\t\v]* {
     BEGIN(IN_DIRECTIVE);
     if ('<' == YYTEXT[0]) {
@@ -121,12 +132,18 @@ EOS = [\000];
     return 0;
 }
 
+<X> [^] {
+    PUSH_TOKEN(NAME_VARIABLE);
+}
+
 /*
 <INITIAL,IN_DIRECTIVE,IN_DOUBLE_STRING,IN_SINGLE_STRING> '${' [^:]+ '}' {
     return ;
 }
 */
 */
+    }
+    DONE;
 }
 
 LexerImplementation apache_lexer = {
@@ -141,5 +158,6 @@ LexerImplementation apache_lexer = {
     NULL,
     apachelex,
     sizeof(LexerData),
+    NULL,
     NULL
 };

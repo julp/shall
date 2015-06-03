@@ -1,15 +1,7 @@
 module Shall
     module Lexer
-        # For PHP source code
-        class PHP < Base ; end
-        # For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.
-        class ERB < Base ; end
-        # For Ruby source code
-        class Ruby < Base ; end
-        # Generic lexer for XML (eXtensible Markup Language)
-        class XML < Base ; end
-        # A lexer for DTDs (Document Type Definitions)
-        class DTD < Base ; end
+        # Lexer for configuration files following the Apache configuration file format (including .htaccess)
+        class Apache < Base ; end
         # For C source code with preprocessor directives
         class C < Base ; end
         # Lexer for CMake files
@@ -18,18 +10,26 @@ module Shall
         class CSS < Base ; end
         # Lexer for unified or context-style diffs or patches
         class Diff < Base ; end
+        # A lexer for DTDs (Document Type Definitions)
+        class DTD < Base ; end
+        # For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.
+        class ERB < Base ; end
         # For JSON data structures
         class JSON < Base ; end
         # Lexer for Nginx configuration files
         class Nginx < Base ; end
-        # Lexer for configuration files following the Apache configuration file format (including .htaccess)
-        class Apache < Base ; end
-        # A lexer for Varnish configuration language
-        class Varnish < Base ; end
+        # For PHP source code
+        class PHP < Base ; end
         # Lexer for the PostgreSQL dialect of SQL
         class PostgreSQL < Base ; end
+        # For Ruby source code
+        class Ruby < Base ; end
         # A "dummy" lexer that doesn't highlight anything
         class Text < Base ; end
+        # A lexer for Varnish configuration language
+        class Varnish < Base ; end
+        # Generic lexer for XML (eXtensible Markup Language)
+        class XML < Base ; end
     end
     module Formatter
         # Format tokens as HTML 4 <span> tags within a <pre> tag

@@ -14,7 +14,6 @@
 #include "utils.h"
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 typedef struct {
     LexerData data;
@@ -521,10 +520,12 @@ static int pglex(YYLEX_ARGS) {
     PgLexerData *mydata;
 
     mydata = (PgLexerData *) data;
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 space = [ \t\n\r\f];
 horiz_space = [ \t\f];
@@ -958,6 +959,8 @@ other = .;
 
 // <<EOF>>
 */
+    }
+    DONE;
 }
 
 LexerImplementation postgresql_lexer = {
@@ -976,5 +979,6 @@ LexerImplementation postgresql_lexer = {
         { "uppercase_keywords", OPT_TYPE_BOOL, offsetof(PgLexerData, uppercase_keywords), OPT_DEF_BOOL(0), "when true, PostgreSQL keywords are uppercased" },
         { "standard_conforming_strings", OPT_TYPE_BOOL, offsetof(PgLexerData, standard_conforming_strings), OPT_DEF_BOOL(1), "To treat backslashes literally in ordinary string literals (`'...'`) or not" },
         END_OF_LEXER_OPTIONS
-    }
+    },
+    NULL
 };

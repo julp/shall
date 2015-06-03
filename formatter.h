@@ -101,6 +101,14 @@ struct FormatterImplementation {
      */
     int (*write_token)(String *, const char *, size_t, FormatterData *);
     /**
+     * Callback called when a lexer is pushed
+     */
+    int (*start_lexing)(const char *, String *, FormatterData *);
+    /**
+     * Callback called when a lexer is poped
+     */
+    int (*end_lexing)(const char *, String *, FormatterData *);
+    /**
      * Size to allocate to create a Formatter
      * default is `sizeof(FormatterData)`
      */

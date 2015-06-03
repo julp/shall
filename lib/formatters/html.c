@@ -81,6 +81,22 @@ static int write_token(String *out, const char *token, size_t token_len, Formatt
     return 0;
 }
 
+static int start_lexing(const char *lexname, String *out, FormatterData *UNUSED(data))
+{
+    STRING_APPEND_STRING(out, "<SPAN class=\"");
+    string_append_string(out, lexname);
+    STRING_APPEND_STRING(out, "\">");
+
+    return 0;
+}
+
+static int end_lexing(const char *lexname, String *out, FormatterData *UNUSED(data))
+{
+    STRING_APPEND_STRING(out, "</SPAN>");
+
+    return 0;
+}
+
 const FormatterImplementation _htmlfmt = {
     "HTML",
     "Format tokens as HTML 4 <span> tags within a <pre> tag",
@@ -90,6 +106,8 @@ const FormatterImplementation _htmlfmt = {
     start_token,
     end_token,
     write_token,
+    start_lexing,
+    end_lexing,
     sizeof(HTMLFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("linestart"), OPT_TYPE_INT, offsetof(HTMLFormatterData, linestart), OPT_DEF_INT(1), "The line number for the first line" },

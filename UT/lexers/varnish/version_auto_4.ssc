@@ -5,7 +5,7 @@ varnish
 --SOURCE--
 vcl 4.0;
 
-bereq.method;
+bereq.method
 --EXPECT--
 KEYWORD_DECLARATION: vcl
 IGNORABLE:  
@@ -13,4 +13,3 @@ NUMBER_FLOAT: 4.0
 PUNCTUATION: ;
 IGNORABLE: \n\n
 NAME_VARIABLE: bereq.method
-PUNCTUATION: ;

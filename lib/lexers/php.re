@@ -29,12 +29,12 @@
 #include "utils.h"
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 
 typedef struct {
     LexerData data;
     int short_tags ALIGNED(sizeof(OptionValue));
     int asp_tags ALIGNED(sizeof(OptionValue));
+    int version ALIGNED(sizeof(OptionValue));
     OptionValue secondary ALIGNED(sizeof(OptionValue));
     int in_namespace;
     char *doclabel; // (?:now|here)doc label // TODO: may leak
@@ -43,6 +43,7 @@ typedef struct {
 
 static int phpanalyse(const char *src, size_t src_len)
 {
+    // TODO: "<?php" is case insentive
     if (src_len >= STR_LEN("<?XXX") && (0 == memcmp(src, "<?php", STR_LEN("<?php")) || (0 == memcmp(src, "<?", STR_LEN("<?")) && 0 != memcmp(src, "<?xml", STR_LEN("<?xml"))))) {
         return 999;
     }
@@ -237,18 +238,24 @@ static named_element_t classes[] = {
  * - dimension de tableau (machin[bidule])
  **/
 
+#define IS_SPACE(c) \
+    (' ' == c || '\n' == c || '\r' == c || '\t' == c)
+
 #define IS_LABEL_START(c) \
     (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z') || (c) == '_' || (c) >= 0x7F)
 
 static int phplex(YYLEX_ARGS) {
     PHPLexerData *mydata;
 
+debug("%s", __func__);
     mydata = (PHPLexerData *) data;
+    while (YYCURSOR < YYLIMIT) {
 restart:
-    YYTEXT = YYCURSOR;
+        YYTEXT = YYCURSOR;
 // yymore_restart:
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 LNUM = [0-9]+;
 DNUM = ([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*);
@@ -286,7 +293,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <INITIAL>"<%" {
-    if (mydata->asp_tags) {
+    if (mydata->version < 7 && mydata->asp_tags) {
         BEGIN(ST_IN_SCRIPTING);
         PUSH_TOKEN(NAME_TAG);
     } else {
@@ -294,9 +301,13 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     }
 }
 
-<INITIAL>'<script'WHITESPACE+'language'WHITESPACE*"="WHITESPACE*('php'|'"php"'|'\'php\'')WHITESPACE*">" {
-    BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(NAME_TAG);
+<INITIAL>'<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">" {
+    if (mydata->version < 7) {
+        BEGIN(ST_IN_SCRIPTING);
+        PUSH_TOKEN(NAME_TAG);
+    } else {
+        goto not_php;
+    }
 }
 
 <ST_IN_SCRIPTING> "=>" {
@@ -306,6 +317,13 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <ST_IN_SCRIPTING>"->" {
     PUSH_STATE(ST_LOOKING_FOR_PROPERTY);
     PUSH_TOKEN(OPERATOR);
+}
+
+<ST_IN_SCRIPTING>'yield' WHITESPACE 'from' {
+    if (mydata->version < 7) {
+        yyless(STR_LEN("yield"));
+    }
+    PUSH_TOKEN(KEYWORD);
 }
 
 <ST_LOOKING_FOR_PROPERTY>"->" {
@@ -321,6 +339,15 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     yyless(0);
     POP_STATE();
     goto restart;
+}
+
+<ST_IN_SCRIPTING>"??" | "<=>" {
+    if (mydata->version >= 7) {
+        //yyless(STR_LEN("?"));
+        //yyless(STR_LEN("<="));
+        yyless(YYLENG - 1);
+    }
+    PUSH_TOKEN(OPERATOR);
 }
 
 <ST_IN_SCRIPTING> "++" | "--" | [!=]"==" | "<>" | [-+*/%.<>+&|^!=]"=" | ">>=" | "<<=" | "**=" | "<<" | ">>" | "**" | [-+.*/%=^&|!~<>?:@] {
@@ -540,14 +567,15 @@ debug("[ERR] %d", __LINE__);
         default:
         {
             size_t i;
+            int token;
 
+            token = IGNORABLE;
             for (i = 0; i < ARRAY_SIZE(keywords); i++) {
                 if (0 == ascii_strcasecmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
-                    if (!case_insentive[keywords[i].type] && 0 != strcmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
-                        break;
-                    } else {
-                        PUSH_TOKEN(keywords[i].type);
+                    if (case_insentive[keywords[i].type] || 0 == strcmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
+                        token = keywords[i].type;
                     }
+                    break;
                 }
             }
 #if 0
@@ -559,7 +587,7 @@ debug("[ERR] %d", __LINE__);
                 }
             }
 #endif
-            PUSH_TOKEN(IGNORABLE);
+            PUSH_TOKEN(token);
         }
     }
 }
@@ -584,13 +612,22 @@ debug("[ERR] %d", __LINE__);
     PUSH_TOKEN(NUMBER_FLOAT);
 }
 
-<ST_IN_SCRIPTING>("?>" | '</script' WHITESPACE* ">") NEWLINE? {
+<ST_IN_SCRIPTING>'</script' WHITESPACE* ">" NEWLINE? {
+    if (mydata->version < 7) {
+        BEGIN(INITIAL);
+        PUSH_TOKEN(NAME_TAG);
+    } else {
+        PUSH_TOKEN(IGNORABLE);
+    }
+}
+
+<ST_IN_SCRIPTING>"?>" NEWLINE? {
     BEGIN(INITIAL);
     PUSH_TOKEN(NAME_TAG);
 }
 
-<ST_IN_SCRIPTING>"%>"NEWLINE? {
-    if (mydata->asp_tags) {
+<ST_IN_SCRIPTING>"%>" NEWLINE? {
+    if (mydata->version < 7 && mydata->asp_tags) {
         yyless(STR_LEN("%>"));
         BEGIN(INITIAL);
         PUSH_TOKEN(NAME_TAG);
@@ -740,6 +777,14 @@ debug("[ERR] %d", __LINE__);
     PUSH_TOKEN(default_token_type[old_state]);
 }
 
+<ST_DOUBLE_QUOTES>"\\u{" [0-9a-fA-F]+ "}" {
+    if (mydata->version >= 7) {
+        PUSH_TOKEN(ESCAPED_CHAR);
+    } else {
+        PUSH_TOKEN(STRING_DOUBLE);
+    }
+}
+
 <ST_DOUBLE_QUOTES>("\\0"[0-9]{2}) | ("\\" 'x' [0-9A-Fa-f]{2}) | ("\\"[$"efrntv\\]) {
     PUSH_TOKEN(ESCAPED_CHAR);
 }
@@ -762,14 +807,6 @@ debug("[ERR] %d", __LINE__);
     PUSH_TOKEN(STRING_BACKTICK);
 }
 
-/*<ST_BACKQUOTE>ANY_CHAR {
-    PUSH_TOKEN(STRING_BACKTICK);
-}
-
-<ST_DOUBLE_QUOTES>ANY_CHAR {
-    PUSH_TOKEN(STRING_DOUBLE);
-}*/
-
 <ST_SINGLE_QUOTES>"\\" [\\'] {
     PUSH_TOKEN(ESCAPED_CHAR);
 }
@@ -779,25 +816,101 @@ debug("[ERR] %d", __LINE__);
     PUSH_TOKEN(STRING_SINGLE);
 }
 
-/*<ST_SINGLE_QUOTES>ANY_CHAR {
-    PUSH_TOKEN(STRING_SINGLE);
-}*/
-
-/*<ST_IN_SCRIPTING>ANY_CHAR {
-    PUSH_TOKEN(IGNORABLE);
-}*/
-
 <INITIAL>ANY_CHAR {
     Lexer *secondary;
 
+#define STRNCASECMP(s) \
+    ascii_strncasecmp_l(s, STR_LEN(s), (char *) ptr, YYLIMIT - ptr, STR_LEN(s))
 not_php:
+    if (YYCURSOR > YYLIMIT) {
+        DONE;
+    }
     secondary = LEXER_UNWRAP(mydata->secondary);
+    while (1) {
+        YYCTYPE *ptr;
+
+        if (NULL == (ptr = memchr(YYCURSOR, '<', YYLIMIT - YYCURSOR))) {
+            YYCURSOR = YYLIMIT;
+break;
+        } else {
+            YYCURSOR = ptr + 1;
+        }
+        if (YYCURSOR < YYLIMIT) {
+            ptr += STR_LEN("<X");
+            switch (*YYCURSOR) {
+                case '?':
+                    if ((mydata->version < 7 && mydata->short_tags) || 0 == STRNCASECMP("php") || ('=' == *(YYCURSOR + 1))) { /* Assume [ \t\n\r] follows "php" */
+                        break;
+                    }
+                    continue;
+                case '%':
+                    if (mydata->version < 7 && mydata->asp_tags) {
+                        break;
+                    }
+                    continue;
+                case 's':
+                case 'S':
+                    if (mydata->version < 7) {
+                        // '<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">"
+                        if (0 == STRNCASECMP("cript")) {
+                            ptr += STR_LEN("cript");
+                            if (IS_SPACE(*ptr)) {
+                                ++ptr;
+                                while (IS_SPACE(*ptr)) {
+                                    ++ptr;
+                                }
+                                if (0 == STRNCASECMP("language")) {
+                                    ptr += STR_LEN("language");
+                                    while (IS_SPACE(*ptr)) {
+                                        ++ptr;
+                                    }
+                                    if ('=' == *ptr) {
+                                        YYCTYPE quote;
+
+                                        ++ptr;
+                                        while (IS_SPACE(*ptr)) {
+                                            ++ptr;
+                                        }
+                                        quote = *ptr;
+                                        if ('\'' == quote || '"' == quote) {
+                                            ++ptr;
+                                        } else {
+                                            quote = 0;
+                                        }
+                                        if (STRNCASECMP("php")) {
+                                            ptr += STR_LEN("php");
+                                            if (0 == quote || *ptr == quote) {
+                                                if (quote) {
+                                                    ++ptr;
+                                                }
+                                                while (IS_SPACE(*ptr)) {
+                                                    ++ptr;
+                                                }
+                                                if ('>' == *ptr) {
+                                                    break;
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+//                     YYCURSOR--;
+//                     yymore();
+                    /* no break - implicit continue */
+                default:
+                    continue;
+            }
+            YYCURSOR--;
+        }
+        break;
+    }
+// debug("NON PHP = ---\n%.*s\n---", YYLENG, YYTEXT);
     if (NULL == secondary) {
         PUSH_TOKEN(IGNORABLE);
     } else {
-        YYCURSOR = YYTEXT;
-
-        return secondary->imp->yylex(yy, (LexerData *) secondary->optvals);
+        REPLAY(YYTEXT, YYCURSOR, secondary->imp, (LexerData *) secondary->optvals);
     }
 }
 
@@ -805,6 +918,8 @@ not_php:
     PUSH_TOKEN(default_token_type[YYSTATE]);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation php_lexer = {
@@ -820,10 +935,12 @@ LexerImplementation php_lexer = {
     phplex,
     sizeof(PHPLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "start_inline", OPT_TYPE_BOOL, offsetof(LexerData, state), OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
-        { "asp_tags", OPT_TYPE_BOOL, offsetof(PHPLexerData, asp_tags), OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags))" },
-        { "short_tags", OPT_TYPE_BOOL, offsetof(PHPLexerData, short_tags), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
-        { "secondary", OPT_TYPE_LEXER, offsetof(PHPLexerData, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
+        { "start_inline", OPT_TYPE_BOOL,  offsetof(LexerData, state),         OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
+        { "version",      OPT_TYPE_INT,   offsetof(PHPLexerData, version),    OPT_DEF_INT(5),  "TODO" },
+        { "asp_tags",     OPT_TYPE_BOOL,  offsetof(PHPLexerData, asp_tags),   OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7)" },
+        { "short_tags",   OPT_TYPE_BOOL,  offsetof(PHPLexerData, short_tags), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
+        { "secondary",    OPT_TYPE_LEXER, offsetof(PHPLexerData, secondary),  OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
-    }
+    },
+    NULL
 };

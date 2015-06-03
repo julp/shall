@@ -3,7 +3,6 @@
 
 #include "tokens.h"
 #include "lexer.h"
-#include "lexer-private.h"
 #include "utils.h"
 
 // http://www.w3.org/TR/CSS2/grammar.html
@@ -705,9 +704,11 @@ static named_element_t builtins[] = {
 };
 
 static int csslex(YYLEX_ARGS) {
-    YYTEXT = YYCURSOR;
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
+re2c:yyfill:enable = 0;
 
 w = [ \t\r\n\f]*;
 num = [0-9]+ | [0-9]*"."[0-9]+;
@@ -861,6 +862,8 @@ invalid = invalid1 | invalid2;
     PUSH_TOKEN(IGNORABLE);
 }
 */
+    }
+    DONE;
 }
 
 LexerImplementation css_lexer = {
@@ -875,5 +878,6 @@ LexerImplementation css_lexer = {
     NULL,
     csslex,
     sizeof(LexerData),
+    NULL,
     NULL
 };

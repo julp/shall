@@ -26,11 +26,9 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES lib/shall.c lib/lexer.c xtring.c darray.c hashtable.c)
-set(FORMATTERS html terminal plain) # xml
-# set(C_LEXERS text diff)
-# set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
-set(C_LEXERS "")
-set(RE2C_LEXERS cmake dtd xml)
+set(FORMATTERS html terminal plain)
+set(C_LEXERS text diff)
+set(RE2C_LEXERS apache c cmake css dtd json nginx pgsql php ruby varnish xml)
 
 foreach(lexer ${C_LEXERS})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.c")
