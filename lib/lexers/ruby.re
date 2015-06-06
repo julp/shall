@@ -73,6 +73,7 @@ static void erbinit(LexerData *data)
 }
 
 #if 0
+/*
     Séquences d'échappement (chaînes) : \u{...}, \uXXXX, \C-?, \M-?
 
     suffixes i (complexes) et r (rationnels) ?
@@ -98,6 +99,7 @@ static void erbinit(LexerData *data)
     si on recontre __END__ on a fini (en faire un paramètre ? ça dépend si la suite est du ruby ou pas ...)
 
 https://raw.githubusercontent.com/ruby/ruby/trunk/parse.y
+*/
 #endif
 static int rubylex(YYLEX_ARGS) {
     RubyLexerData *mydata;
@@ -218,6 +220,7 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
             break;
         case '>':
             if(mydata->erb) {
+                yyless(STR_LEN("%>"));
                 BEGIN(INITIAL);
                 PUSH_TOKEN(NAME_TAG);
             }
@@ -359,16 +362,18 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     if (YYCURSOR > YYLIMIT) {
         DONE;
     }
+    secondary = LEXER_UNWRAP(mydata->secondary);
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "<%", STR_LEN("<%"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
     } else {
         YYCURSOR = end;
     }
-    secondary = LEXER_UNWRAP(mydata->secondary);
     if (NULL == secondary) {
         PUSH_TOKEN(IGNORABLE);
     } else {
+// debug("[%d] YYTEXT = %c, YYCURSOR = %c", __LINE__, *YYTEXT, *YYCURSOR);
         REPLAY(YYTEXT, YYCURSOR, secondary->imp, (LexerData *) secondary->optvals);
+// debug("[%d] YYTEXT = %c, YYCURSOR = %c", __LINE__, *YYTEXT, *YYCURSOR);
     }
 }
 */
