@@ -127,6 +127,8 @@ MIME type(s): text/x-ruby, application/x-ruby
 
 A "dummy" lexer that doesn't highlight anything
 
+Alias(es): txt
+
 Filename(s): *.txt
 
 MIME type(s): text/plain

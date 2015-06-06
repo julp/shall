@@ -249,7 +249,6 @@ static named_element_t classes[] = {
 static int phplex(YYLEX_ARGS) {
     PHPLexerData *mydata;
 
-debug("%s", __func__);
     mydata = (PHPLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
 restart:
@@ -847,7 +846,7 @@ not_php:
 
         if (NULL == (ptr = memchr(YYCURSOR, '<', YYLIMIT - YYCURSOR))) {
             YYCURSOR = YYLIMIT;
-break;
+            break;
         } else {
             YYCURSOR = ptr + 1;
         }

@@ -9,5 +9,6 @@ int ascii_strcasecmp(const char *, const char *);
 int ascii_strcasecmp_l(const char *, size_t, const char *, size_t);
 int ascii_strncasecmp_l(const char *, size_t, const char *, size_t, size_t);
 char *memstr(const char *, const char *, size_t, const char *);
+int ascii_memcasecmp(const char *, const char *, size_t);
 
 #endif /* !UTILS_H */

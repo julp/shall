@@ -168,24 +168,54 @@ int strncmp_l(
     return 0;
 }
 
-char *memstr(const char *haystack, const char *needle, size_t needle_len, const char * /*const*/ haystack_end)
+char *ascii_memcasechr(const char *str, int c, size_t n)
 {
-    char *m;
+    int uc;
 
-    m = NULL;
-    if (needle_len <= (size_t) (haystack_end - haystack)) {
-        if (1 == needle_len) {
-            m = (char *) memchr(haystack, needle[0], haystack_end - haystack);
-        } else {
-            const char *p;
+    for (uc = ascii_toupper((unsigned char) c); 0 != n; n--, str++) {
+        if (uc == ascii_toupper(*(const unsigned char *) str)) {
+            return (char *) str;
+        }
+    }
 
-            p = haystack;
-            haystack_end -= needle_len;
-            while (p <= haystack_end && NULL != (m = (char *) memchr(p, needle[0], haystack_end - p + 1)) && 0 != memcmp(needle + 1, m + 1, needle_len - 1)) {
-                ++p;
+    return NULL;
+}
+
+int ascii_memcasecmp(const char *str1, const char *str2, size_t n)
+{
+    if (str1 != str2) {
+        for (; 0 != n; n--) {
+            int c1, c2;
+
+            c1 = ascii_toupper(*(unsigned char *) str1++);
+            c2 = ascii_toupper(*(unsigned char *) str2++);
+            if (c1 != c2) {
+                return (unsigned char) c1 - (unsigned char) c2;
             }
         }
     }
 
-    return m;
+    return 0;
+}
+
+char *memstr(const char *haystack, const char *needle, size_t needle_len, const char * const haystack_end)
+{
+    if (needle_len <= (size_t) (haystack_end - haystack)) {
+        if (0 == needle_len) {
+            return (char *) haystack;
+        } else if (1 == needle_len) {
+            return (char *) memchr(haystack, (int) needle[0], haystack_end - haystack);
+        } else {
+            const char *p;
+            const char const *l = haystack_end - needle_len; // last possible position to find a match
+
+            for (p = haystack; p <= l; p++) {
+                if (*p == needle[0] && 0 == memcmp(needle + 1, p + 1, needle_len - 1)) {
+                    return (char *) p;
+                }
+            }
+        }
+    }
+
+    return NULL;
 }

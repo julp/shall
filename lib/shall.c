@@ -1536,7 +1536,7 @@ static void handle_event(event_t event, void *data, ...)
                 x->yy->cursor = va_arg(ap, YYCTYPE *);
                 x->yy->limit = va_arg(ap, YYCTYPE *);
 // //             if (x->yy->cursor < x->yy->limit) {
-// debug("REPLAY (%d) >%.*s<", x->yy->limit - x->yy->cursor, x->yy->limit - x->yy->cursor, x->yy->cursor);
+// debug("REPLAY (%ld) >%.*s<", x->yy->limit - x->yy->cursor, (int) (x->yy->limit - x->yy->cursor), x->yy->cursor);
                 imp = va_arg(ap, const LexerImplementation *);
                 if (NULL == (data = va_arg(ap, LexerData *))) {
                     data = malloc(imp->data_size);
@@ -1556,7 +1556,8 @@ static void handle_event(event_t event, void *data, ...)
 //                 x->yy->yytext = x->yy->cursor;
                 x->yy->limit = saved_limit;
                 x->yy->yytext = x->yy->cursor;
-// debug("AFTER REPLAY (%d) >%.*s<", x->yy->limit - x->yy->cursor, x->yy->limit - x->yy->cursor, x->yy->cursor);
+// debug("AFTER REPLAY YYCURSOR = %c (%d), YYTEXT = %c (%d)", *x->yy->cursor, *x->yy->cursor, *x->yy->yytext, *x->yy->yytext);
+// debug("AFTER REPLAY (%ld) >%.*s<", x->yy->limit - x->yy->cursor, (int) (x->yy->limit - x->yy->cursor), x->yy->cursor);
 //             }
             break;
         }
@@ -1650,8 +1651,6 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
         lexer->imp->yylex(&yy, (LexerData *) lexer->optvals, handle_event, &x);
     }
 #else
-    // TODO: prendre le token avant de rencontrer la fin
-    // YYFILL ne doit pas permettre de prendre en compte le type du token au début sur un token de plusieurs caractères
     while ((token = lexer->imp->yylex(&yy, (LexerData *) lexer->optvals)) > 0) {
         int yyleng;
 

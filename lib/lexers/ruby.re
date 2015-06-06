@@ -106,6 +106,7 @@ static int rubylex(YYLEX_ARGS) {
 
     mydata = (RubyLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
+restart:
         YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
@@ -371,9 +372,8 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     if (NULL == secondary) {
         PUSH_TOKEN(IGNORABLE);
     } else {
-// debug("[%d] YYTEXT = %c, YYCURSOR = %c", __LINE__, *YYTEXT, *YYCURSOR);
         REPLAY(YYTEXT, YYCURSOR, secondary->imp, (LexerData *) secondary->optvals);
-// debug("[%d] YYTEXT = %c, YYCURSOR = %c", __LINE__, *YYTEXT, *YYCURSOR);
+        goto restart;
     }
 }
 */

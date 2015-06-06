@@ -60,7 +60,6 @@ typedef struct {
 static int dtdlex(YYLEX_ARGS) {
     DTDLexerData *mydata;
 
-debug("%s", __func__);
     mydata = (DTDLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
@@ -94,7 +93,6 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <INITIAL>"<!DOCTYPE" S {
-    debug("%s: <!DOCTYPE", __func__);
     yyless(STR_LEN("<!DOCTYPE"));
     PUSH_TOKEN(NAME_TAG);
 }
@@ -212,9 +210,7 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <INITIAL>"]" S? ">" {
-debug("%s: ]>", __func__);
-    //PUSH_TOKEN(NAME_TAG);
-    cb(EVENT_TOKEN, cb_data, NAME_TAG);
+    TOKEN(NAME_TAG);
     DONE;
 }
 

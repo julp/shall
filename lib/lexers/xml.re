@@ -48,7 +48,6 @@ static int default_token_type[] = {
  * (for re2c, by default, without --case-inverted or --case-insensitive)
  **/
 static int xmllex(YYLEX_ARGS) {
-debug("%s", __func__);
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c

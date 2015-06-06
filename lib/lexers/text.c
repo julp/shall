@@ -9,7 +9,7 @@ static int textlex(YYLEX_ARGS) {
     YYTEXT = YYCURSOR;
     if (YYCURSOR < YYLIMIT) {
         YYCURSOR = YYLIMIT;
-        cb(EVENT_TOKEN, cb_data, IGNORABLE);
+        TOKEN(IGNORABLE);
     }
     DONE;
 }

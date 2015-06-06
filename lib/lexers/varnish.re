@@ -391,7 +391,7 @@ SPACE = [ \f\n\r\t\v]+;
     YYCTYPE *end;
 
     // handle "C{"
-    cb(EVENT_TOKEN, cb_data, IGNORABLE);
+    TOKEN(IGNORABLE);
     // send text between "C{" and "}C" to C lexer
     YYTEXT += STR_LEN("C{");
     YYCURSOR += STR_LEN("C{");
@@ -405,7 +405,7 @@ SPACE = [ \f\n\r\t\v]+;
     if (NULL != end) {
         YYTEXT = YYCURSOR;
         YYCURSOR += STR_LEN("}C");
-        cb(EVENT_TOKEN, cb_data, IGNORABLE);
+        TOKEN(IGNORABLE);
     }
     continue;
 }
