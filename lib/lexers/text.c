@@ -18,7 +18,7 @@ LexerImplementation text_lexer = {
     "Text",
     0,
     "A \"dummy\" lexer that doesn't highlight anything",
-    (const char * const []) { NULL },
+    (const char * const []) { "txt", NULL },
     (const char * const []) { "*.txt", NULL },
     (const char * const []) { "text/plain", NULL },
     NULL,
