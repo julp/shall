@@ -4,8 +4,16 @@
 #include "cpp.h"
 #include "tokens.h"
 #include "lexer.h"
+#include "utils.h"
 
+extern const LexerImplementation css_lexer;
 extern const LexerImplementation dtd_lexer;
+
+typedef struct {
+    LexerData data;
+    int html;
+    int css;
+} XMLLexerData;
 
 enum {
     STATE(INITIAL),
@@ -17,6 +25,15 @@ enum {
     STATE(IN_SINGLE_QUOTES),
     STATE(IN_DOUBLE_QUOTES),
 };
+
+static void htmlinit(LexerData *data)
+{
+    XMLLexerData *mydata;
+
+    BEGIN(INITIAL);
+    mydata = (XMLLexerData *) data;
+    mydata->html = 1;
+}
 
 static int xmlanalyse(const char *src, size_t src_len)
 {
@@ -48,7 +65,11 @@ static int default_token_type[] = {
  * (for re2c, by default, without --case-inverted or --case-insensitive)
  **/
 static int xmllex(YYLEX_ARGS) {
+    XMLLexerData *mydata;
+
+    mydata = (XMLLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
+restart:
         YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
@@ -190,11 +211,19 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
 }
 
 <INITIAL> "<" Name {
+debug("%.*s", YYLENG, YYTEXT);
+    if (mydata->html && 0 == YYSTRNCASECMP("<style")) {
+        mydata->css = 1;
+debug("got style");
+    }
     PUSH_STATE(IN_TAG);
     PUSH_TOKEN(NAME_TAG);
 }
 
 <INITIAL> ETag {
+    if (mydata->css && 0 == YYSTRNCASECMP("</style>")) {
+        mydata->css = 0;
+    }
     PUSH_TOKEN(NAME_TAG);
 }
 
@@ -219,9 +248,9 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     PUSH_TOKEN(NAME_ATTRIBUTE);
 }
 
-/*<IN_TAG> Name {
+<IN_TAG> Name {
     PUSH_TOKEN(NAME_ATTRIBUTE);
-}*/
+}
 
 <IN_ATTRIBUTE> "'" {
     //PUSH_STATE(IN_SINGLE_QUOTES);
@@ -251,6 +280,22 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     PUSH_TOKEN(NAME_ENTITY);
 }
 
+<INITIAL> [^] {
+    if (mydata->css) {
+        YYCTYPE *end;
+
+        if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "</style>", STR_LEN("</style>"), (const char *) YYLIMIT))) {
+            YYCURSOR = YYLIMIT;
+        } else {
+            YYCURSOR = end;
+        }
+        REPLAY(YYTEXT, YYCURSOR, &css_lexer, NULL);
+        goto restart;
+    } else {
+        PUSH_TOKEN(IGNORABLE);
+    }
+}
+
 <*>[^] {
     PUSH_TOKEN(default_token_type[YYSTATE]);
 }
@@ -258,8 +303,6 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     }
     DONE;
 }
-
-extern const LexerImplementation dtd_lexer;
 
 LexerImplementation xml_lexer = {
     "XML",
@@ -272,7 +315,23 @@ LexerImplementation xml_lexer = {
     NULL,
     xmlanalyse,
     xmllex,
-    sizeof(LexerData),
+    sizeof(XMLLexerData),
     NULL,
     (const LexerImplementation * const []) { &dtd_lexer, NULL }
+};
+
+LexerImplementation html_lexer = {
+    "HTML",
+    0,
+    "XXX",
+    NULL,
+    (const char * const []) { "*.html", NULL },
+    (const char * const []) { "text/html", NULL },
+    NULL,
+    htmlinit,
+    NULL,
+    xmllex,
+    sizeof(XMLLexerData),
+    NULL,
+    (const LexerImplementation * const []) { &css_lexer, NULL }
 };

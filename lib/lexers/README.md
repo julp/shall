@@ -66,6 +66,24 @@ MIME type(s): application/x-ruby-templating
 | ------ | ---- | ------------- | ----------- |
 | secondary | lexer | null/none | Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted) |
 
+## HTML
+
+XXX
+
+Filename(s): *.html
+
+MIME type(s): text/html
+
+## Javascript
+
+TODO
+
+Alias(es): JS
+
+Filename(s): *.js
+
+MIME type(s): text/javascript
+
 ## JSON
 
 For JSON data structures

@@ -14,6 +14,10 @@ module Shall
         class DTD < Base ; end
         # For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.
         class ERB < Base ; end
+        # XXX
+        class HTML < Base ; end
+        # TODO
+        class Javascript < Base ; end
         # For JSON data structures
         class JSON < Base ; end
         # Lexer for Nginx configuration files

@@ -22,7 +22,9 @@ extern const LexerImplementation cmake_lexer;
 extern const LexerImplementation css_lexer;
 extern const LexerImplementation diff_lexer;
 extern const LexerImplementation dtd_lexer;
-extern const LexerImplementation erb_lexer;
+extern const LexerImplementation erb_lexer; // provided by ruby lexer
+extern const LexerImplementation html_lexer; // provided by xml lexer
+extern const LexerImplementation js_lexer;
 extern const LexerImplementation json_lexer;
 extern const LexerImplementation nginx_lexer;
 extern const LexerImplementation php_lexer;
@@ -41,7 +43,9 @@ static const LexerImplementation *available_lexers[] = {
     &css_lexer,
     &diff_lexer,
     &dtd_lexer,
-    &erb_lexer, // provided by ruby lexer
+    &erb_lexer,
+    &html_lexer,
+    &js_lexer,
     &json_lexer,
     &nginx_lexer,
     &php_lexer,
@@ -1648,7 +1652,13 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
             x.lexers = &lexers;
         }
 #endif
+        if (NULL != x.fmt->imp->start_lexing) {
+            x.fmt->imp->start_lexing(lexer->imp->name, x.buffer, &x.fmt->optvals);
+        }
         lexer->imp->yylex(&yy, (LexerData *) lexer->optvals, handle_event, &x);
+        if (NULL != x.fmt->imp->end_lexing) {
+            x.fmt->imp->end_lexing(lexer->imp->name, x.buffer, &x.fmt->optvals);
+        }
     }
 #else
     while ((token = lexer->imp->yylex(&yy, (LexerData *) lexer->optvals)) > 0) {
