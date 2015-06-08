@@ -90,7 +90,7 @@ static int start_lexing(const char *lexname, String *out, FormatterData *UNUSED(
     return 0;
 }
 
-static int end_lexing(const char *lexname, String *out, FormatterData *UNUSED(data))
+static int end_lexing(const char *UNUSED(lexname), String *out, FormatterData *UNUSED(data))
 {
     STRING_APPEND_STRING(out, "</SPAN>");
 
