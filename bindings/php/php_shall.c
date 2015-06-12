@@ -451,6 +451,32 @@ static int php_write_token(String *out, const char *token, size_t token_len, For
     return 0;
 }
 
+static int php_start_lexing(const char *lexname, String *out, FormatterData *data)
+{
+    zval *zlexname, **params[1];
+
+    MAKE_STD_ZVAL(zlexname);
+    ZVAL_STRING(zlexname, lexname, 1);
+    params[0] = &zlexname;
+    PHP_CALLBACK("start_lexing", STR_LEN("start_lexing"), 1, params, out, data TSRMLS_CC);
+    zval_ptr_dtor(&zlexname);
+
+    return 0;
+}
+
+static int php_end_lexing(const char *lexname, String *out, FormatterData *data)
+{
+    zval *zlexname, **params[1];
+
+    MAKE_STD_ZVAL(zlexname);
+    ZVAL_STRING(zlexname, lexname, 1);
+    params[0] = &zlexname;
+    PHP_CALLBACK("end_lexing", STR_LEN("end_lexing"), 1, params, out, data TSRMLS_CC);
+    zval_ptr_dtor(&zlexname);
+
+    return 0;
+}
+
 #if 0
 static OptionValue *php_define_option(Formatter *fmt, const char *name, /*size_t name_len, */size_t UNUSED(offset), OptionValue optval)
 {
@@ -492,6 +518,8 @@ static const FormatterImplementation phpfmt = {
     php_start_token,
     php_end_token,
     php_write_token,
+    php_start_lexing,
+    php_end_lexing,
     sizeof(PHPFormatterData),
     NULL
 };
@@ -710,6 +738,28 @@ PHP_FUNCTION(Shall_Base_Formatter_write_token)
     RETURN_STRINGL(token, token_len, 1);
 }
 
+PHP_FUNCTION(Shall_Base_Formatter_start_lexing)
+{
+    char *lexname;
+    int lexname_len;
+    zval *object;
+
+    if (FAILURE == zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Os", &object, Shall_Formatter_ce_ptr, &lexname, &lexname_len)) {
+        RETURN_FALSE;
+    }
+}
+
+PHP_FUNCTION(Shall_Base_Formatter_end_lexing)
+{
+    char *lexname;
+    int lexname_len;
+    zval *object;
+
+    if (FAILURE == zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Os", &object, Shall_Formatter_ce_ptr, &lexname, &lexname_len)) {
+        RETURN_FALSE;
+    }
+}
+
 /* ========== functions ========== */
 
 #if 0
@@ -920,6 +970,8 @@ zend_function_entry Shall_Formatter_Base_class_functions[] = {
     ZEND_RAW_FENTRY("start_token",    ZEND_FN(Shall_Base_Formatter_start_token),    ainfo_shall_1arg,    ZEND_ACC_PUBLIC)
     ZEND_RAW_FENTRY("end_token",      ZEND_FN(Shall_Base_Formatter_end_token),      ainfo_shall_1arg,    ZEND_ACC_PUBLIC)
     ZEND_RAW_FENTRY("write_token",    ZEND_FN(Shall_Base_Formatter_write_token),    ainfo_shall_1arg,    ZEND_ACC_PUBLIC)
+    ZEND_RAW_FENTRY("start_lexing",   ZEND_FN(Shall_Base_Formatter_start_lexing),   ainfo_shall_1arg,    ZEND_ACC_PUBLIC)
+    ZEND_RAW_FENTRY("end_lexing",     ZEND_FN(Shall_Base_Formatter_end_lexing),     ainfo_shall_1arg,    ZEND_ACC_PUBLIC)
     ZEND_RAW_FENTRY("getOption",      ZEND_FN(Shall_Base_Formatter_getOption),      ainfo_shall_1arg,    ZEND_ACC_PUBLIC)
     ZEND_RAW_FENTRY("setOption",      ZEND_FN(Shall_Base_Formatter_setOption),      ainfo_shall_2arg,    ZEND_ACC_PUBLIC)
     PHP_FE_END

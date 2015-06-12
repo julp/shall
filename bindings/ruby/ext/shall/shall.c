@@ -427,6 +427,20 @@ static int ruby_write_token(String *out, const char *token, size_t token_len, Fo
     return 0;
 }
 
+static int ruby_start_lexing(const char *lexname, String *out, FormatterData *data)
+{
+    RUBY_CALLBACK(sStartLexing, 1, rb_str_new_cstr(lexname));
+
+    return 0;
+}
+
+static int ruby_end_lexing(const char *lexname, String *out, FormatterData *data)
+{
+    RUBY_CALLBACK(sEndLexing, 1, rb_str_new_cstr(lexname));
+
+    return 0;
+}
+
 static OptionValue *ruby_get_option_ptr(Formatter *fmt, int define, size_t UNUSED(offset), const char *name, size_t name_len)
 {
     OptionValue *optvalptr;
@@ -453,6 +467,8 @@ static const FormatterImplementation rubyfmt = {
     ruby_start_token,
     ruby_end_token,
     ruby_write_token,
+    ruby_start_lexing,
+    ruby_end_lexing,
     sizeof(RubyFormatterData),
     NULL
 };
@@ -674,6 +690,34 @@ static VALUE rb_formatter_end_token(VALUE UNUSED(self), VALUE UNUSED(token))
 static VALUE rb_formatter_write_token(VALUE UNUSED(self), VALUE token)
 {
     return token;
+}
+
+/*
+ * call-seq:
+ *   formatter.start_lexing(string) -> (nil|string)
+ *
+ * Callback invoked when a sublexer join the party.
+ * Default behavior is to do nothing (nil returned). Override
+ * it in your class to return a string if you want to append
+ * a random string on lexer switch.
+ */
+static VALUE rb_formatter_start_lexing(VALUE UNUSED(self), VALUE UNUSED(lexname))
+{
+    return Qnil;
+}
+
+/*
+ * call-seq:
+ *   formatter.end_lexing(string) -> (nil|string)
+ *
+ * Callback invoked when a sublexer leave the party.
+ * Default behavior is to do nothing (nil returned). Override
+ * it in your class to return a string if you want to append
+ * a random string when a lexer return the control.
+ */
+static VALUE rb_formatter_end_lexing(VALUE UNUSED(self), VALUE UNUSED(lexname))
+{
+    return Qnil;
 }
 
 /* ========== Shall module functions ========== */
@@ -926,6 +970,8 @@ void Init_shall(void)
     sStartToken = rb_intern("start_token");
     sEndToken = rb_intern("end_token");
     sWriteToken = rb_intern("write_token");
+    sStartLexing = rb_intern("start_lexing");
+    sEndLexing = rb_intern("end_lexing");
 
     mShall = rb_define_module("Shall");
     mLexer = rb_define_module_under(mShall, "Lexer");
@@ -971,6 +1017,8 @@ void Init_shall(void)
     rb_define_method(cBaseFormatter, "start_token", rb_formatter_start_token, 1);
     rb_define_method(cBaseFormatter, "end_token", rb_formatter_end_token, 1);
     rb_define_method(cBaseFormatter, "write_token", rb_formatter_write_token, 1);
+    rb_define_method(cBaseFormatter, "start_lexing", rb_formatter_start_lexing, 1);
+    rb_define_method(cBaseFormatter, "end_lexing", rb_formatter_end_lexing, 1);
 //     rb_undef_method(CLASS_OF(cBaseFormatter), "new");
 //     rb_undef_alloc_func(cBaseFormatter);
     rb_define_alloc_func(cBaseFormatter, rb_formatter_alloc);

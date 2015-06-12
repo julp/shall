@@ -472,6 +472,16 @@ static PyObject *shall_formatter_write_token(PyObject *self, PyObject *args)
 #endif
 }
 
+static PyObject *shall_formatter_start_lexing(PyObject *self, PyObject *args)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *shall_formatter_end_lexing(PyObject *self, PyObject *args)
+{
+    Py_RETURN_NONE;
+}
+
 /* python internals */
 
 typedef struct {
@@ -541,6 +551,20 @@ static int python_write_token(String *out, const char *token, size_t token_len, 
     return 0;
 }
 
+static int python_start_lexing(const char *lexname, String *out, FormatterData *data)
+{
+    PYTHON_CALLBACK("start_lexing", "s", lexname);
+
+    return 0;
+}
+
+static int python_end_lexing(const char *lexname, String *out, FormatterData *data)
+{
+    PYTHON_CALLBACK("end_lexing", "s", lexname);
+
+    return 0;
+}
+
 static OptionValue *python_get_option_ptr(Formatter *fmt, int define, size_t UNUSED(offset), const char *name, size_t name_len)
 {
     OptionValue *optvalptr;
@@ -567,6 +591,8 @@ static const FormatterImplementation pythonfmt = {
     python_start_token,
     python_end_token,
     python_write_token,
+    python_start_lexing,
+    python_end_lexing,
     sizeof(PythonFormatterData),
     NULL
 };
@@ -630,6 +656,8 @@ static PyMethodDef Shall_Formatter_Methods[] = {
     { "start_token",    (PyCFunction) shall_formatter_start_token,    METH_VARARGS, "TODO" },
     { "end_token",      (PyCFunction) shall_formatter_end_token,      METH_VARARGS, "TODO" },
     { "write_token",    (PyCFunction) shall_formatter_write_token,    METH_VARARGS, "TODO" },
+    { "start_lexing",   (PyCFunction) shall_formatter_start_lexing,   METH_VARARGS, "TODO" },
+    { "end_lexing",     (PyCFunction) shall_formatter_end_lexing,     METH_VARARGS, "TODO" },
     { NULL, NULL, 0, NULL }
 };
 
