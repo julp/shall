@@ -1558,6 +1558,7 @@ static void handle_event(event_t event, void *data, ...)
 //                 x->fmt->imp->end_lexing(imp->name);
 //                 x->yy->cursor = saved_cursor;
 //                 x->yy->yytext = x->yy->cursor;
+//                 /*x->yy->yytext = */x->yy->cursor = x->yy->limit;
                 x->yy->limit = saved_limit;
                 x->yy->yytext = x->yy->cursor;
 // debug("AFTER REPLAY YYCURSOR = %c (%d), YYTEXT = %c (%d)", *x->yy->cursor, *x->yy->cursor, *x->yy->yytext, *x->yy->yytext);

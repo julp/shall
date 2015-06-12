@@ -38,6 +38,7 @@ static int canalyse(const char *src, size_t src_len)
  **/
 static int clex(YYLEX_ARGS) {
     while (YYCURSOR < YYLIMIT) {
+restart:
         YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
@@ -158,9 +159,10 @@ IS = [uUlL]*;
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
     } else {
-        YYCURSOR = end;
+        YYCURSOR = end + 1;
     }
     REPLAY(YYTEXT, YYCURSOR, &annotations_lexer, NULL);
+    goto restart;
 #endif
 }
 

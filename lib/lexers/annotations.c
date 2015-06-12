@@ -34,7 +34,7 @@ static int annotationslex(YYLEX_ARGS)
             YYTEXT = YYCURSOR;
         }
         while (YYCURSOR < YYLIMIT && '\n' != *YYCURSOR) {
-            if ('*' == *YYCURSOR && YYCURSOR > YYLIMIT && '/' == YYCURSOR[1]) {
+            if ('*' == *YYCURSOR && YYCURSOR < YYLIMIT && '/' == YYCURSOR[1]) {
                 YYCURSOR += STR_LEN("*/");
                 goto end;
             }

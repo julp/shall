@@ -495,9 +495,10 @@ debug("[ERR] %d", __LINE__);
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
     } else {
-        YYCURSOR = end;
+        YYCURSOR = end + 1;
     }
     REPLAY(YYTEXT, YYCURSOR, &annotations_lexer, NULL);
+    goto restart;
 #endif
 }
 
