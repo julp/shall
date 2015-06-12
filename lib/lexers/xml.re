@@ -8,11 +8,13 @@
 
 extern const LexerImplementation css_lexer;
 extern const LexerImplementation dtd_lexer;
+extern const LexerImplementation js_lexer;
 
 typedef struct {
     LexerData data;
     int html;
     int css;
+    int js;
 } XMLLexerData;
 
 enum {
@@ -211,10 +213,12 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
 }
 
 <INITIAL> "<" Name {
-debug("%.*s", YYLENG, YYTEXT);
-    if (mydata->html && 0 == YYSTRNCASECMP("<style")) {
-        mydata->css = 1;
-debug("got style");
+    if (mydata->html) {
+        if (0 == YYSTRNCASECMP("<style")) {
+            mydata->css = 1;
+        } else if (0 == YYSTRNCASECMP("<script")) {
+            mydata->js = 1;
+        }
     }
     PUSH_STATE(IN_TAG);
     PUSH_TOKEN(NAME_TAG);
@@ -223,6 +227,8 @@ debug("got style");
 <INITIAL> ETag {
     if (mydata->css && 0 == YYSTRNCASECMP("</style>")) {
         mydata->css = 0;
+    } else if (mydata->js && 0 == YYSTRNCASECMP("</script>")) {
+        mydata->js = 0;
     }
     PUSH_TOKEN(NAME_TAG);
 }
@@ -291,6 +297,16 @@ debug("got style");
         }
         REPLAY(YYTEXT, YYCURSOR, &css_lexer, NULL);
         goto restart;
+    } else if (mydata->js) {
+        YYCTYPE *end;
+
+        if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "</script>", STR_LEN("</script>"), (const char *) YYLIMIT))) {
+            YYCURSOR = YYLIMIT;
+        } else {
+            YYCURSOR = end;
+        }
+        REPLAY(YYTEXT, YYCURSOR, &js_lexer, NULL);
+        goto restart;
     } else {
         PUSH_TOKEN(IGNORABLE);
     }
@@ -333,5 +349,5 @@ LexerImplementation html_lexer = {
     xmllex,
     sizeof(XMLLexerData),
     NULL,
-    (const LexerImplementation * const []) { &css_lexer, NULL }
+    (const LexerImplementation * const []) { &css_lexer, &js_lexer, NULL }
 };
