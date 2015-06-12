@@ -39,6 +39,8 @@
 
 # define yymore() goto yymore_restart
 
+#define NEWLINE /* TODO */
+
 # define TOKEN(type) \
     cb(EVENT_TOKEN, cb_data, type); \
 
@@ -123,10 +125,51 @@ struct LexerInput {
     (NULL == OPT_LEXUWF(optval) ? (Lexer *) OPT_LEXPTR(optval) : (OPT_LEXUWF(optval)(OPT_LEXPTR(optval))))
 
 typedef enum {
-    EVENT_DONE,  // nothing
-    EVENT_PUSH,  // const LexerImplementation *, LexerData * (can be NULL)
-    EVENT_TOKEN, // int type
-    EVENT_REPLAY // YYCTYPE *, const LexerImplementation *, LexerData * (can be NULL)
+    /**
+     * Emitted when parsing is finished (ie YYLIMIT is reached)
+     *
+     * Parameters expected by the event callback: none
+     */
+    EVENT_DONE,
+    /**
+     * Emitted to step down current parsing to a sublexer
+     *
+     * Parameters expected by the event callback:
+     * - const LexerImplementation * : the lexer implementation to use from this point (YYCURSOR)
+     * - LexerData * or NULL : the lexer data to use or NULL to create one with default values
+     */
+    EVENT_PUSH,
+    /**
+     * Emitted to step down current parsing to a sublexer
+     *
+     * Parameters expected by the event callback:
+     * - int : the type of the encountered token
+     */
+    EVENT_TOKEN,
+    /**
+     * Emitted to replay a token with a sublexer.
+     *
+     * Difference with EVENT_PUSH:
+     * - EVENT_PUSH: this is the sublexer which decides when to return the control. It is intended for
+     * cases when current/top/parent lexer is not able to determine where the parsing for this sublexer
+     * should end.
+     * - EVENT_REPLAY: in the oppposite, with a "replay", the current lexer know exactly which part
+     * of the actual input it has to handle (from a start point - usually YYTEXT - to a specific end
+     * point - which may be not YYCURSOR)
+     *
+     * Parameters expected by the event callback:
+     * - YYCTYPE * : the start point of the token to replay (becomes again YYCURSOR for the sublexer)
+     * - YYCTYPE * : the end point of the token to replay (becomes YYLIMIT for the sublexer)
+     * - const LexerImplementation * : the lexer implementation to use from this point (YYCURSOR)
+     * - LexerData * or NULL : the lexer data to use or NULL to create one with default values
+     */
+    EVENT_REPLAY,
+    /**
+     * Emitted when a newline is encountered
+     *
+     * Parameters expected by the event callback: none
+     */
+    EVENT_NEWLINE
 } event_t;
 
 typedef void envent_cb_t(event_t, void *, ...);

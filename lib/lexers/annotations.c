@@ -33,13 +33,14 @@ static int annotationslex(YYLEX_ARGS)
             TOKEN(KEYWORD);
             YYTEXT = YYCURSOR;
         }
-        while (YYCURSOR < YYLIMIT && '\n' != *YYCURSOR) {
+        while (YYCURSOR < YYLIMIT && /*(*/'\n' != *YYCURSOR /* || '\r' != *YYCURSOR) */) {
             if ('*' == *YYCURSOR && YYCURSOR < YYLIMIT && '/' == YYCURSOR[1]) {
                 YYCURSOR += STR_LEN("*/");
                 goto end;
             }
             ++YYCURSOR;
         }
+        NEWLINE;
         ++YYCURSOR; // '\n'
     }
 end:
