@@ -167,7 +167,7 @@ int32_t string_subreplace_len(String *str, const char *replacement, size_t repla
 
     diff_len = replacement_length - length;
     if (diff_len > 0) {
-        _string_maybe_expand_of(str, diff_len);
+        _string_maybe_expand_of(str, (size_t) diff_len);
     }
     if (replacement_length != length) {
         // TODO: assume str->len - position - length > 0?
@@ -216,7 +216,7 @@ void string_append_string(String *str, const char *suffix)
     string_insert_len(str, str->len, suffix, strlen(suffix));
 }
 
-void string_append_string_len(String *str, const char *suffix, int32_t len)
+void string_append_string_len(String *str, const char *suffix, size_t len)
 {
     string_insert_len(str, str->len, suffix, len);
 }
@@ -231,7 +231,7 @@ void string_prepend_string(String *str, const char *prefix)
     string_insert_len(str, 0, prefix, strlen(prefix));
 }
 
-void string_prepend_string_len(String *str, const char *prefix, int32_t len)
+void string_prepend_string_len(String *str, const char *prefix, size_t len)
 {
     string_insert_len(str, 0, prefix, len);
 }
