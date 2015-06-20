@@ -183,6 +183,10 @@ typedef void envent_cb_t(event_t, void *, ...);
  */
 typedef struct {
     /**
+     * Lexer internal flags
+     */
+    uint16_t flags ALIGNED(sizeof(OptionValue));
+    /**
      * Lexer's state/condition
      */
     int state ALIGNED(sizeof(OptionValue));

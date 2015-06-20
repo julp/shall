@@ -789,7 +789,7 @@ SHALL_API const LexerImplementation *lexer_implementation(Lexer *lexer)
     return lexer->imp;
 }
 
-static int lexer_data_init(LexerData *data, size_t data_size)
+static bool lexer_data_init(LexerData *data, size_t data_size)
 {
     bzero(data, data_size);
     if (NULL != (data->state_stack = malloc(sizeof(*data->state_stack)))) {
@@ -797,6 +797,14 @@ static int lexer_data_init(LexerData *data, size_t data_size)
     }
 
     return NULL != data->state_stack;
+}
+
+static void lexer_data_destroy(LexerData *data)
+{
+    if (NULL != data->state_stack) {
+        darray_destroy(data->state_stack);
+        free(data->state_stack);
+    }
 }
 
 /**
@@ -898,10 +906,6 @@ SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
     LexerData *data;
 
     data = (LexerData *) &lexer->optvals;
-    if (NULL != data->state_stack) {
-        darray_destroy(data->state_stack);
-        free(data->state_stack);
-    }
     if (NULL != lexer->imp->options) {
         LexerOption *lo;
 
@@ -935,6 +939,14 @@ SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
             }
         }
     }
+#if 0
+    if (NULL != data->state_stack) {
+        darray_destroy(data->state_stack);
+        free(data->state_stack);
+    }
+#else
+    lexer_data_destroy(data);
+#endif
     free(lexer);
 }
 
@@ -1482,7 +1494,28 @@ typedef struct {
     String *buffer;
     Formatter *fmt;
     int prev_token;
+    /**
+     * HashTable of LexerData *:
+     * - to reuse previous data associated to a LexerImplementation (if any, we create one)
+     *   instead of creating one new each time
+     * - free them when done, but only those are orphaned (ie not associated to a Lexer as
+     *   internally we won't create a Lexer *)
+     */
+    HashTable *lexers;
 } xxx;
+
+#define LEXER_FLAG_KEEP (1<<0)
+
+static void destroy_nonuser_lexer_data(void *rawdata)
+{
+    LexerData *data;
+
+    data = (LexerData *) rawdata;
+    if (!HAS_FLAG(data->flags, LEXER_FLAG_KEEP)) {
+        lexer_data_destroy(data);
+        free(data);
+    }
+}
 
 static void handle_event(event_t event, void *data, ...)
 {
@@ -1503,16 +1536,24 @@ static void handle_event(event_t event, void *data, ...)
         }
         case EVENT_PUSH:
         {
+            bool known;
             LexerData *data;
             const LexerImplementation *imp;
 
+            known = FALSE;
             imp = va_arg(ap, const LexerImplementation *);
 // debug("PUSH %s", imp->name);
             if (NULL == (data = va_arg(ap, LexerData *))) {
-                data = malloc(imp->data_size);
-                lexer_data_init(data, imp->data_size);
+                if (!(known = hashtable_direct_get(x->lexers, (ht_hash_t) imp, (void **) &data))) {
+                    data = malloc(imp->data_size);
+                    lexer_data_init(data, imp->data_size);
+                }
             } else {
-                reset_lexer(data);
+//                 reset_lexer(data);
+                SET_FLAG(data->flags, LEXER_FLAG_KEEP);
+            }
+            if (!known) {
+                hashtable_direct_put(x->lexers, 0, (ht_hash_t) imp, data, NULL);
             }
             if (NULL != x->fmt->imp->start_lexing) {
                 x->fmt->imp->start_lexing(imp->name, x->buffer, &x->fmt->optvals);
@@ -1530,10 +1571,12 @@ static void handle_event(event_t event, void *data, ...)
         }
         case EVENT_REPLAY:
         {
+            bool known;
             LexerData *data;
             const LexerImplementation *imp;
             YYCTYPE *saved_limit/*, *saved_cursor*/;
 
+            known = FALSE;
 //             saved_cursor = x->yy->cursor;
 //             if (x->yy->cursor < x->yy->limit) {
                 saved_limit = x->yy->limit;
@@ -1542,12 +1585,27 @@ static void handle_event(event_t event, void *data, ...)
 // //             if (x->yy->cursor < x->yy->limit) {
 // debug("REPLAY (%ld) >%.*s<", x->yy->limit - x->yy->cursor, (int) (x->yy->limit - x->yy->cursor), x->yy->cursor);
                 imp = va_arg(ap, const LexerImplementation *);
+#if 1
+                if (NULL == (data = va_arg(ap, LexerData *))) {
+                    if (!(known = hashtable_direct_get(x->lexers, (ht_hash_t) imp, (void **) &data))) {
+                        data = malloc(imp->data_size);
+                        lexer_data_init(data, imp->data_size);
+                    }
+                } else {
+//                     reset_lexer(data);
+                    SET_FLAG(data->flags, LEXER_FLAG_KEEP);
+                }
+                if (!known) {
+                    hashtable_direct_put(x->lexers, 0, (ht_hash_t) imp, data, NULL);
+                }
+#else
                 if (NULL == (data = va_arg(ap, LexerData *))) {
                     data = malloc(imp->data_size);
                     lexer_data_init(data, imp->data_size);
                 }/* else {
                     reset_lexer(data);
                 }*/
+#endif
                 if (NULL != x->fmt->imp->start_lexing) {
                     x->fmt->imp->start_lexing(imp->name, x->buffer, &x->fmt->optvals);
                 }
@@ -1601,9 +1659,9 @@ static void handle_event(event_t event, void *data, ...)
  */
 SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src, char **dest)
 {
-    String *buffer;
-    int prev, token;
+    int prev;
     LexerInput yy;
+    String *buffer;
     size_t src_len, buffer_len;
 
     src_len = strlen(src);
@@ -1630,29 +1688,30 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
             src = lf;
         }
     }
-    yy.cursor = (YYCTYPE *) src;
+    /*yy.marker = *//*yy.yytext = */yy.cursor = (YYCTYPE *) src;
     yy.limit = (YYCTYPE *) src + src_len;
-#if 1
     {
         xxx x;
+        HashTable lexers;
+//         OptionValue *secondary_optvalptr;
 
         x.buffer = buffer;
         x.fmt = fmt;
         x.prev_token = prev;
         x.yy = &yy;
+        hashtable_init(&lexers, 0, value_hash, value_equal, NULL, NULL, destroy_nonuser_lexer_data);
 #if 0
-        HashTable lexers;
-        {
+        if (OPT_TYPE_LEXER == lexer_get_option(lexer, "secondary", &secondary_optvalptr)) {
             Lexer *secondary;
 
-            secondary = NULL;
-            hashtable_init(&lexers);
-            if (OPT_TYPE_LEXER == lexer_get_option(lexer, "secondary", &secondary) && NULL != secondary) {
-                hashtable_direct_put(&lexers, 0, secondary->imp, (LexerData *) secondary->optvals, NULL);
+            secondary = LEXER_UNWRAP(*secondary_optvalptr);
+            if (NULL != secondary) {
+                SET_FLAG(((LexerData *) (secondary->optvals))->flags, LEXER_FLAG_KEEP);
+                hashtable_direct_put(&lexers, 0, (ht_hash_t) secondary->imp, (LexerData *) secondary->optvals, NULL);
             }
-            x.lexers = &lexers;
         }
 #endif
+        x.lexers = &lexers;
         if (NULL != x.fmt->imp->start_lexing) {
             x.fmt->imp->start_lexing(lexer->imp->name, x.buffer, &x.fmt->optvals);
         }
@@ -1660,27 +1719,8 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
         if (NULL != x.fmt->imp->end_lexing) {
             x.fmt->imp->end_lexing(lexer->imp->name, x.buffer, &x.fmt->optvals);
         }
+        hashtable_destroy(&lexers);
     }
-#else
-    while ((token = lexer->imp->yylex(&yy, (LexerData *) lexer->optvals)) > 0) {
-        int yyleng;
-
-        yyleng = yy.cursor - yy.yytext;
-        if (prev != token) {
-            if (prev != -1/* && prev != IGNORABLE*/) {
-                fmt->imp->end_token(prev, buffer, &fmt->optvals);
-            }
-//             if (token != IGNORABLE) {
-                fmt->imp->start_token(token, buffer, &fmt->optvals);
-//             }
-        }
-        fmt->imp->write_token(buffer, (char *) yy.yytext, yyleng, &fmt->optvals);
-        prev = token;
-    }
-    if (-1 != prev/* && IGNORABLE != prev*/) {
-        fmt->imp->end_token(prev, buffer, &fmt->optvals);
-    }
-#endif
     if (NULL != fmt->imp->end_document) {
         fmt->imp->end_document(buffer, &fmt->optvals);
     }
