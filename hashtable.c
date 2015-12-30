@@ -221,7 +221,7 @@ bool _hashtable_put(HashTable *this, uint32_t flags, ht_key_t key, void *value, 
     return hashtable_put_real(this, flags, NULL == this->hf ? key : this->hf(key), key, value, oldvalue);
 }
 
-bool hashtable_direct_put(HashTable *this, uint32_t flags, ht_hash_t h, void *value, void **oldvalue)
+bool _hashtable_direct_put(HashTable *this, uint32_t flags, ht_hash_t h, void *value, void **oldvalue)
 {
     return hashtable_put_real(this, flags, h, (ht_key_t) h, value, oldvalue);
 }
@@ -250,7 +250,7 @@ bool _hashtable_contains(HashTable *this, ht_key_t key)
     return _hashtable_quick_contains(this, NULL == this->hf ? key : this->hf(key), key);
 }
 
-bool hashtable_direct_contains(HashTable *this, ht_hash_t h)
+bool _hashtable_direct_contains(HashTable *this, ht_hash_t h)
 {
     return _hashtable_quick_contains(this, h, (ht_key_t) h);
 }
@@ -281,7 +281,7 @@ bool _hashtable_get(HashTable *this, ht_key_t key, void **value)
     return _hashtable_quick_get(this, NULL == this->hf ? key : this->hf(key), key, value);
 }
 
-bool hashtable_direct_get(HashTable *this, ht_hash_t h, void **value)
+bool _hashtable_direct_get(HashTable *this, ht_hash_t h, void **value)
 {
     return _hashtable_quick_get(this, h, h, value);
 }
@@ -341,7 +341,7 @@ bool _hashtable_delete(HashTable *this, ht_key_t key, bool call_dtor)
     return hashtable_delete_real(this, NULL == this->hf ? key : this->hf(key), key, call_dtor);
 }
 
-bool hashtable_direct_delete(HashTable *this, ht_hash_t h, bool call_dtor)
+bool _hashtable_direct_delete(HashTable *this, ht_hash_t h, bool call_dtor)
 {
     return hashtable_delete_real(this, h, h, call_dtor);
 }
