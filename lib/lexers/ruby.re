@@ -410,7 +410,7 @@ LexerImplementation erb_lexer = {
     rubylex,
     sizeof(RubyLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "secondary", OPT_TYPE_LEXER, offsetof(RubyLexerData, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
+        { "secondary", OPT_TYPE_LEXER, offsetof(RubyLexerData, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of ERB tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
     },
     NULL
