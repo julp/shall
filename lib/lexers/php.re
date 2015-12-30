@@ -220,8 +220,8 @@ static named_element_t functions[] = {
 
 static named_element_t classes[] = {
     NE("Directory"),
-//     NE("stdClass"),
-//     NE("__PHP_Incomplete_Class"),
+    NE("stdClass"),
+    NE("__PHP_Incomplete_Class"),
 };
 #endif
 
@@ -452,22 +452,17 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     PUSH_TOKEN(PUNCTUATION);
 }
 
+<ST_VAR_OFFSET>[0] | [1-9][0-9]* {
+    PUSH_TOKEN(NUMBER_DECIMAL);
+}
+
+<ST_VAR_OFFSET>LNUM | HNUM | BNUM {
+    /* Offset must be treated as a string */
+    PUSH_TOKEN(STRING_SINGLE);
+}
+
 <ST_VAR_OFFSET>"[" {
     PUSH_TOKEN(PUNCTUATION);
-}
-
-<ST_VAR_OFFSET>TOKENS | [{}"`] {
-debug("[ERR] %d", __LINE__);
-    /* Only '[' can be valid, but returning other tokens will allow a more explicit parse error */
-    PUSH_TOKEN(IGNORABLE);
-}
-
-<ST_VAR_OFFSET>[ \n\r\t\\'#] {
-debug("[ERR] %d", __LINE__);
-    /* Invalid rule to return a more explicit parse error with proper line number */
-    yyless(0);
-    POP_STATE();
-    PUSH_TOKEN(IGNORABLE);
 }
 
 <ST_VAR_OFFSET>LABEL {
