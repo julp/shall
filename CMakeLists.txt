@@ -25,7 +25,7 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(SOURCES lib/shall.c lib/lexer.c xtring.c darray.c hashtable.c)
+set(SOURCES lib/shall.c lib/lexer.c lib/themes.c xtring.c darray.c hashtable.c)
 set(FORMATTERS html terminal plain)
 set(C_LEXERS annotations diff text)
 set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
