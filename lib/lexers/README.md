@@ -64,7 +64,7 @@ MIME type(s): application/x-ruby-templating
 
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
-| secondary | lexer | null/none | Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted) |
+| secondary | lexer | null/none | Lexer to highlight content outside of ERB tags (if none, these parts will not be highlighted) |
 
 ## HTML
 
