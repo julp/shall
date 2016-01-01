@@ -26,6 +26,7 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(SOURCES lib/shall.c lib/lexer.c lib/themes.c xtring.c darray.c hashtable.c)
+set(THEMES monokai molokai)
 set(FORMATTERS html terminal plain)
 set(C_LEXERS annotations diff text)
 set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
@@ -33,6 +34,10 @@ set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
 foreach(lexer ${C_LEXERS})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.c")
 endforeach(lexer)
+
+foreach(theme ${THEMES})
+    list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/themes/${theme}.c")
+endforeach(theme)
 
 set(RE2C_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/genlexers/")
 file(MAKE_DIRECTORY "${RE2C_OUTPUT_DIRECTORY}")
@@ -64,7 +69,7 @@ target_link_libraries(shalltest shall_lib)
 add_executable(shalldoc bin/shalldoc.c $<TARGET_OBJECTS:common>)
 target_link_libraries(shalldoc shall_lib)
 
-set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "shall.h;cpp.h;tokens.h;keywords.h;lexer.h;formatter.h;types.h;bool.h")
+set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "shall.h;themes.h;cpp.h;tokens.h;keywords.h;lexer.h;formatter.h;types.h;bool.h")
 
 foreach(target "shall_lib;shall_bin")
     set_target_properties(${target} PROPERTIES OUTPUT_NAME "shall")
