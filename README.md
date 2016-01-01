@@ -20,7 +20,8 @@ See README in formatters/ subfolder
 # Installation
 
 * Download, extract and move to shall sources directory
-* Generate Makefiles: `cmake . -DCMAKE_INSTALL_PREFIX:PATH=/usr/local`
+* Use a temporary directory for building (eg: `mkdir /tmp/shallbuild && cd /tmp/shallbuild`)
+* Generate Makefiles: `cmake /path/to/shall/sources -DCMAKE_INSTALL_PREFIX:PATH=/usr/local` (outsource build required)
 * Compile: `make`
 * Install it: `(sudo) make install`
 
@@ -51,6 +52,6 @@ Examples:
 
 # Current limitations
 
-* input/output strings have to be UTF-8
+* input/output strings have to be UTF-8 encoded
 * for the terminal formatter and/or shall binary, current locale have to be in UTF-8 as well
 * -b option of re2c generates broken lexers?
