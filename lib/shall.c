@@ -13,6 +13,7 @@
 #include "tokens.h"
 #include "lexer.h"
 #include "formatter.h"
+#include "hashtable.h"
 #include "shall.h"
 
 #ifndef DOXYGEN

@@ -4,7 +4,9 @@
 
 # include "types.h"
 # include "xtring.h"
-# include "hashtable.h"
+# ifdef TEST
+#  include "hashtable.h"
+# endif /* TEST */
 
 typedef void FormatterData;
 
@@ -127,12 +129,12 @@ struct Formatter {
      * Implementation on which depends the formatter (like its "class")
      */
     const FormatterImplementation *imp;
-#ifdef TEST
+# ifdef TEST
     /**
      * Hashtable to associate option's name to its value
      */
     HashTable optmap;
-#endif
+# endif
     /**
      * (Variable) Space to store current values of options
      */

@@ -19,9 +19,9 @@ endif("${srcdir}" STREQUAL "${bindir}")
 
 find_package(RE2C 0.13.7 REQUIRED)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_definitions(-DDEBUG -DTEST)
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#     add_definitions(-DDEBUG -DTEST)
+# endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 include_directories(${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 
