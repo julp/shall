@@ -111,8 +111,7 @@ void hashtable_init(
     DupFunc key_duper,
     DtorFunc key_dtor,
     DtorFunc value_dtor
-)
-{
+) {
     this->count = 0;
     this->gHead = NULL;
     this->gTail = NULL;

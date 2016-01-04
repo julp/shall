@@ -10,6 +10,7 @@
 #include "shall.h"
 #include "xtring.h"
 #include "hashtable.h"
+#include "themes.h"
 
 #ifndef EUSAGE
 # define EUSAGE -2
@@ -22,7 +23,7 @@ extern char *__progname;
 #endif /* _MSC_VER */
 
 static HashTable lexers;
-static char optstr[] = "f:l:o:LO:";
+static char optstr[] = "f:l:o:t:LO:";
 
 static struct option long_options[] = {
     { "list",             required_argument, NULL, 'L' },
@@ -30,6 +31,8 @@ static struct option long_options[] = {
     { "formatter",        required_argument, NULL, 'f' },
     { "lexer-option",     required_argument, NULL, 'o' },
     { "formatter-option", required_argument, NULL, 'O' },
+    { "theme",            required_argument, NULL, 't' },
+    { "scope",            required_argument, NULL, 's' }, // TODO: optional CSS scope to generate CSS rules for theme
     { NULL,               no_argument,       NULL, 0   }
 };
 
@@ -154,6 +157,23 @@ static void print_lexer_cb(const LexerImplementation *imp, void *UNUSED(data))
     lexer_implementation_each_option(imp, print_lexer_option_cb, NULL);
 }
 
+static void print_formatter_cb(const FormatterImplementation *imp, void *UNUSED(data))
+{
+    const char *imp_name;
+
+    imp_name = formatter_implementation_name(imp);
+    printf("- %s\n", imp_name);
+    formatter_implementation_each_option(imp, print_lexer_option_cb, NULL);
+}
+
+static void print_theme_cb(const Theme *theme, void *UNUSED(data))
+{
+    const char *name;
+
+    name = theme_name(theme);
+    printf("- %s\n", name);
+}
+
 static void destroy_lexer_cb(void *ptr)
 {
     Lexer *lexer;
@@ -186,7 +206,23 @@ int main(int argc, char **argv)
             {
                 puts("Available lexers are:");
                 lexer_implementation_each(print_lexer_cb, NULL);
+                puts("\nAvailable formatters are:");
+                formatter_implementation_each(print_formatter_cb, NULL);
+                puts("\nAvailable themes are:");
+                theme_each(print_theme_cb, NULL);
                 return EXIT_SUCCESS;
+            }
+            case 't':
+            {
+                const Theme *theme;
+
+                // TODO: do not allow mix of options (L, t and l/f/o/O are mutually exclusive ; L/t don't expect additionnal arg[cv]) - imply to do these checks after full options processing?
+                if (NULL == (theme = theme_by_name(optarg))) {
+                    fprintf(stderr, "unknown theme '%s'\n", optarg);
+                } else {
+                    fputs(theme_css(theme, NULL, TRUE), stdout);
+                }
+                return NULL == theme ? EXIT_FAILURE : EXIT_SUCCESS;
             }
             case 'l':
                 if (NULL == (limp = lexer_implementation_by_name(optarg))) {
