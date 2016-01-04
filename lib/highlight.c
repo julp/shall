@@ -65,7 +65,7 @@ static void handle_event(event_t event, void *data, ...)
             imp = va_arg(ap, const LexerImplementation *);
 // debug("PUSH %s", imp->name);
             if (NULL == (data = va_arg(ap, LexerData *))) {
-                if (!(known = hashtable_direct_get(x->lexers, (ht_hash_t) imp, (void **) &data))) {
+                if (!(known = hashtable_direct_get(x->lexers, imp, &data))) {
                     data = malloc(imp->data_size);
                     lexer_data_init(data, imp->data_size);
                 }
@@ -74,7 +74,7 @@ static void handle_event(event_t event, void *data, ...)
                 SET_FLAG(data->flags, LEXER_FLAG_KEEP);
             }
             if (!known) {
-                hashtable_direct_put(x->lexers, 0, (ht_hash_t) imp, data, NULL);
+                hashtable_direct_put(x->lexers, 0, imp, data, NULL);
             }
             if (NULL != x->fmt->imp->start_lexing) {
                 x->fmt->imp->start_lexing(imp->name, x->buffer, &x->fmt->optvals);
@@ -108,7 +108,7 @@ static void handle_event(event_t event, void *data, ...)
                 imp = va_arg(ap, const LexerImplementation *);
 #if 1
                 if (NULL == (data = va_arg(ap, LexerData *))) {
-                    if (!(known = hashtable_direct_get(x->lexers, (ht_hash_t) imp, (void **) &data))) {
+                    if (!(known = hashtable_direct_get(x->lexers, imp, &data))) {
                         data = malloc(imp->data_size);
                         lexer_data_init(data, imp->data_size);
                     }
@@ -117,7 +117,7 @@ static void handle_event(event_t event, void *data, ...)
                     SET_FLAG(data->flags, LEXER_FLAG_KEEP);
                 }
                 if (!known) {
-                    hashtable_direct_put(x->lexers, 0, (ht_hash_t) imp, data, NULL);
+                    hashtable_direct_put(x->lexers, 0, imp, data, NULL);
                 }
 #else
                 if (NULL == (data = va_arg(ap, LexerData *))) {

@@ -45,7 +45,7 @@ static int html_end_document(String *out, FormatterData *UNUSED(data))
     return 0;
 }
 
-static int start_token(int token, String *out, FormatterData *UNUSED(data))
+static int html_start_token(int token, String *out, FormatterData *UNUSED(data))
 {
     if (IGNORABLE != token) {
         if ('\0' == map[token][1]) {
@@ -65,7 +65,7 @@ static int start_token(int token, String *out, FormatterData *UNUSED(data))
     return 0;
 }
 
-static int end_token(int token, String *out, FormatterData *UNUSED(data))
+static int html_end_token(int token, String *out, FormatterData *UNUSED(data))
 {
     if (IGNORABLE != token) {
         STRING_APPEND_STRING(out, "</span>");
@@ -74,14 +74,14 @@ static int end_token(int token, String *out, FormatterData *UNUSED(data))
     return 0;
 }
 
-static int write_token(String *out, const char *token, size_t token_len, FormatterData *UNUSED(data))
+static int html_write_token(String *out, const char *token, size_t token_len, FormatterData *UNUSED(data))
 {
     string_append_xml_len(out, token, token_len);
 
     return 0;
 }
 
-static int start_lexing(const char *lexname, String *out, FormatterData *UNUSED(data))
+static int html_start_lexing(const char *lexname, String *out, FormatterData *UNUSED(data))
 {
     STRING_APPEND_STRING(out, "<SPAN class=\"");
     string_append_string(out, lexname);
@@ -90,7 +90,7 @@ static int start_lexing(const char *lexname, String *out, FormatterData *UNUSED(
     return 0;
 }
 
-static int end_lexing(const char *UNUSED(lexname), String *out, FormatterData *UNUSED(data))
+static int html_end_lexing(const char *UNUSED(lexname), String *out, FormatterData *UNUSED(data))
 {
     STRING_APPEND_STRING(out, "</SPAN>");
 
@@ -103,11 +103,11 @@ const FormatterImplementation _htmlfmt = {
     formatter_implementation_default_get_option_ptr,
     html_start_document,
     html_end_document,
-    start_token,
-    end_token,
-    write_token,
-    start_lexing,
-    end_lexing,
+    html_start_token,
+    html_end_token,
+    html_write_token,
+    html_start_lexing,
+    html_end_lexing,
     sizeof(HTMLFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("linestart"), OPT_TYPE_INT, offsetof(HTMLFormatterData, linestart), OPT_DEF_INT(1), "The line number for the first line" },

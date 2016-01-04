@@ -89,7 +89,7 @@ target_link_libraries(shalltest shall_lib)
 add_executable(shalldoc cli/shalldoc.c $<TARGET_OBJECTS:common>)
 target_link_libraries(shalldoc shall_lib)
 
-set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "shall.h;themes.h;cpp.h;tokens.h;keywords.h;lexer.h;formatter.h;types.h;bool.h")
+set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/bool.h;include/xtring.h")
 
 foreach(target "shall_lib;shall_bin")
     set_target_properties(${target} PROPERTIES OUTPUT_NAME "shall")

@@ -2,10 +2,10 @@
 
 #define DEBUG
 #include <shall/cpp.h>
-#include "../../../../formatter.h" // TODO: temporary
+#include <shall/formatter.h>
 #include <shall/shall.h>
 #include <shall/tokens.h>
-#include <shall/option.h>
+#include <shall/types.h>
 
 #define WITH_TYPED_DATA 1
 
@@ -377,7 +377,7 @@ typedef struct {
     st_table *options;
 } RubyFormatterData;
 
-static ID sStartDocument, sEndDocument, sStartToken, sEndToken, sWriteToken;
+static ID sStartLexing, sEndLexing, sStartDocument, sEndDocument, sStartToken, sEndToken, sWriteToken;
 
 #define RUBY_CALLBACK(/*ID*/ method, /*int*/ argc, ...) \
     do { \
@@ -768,7 +768,7 @@ static VALUE rb_lexer_guess(int argc, VALUE *argv, VALUE module)
     const LexerImplementation *imp;
 
     self = options = Qnil;
-    rb_scan_args(argc, argv, "12", &src, &options);
+    rb_scan_args(argc, argv, "11", &src, &options);
     Check_Type(src, T_STRING);
     if (NULL != (imp = lexer_implementation_guess(RSTRING_PTR(src), RSTRING_LEN(src)))) {
         self = _rb_create_lexer(imp, options);
@@ -797,7 +797,7 @@ static VALUE rb_lexer_by_name(int argc, VALUE *argv, VALUE module)
     const LexerImplementation *imp;
 
     self = options = Qnil;
-    rb_scan_args(argc, argv, "12", &name, &options);
+    rb_scan_args(argc, argv, "11", &name, &options);
     Check_Type(name, T_STRING);
     if (NULL != (imp = lexer_implementation_by_name(StringValueCStr(name)))) {
         self = _rb_create_lexer(imp, options);
@@ -825,7 +825,7 @@ static VALUE rb_lexer_for_filename(int argc, VALUE *argv, VALUE module)
     const LexerImplementation *imp;
 
     self = options = Qnil;
-    rb_scan_args(argc, argv, "12", &filename, &options);
+    rb_scan_args(argc, argv, "11", &filename, &options);
     Check_Type(filename, T_STRING);
     if (NULL != (imp = lexer_implementation_for_filename(StringValueCStr(filename)))) {
         self = _rb_create_lexer(imp, options);
