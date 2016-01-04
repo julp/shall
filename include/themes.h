@@ -10,16 +10,16 @@
 
 typedef struct {
     uint8_t r, g, b;
-} color_t;
+} Color;
 
 typedef struct {
-    color_t fg, bg;
+    Color fg, bg;
     bool bold, italic;
-} style_t;
+} Style;
 
 typedef struct {
     const char *name;
-    style_t styles[_LAST_TOKEN];
+    Style styles[_LAST_TOKEN];
 } Theme;
 
 SHALL_API void theme_each(void (*) (const Theme *, void *), void *);

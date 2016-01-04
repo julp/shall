@@ -2,22 +2,13 @@
 
 # define SHALL_H
 
-# define SHALL_VERSION_MAJOR 0
-# define SHALL_VERSION_MINOR 0
-# define SHALL_VERSION_PATCH 0
+# define SHALL_VERSION_MAJOR @SHALL_VERSION_MAJOR@
+# define SHALL_VERSION_MINOR @SHALL_VERSION_MINOR@
+# define SHALL_VERSION_PATCH @SHALL_VERSION_PATCH@
 
 # define SHALL_API
 
-# ifndef SHALL_LEXER_DEFINED
-// typedef struct LexerImplementation LexerImplementation;
-// typedef struct Lexer Lexer;
-# endif /* SHALL_LEXER_DEFINED */
-# ifndef SHALL_FORMATTER_DEFINED
-// typedef struct FormatterImplementation FormatterImplementation;
-// typedef struct Formatter Formatter;
-# endif /* SHALL_FORMATTER_DEFINED */
-
-#include "types.h"
+# include "types.h"
 
 typedef void (*on_lexer_destroy_cb_t)(void *);
 

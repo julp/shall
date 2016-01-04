@@ -46,12 +46,12 @@ static int difflex(YYLEX_ARGS)
                     PUSH_TOKEN(GENERIC_HEADING);
                 case 'i':
                 case 'I':
-                    if (YYLENG >= STR_LEN("index") && 0 == memcmp(YYTEXT + 1, "ndex", STR_LEN("ndex"))) {
+                    if (((size_t) YYLENG) >= STR_LEN("index") && 0 == memcmp(YYTEXT + 1, "ndex", STR_LEN("ndex"))) {
                         PUSH_TOKEN(GENERIC_HEADING);
                     }
                     break;
                 case 'd':
-                    if (YYLENG >= STR_LEN("diff") && 0 == memcmp(YYTEXT + 1, "iff", STR_LEN("iff"))) {
+                    if (((size_t) YYLENG) >= STR_LEN("diff") && 0 == memcmp(YYTEXT + 1, "iff", STR_LEN("iff"))) {
                         PUSH_TOKEN(GENERIC_HEADING);
                     }
                     break;

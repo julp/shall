@@ -2,6 +2,7 @@
 
 # define TYPES_H
 
+# include <stddef.h> /* size_t */
 # include <stdint.h> /* uint\d+_t */
 # include "cpp.h"
 # include "bool.h"

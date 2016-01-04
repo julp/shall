@@ -5,6 +5,11 @@
 # include "types.h"
 # include "darray.h"
 
+# ifndef DOXYGEN
+#  define SHELLMAGIC "#!"
+#  define UTF8_BOM "\xEF\xBB\xBF"
+# endif /* !DOXYGEN */
+
 # define YYLEX_ARGS LexerInput *yy, LexerData *data, envent_cb_t cb, void *cb_data
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
@@ -191,7 +196,7 @@ typedef struct {
      */
     int state ALIGNED(sizeof(OptionValue));
     /**
-     * Stack
+     * States stack
      */
     DArray *state_stack ALIGNED(sizeof(OptionValue));
     /**
@@ -315,6 +320,8 @@ struct Lexer {
 };
 
 void reset_lexer(LexerData *);
+bool lexer_data_init(LexerData *, size_t);
+void lexer_data_destroy(LexerData *);
 
 #define YYSTRNCMP(x) \
     strcmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)

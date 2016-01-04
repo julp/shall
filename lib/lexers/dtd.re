@@ -7,6 +7,7 @@
 #include "utils.h"
 
 #if 0
+/*
 "<!ELEMENT" <espace> <nom> <espace> <"EMPTY" ou "ANY" ou une liste qui commence par "(" et finit par ")"> <espace optionnel> ">"
 
 "<!ATTLIST" <espace> <nom> (<espace> <nom> <espace> <type : "CDATA" ou "ID" | "IDREF" | "IDREFS" | "ENTITY" | "ENTITIES" | "NMTOKEN" | "NMTOKENS" ou ("NOTATION" S)? suivi d'une liste de noms entre "(" et ")" séparée par des "|"> <espace> <"#REQUIRED" | "#IMPLIED">)* <espace optionnel> ">"
@@ -26,6 +27,7 @@
 
 http://www.ibm.com/developerworks/library/x-tiparam/
 http://www.xmlgrrl.com/publications/DSDTD/ch10.html
+*/
 #endif
 
 enum {

@@ -1,13 +1,8 @@
-#include <string.h>
 #include <stddef.h>
+#include <string.h>
 
+#include "cpp.h"
 #include "utils.h"
-// #include "cpp.h"
-
-#ifndef MIN
-# define MIN(a, b) \
-    ((a) <= (b) ? (a) : (b))
-#endif /* !MIN */
 
 /*
 static const unsigned char lower[] = {
