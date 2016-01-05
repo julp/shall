@@ -14,17 +14,17 @@
 const SHALL_API Theme molokai = {
     "molokai",
     {
-#define COMMON_STYLE .fg = dark_blue, .italic = TRUE
+#define COMMON_STYLE FG(dark_blue), .italic = TRUE
         [ COMMENT_SINGLE ]         = { COMMON_STYLE },
         [ COMMENT_MULTILINE ]      = { COMMON_STYLE },
 #undef COMMON_STYLE
-        [ COMMENT_DOCUMENTATION ]  = { .fg = light_grey, .italic = TRUE },
-        [ GENERIC_INSERTED ]       = { .fg = green },
-        [ GENERIC_DELETED ]        = { .fg = red },
-        [ GENERIC_HEADING ]        = { .fg = grey },
+        [ COMMENT_DOCUMENTATION ]  = { FG(light_grey), .italic = TRUE },
+        [ GENERIC_INSERTED ]       = { FG(green) },
+        [ GENERIC_DELETED ]        = { FG(red) },
+        [ GENERIC_HEADING ]        = { FG(grey) },
         [ GENERIC_STRONG ]         = { .bold = TRUE },
-        [ GENERIC_SUBHEADING ]     = { .fg = light_grey },
-#define COMMON_STYLE .fg = blue, .bold = TRUE
+        [ GENERIC_SUBHEADING ]     = { FG(light_grey) },
+#define COMMON_STYLE FG(blue), .bold = TRUE
         [ KEYWORD ]                = { COMMON_STYLE },
 //         [ KEYWORD_DEFAULT ]        = { COMMON_STYLE },
 //         [ KEYWORD_BUILTIN ]        = { COMMON_STYLE },
@@ -34,11 +34,11 @@ const SHALL_API Theme molokai = {
         [ KEYWORD_RESERVED ]       = { COMMON_STYLE },
         [ KEYWORD_TYPE ]           = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = red, .bold = TRUE
+#define COMMON_STYLE FG(red), .bold = TRUE
         [ KEYWORD_NAMESPACE ]      = { COMMON_STYLE },
         [ OPERATOR ]               = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = violet
+#define COMMON_STYLE FG(violet)
         [ NUMBER_FLOAT ]           = { COMMON_STYLE },
         [ NUMBER_DECIMAL ]         = { COMMON_STYLE },
         [ NUMBER_BINARY ]          = { COMMON_STYLE },
@@ -46,19 +46,19 @@ const SHALL_API Theme molokai = {
         [ NUMBER_HEXADECIMAL ]     = { COMMON_STYLE },
         [ SEQUENCE_ESCAPED ]       = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = yellow
+#define COMMON_STYLE FG(yellow)
         [ STRING_REGEX ]           = { COMMON_STYLE },
         [ STRING_SINGLE ]          = { COMMON_STYLE },
         [ STRING_DOUBLE ]          = { COMMON_STYLE },
         [ STRING_BACKTICK ]        = { COMMON_STYLE },
         [ STRING_INTERNED ]        = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = green, .bold = TRUE
+#define COMMON_STYLE FG(green), .bold = TRUE
         [ NAME_CLASS ]             = { COMMON_STYLE },
         [ NAME_FUNCTION ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
 //         [ NAME_CONSTANT ]          = { .fg = blue },
-#define COMMON_STYLE .fg = white
+#define COMMON_STYLE FG(white)
         [ NAME_BUILTIN_PSEUDO ]    = { COMMON_STYLE },
         [ NAME_BUILTIN ]           = { COMMON_STYLE },
         [ NAME_ENTITY ]            = { COMMON_STYLE },
@@ -68,7 +68,7 @@ const SHALL_API Theme molokai = {
         [ NAME_VARIABLE_INSTANCE ] = { COMMON_STYLE },
         [ NAME_VARIABLE ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
-        [ NAME_TAG ]               = { .fg = red },
-//         [ TEXT ]                   = { .fg = white, .bg = black },
+        [ NAME_TAG ]               = { FG(red) },
+//         [ TEXT ]                   = { FG(white), BG(black) },
     }
 };

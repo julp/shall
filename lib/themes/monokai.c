@@ -16,17 +16,17 @@
 const SHALL_API Theme monokai = {
     "monokai",
     {
-#define COMMON_STYLE .fg = dimgrey, .italic = TRUE
+#define COMMON_STYLE FG(dimgrey), .italic = TRUE
         [ COMMENT_SINGLE ]         = { COMMON_STYLE },
         [ COMMENT_MULTILINE ]      = { COMMON_STYLE },
         [ COMMENT_DOCUMENTATION ]  = { COMMON_STYLE, .bold = TRUE },
 #undef COMMON_STYLE
-        [ GENERIC_INSERTED ]       = { .fg = white, .bg = dimgreen },
-        [ GENERIC_DELETED ]        = { .fg = white, .bg = dimred },
-        [ GENERIC_HEADING ]        = { .fg = grey },
+        [ GENERIC_INSERTED ]       = { FG(white), BG(dimgreen) },
+        [ GENERIC_DELETED ]        = { FG(white), BG(dimred) },
+        [ GENERIC_HEADING ]        = { FG(grey) },
         [ GENERIC_STRONG ]         = { .bold = TRUE },
-        [ GENERIC_SUBHEADING ]     = { .fg = light_grey },
-#define COMMON_STYLE .fg = soft_cyan, .bold = TRUE
+        [ GENERIC_SUBHEADING ]     = { FG(light_grey) },
+#define COMMON_STYLE FG(soft_cyan), .bold = TRUE
         [ KEYWORD ]                = { COMMON_STYLE },
         [ KEYWORD_DEFAULT ]        = { COMMON_STYLE },
         [ KEYWORD_BUILTIN ]        = { COMMON_STYLE },
@@ -36,11 +36,11 @@ const SHALL_API Theme monokai = {
         [ KEYWORD_RESERVED ]       = { COMMON_STYLE },
         [ KEYWORD_TYPE ]           = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = bright_pink, .bold = TRUE
+#define COMMON_STYLE FG(bright_pink), .bold = TRUE
         [ KEYWORD_NAMESPACE ]      = { COMMON_STYLE },
         [ OPERATOR ]               = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = light_violet
+#define COMMON_STYLE FG(light_violet)
         [ NUMBER_FLOAT ]           = { COMMON_STYLE },
         [ NUMBER_DECIMAL ]         = { COMMON_STYLE },
         [ NUMBER_BINARY ]          = { COMMON_STYLE },
@@ -48,17 +48,17 @@ const SHALL_API Theme monokai = {
         [ NUMBER_HEXADECIMAL ]     = { COMMON_STYLE },
         [ STRING_SINGLE ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = soft_yellow
+#define COMMON_STYLE FG(soft_yellow)
         [ STRING_DOUBLE ]          = { COMMON_STYLE },
         [ STRING_BACKTICK ]        = { COMMON_STYLE },
         [ STRING_INTERNED ]        = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE .fg = bright_green, .bold = TRUE
+#define COMMON_STYLE FG(bright_green), .bold = TRUE
         [ NAME_CLASS ]             = { COMMON_STYLE },
         [ NAME_FUNCTION ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
-//         [ NAME_CONSTANT ]          = { .fg = soft_cyan },
-#define COMMON_STYLE .fg = whitish
+//         [ NAME_CONSTANT ]          = { FG(soft_cyan) },
+#define COMMON_STYLE FG(whitish)
         [ NAME_BUILTIN_PSEUDO ]    = { COMMON_STYLE },
         [ NAME_BUILTIN ]           = { COMMON_STYLE },
         [ NAME_ENTITY ]            = { COMMON_STYLE },
@@ -68,6 +68,6 @@ const SHALL_API Theme monokai = {
         [ NAME_VARIABLE_INSTANCE ] = { COMMON_STYLE },
         [ NAME_VARIABLE ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
-        [ NAME_TAG ]               = { .fg = bright_pink },
+        [ NAME_TAG ]               = { FG(bright_pink) },
     }
 };

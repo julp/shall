@@ -14,8 +14,22 @@ typedef struct {
 
 typedef struct {
     Color fg, bg;
-    uint8_t bold, italic;
+    union {
+        struct {
+            uint8_t fg_set:1;
+            uint8_t bg_set:2;
+            uint8_t italic:3;
+            uint8_t bold:4;
+        };
+        uint8_t flags;
+    };
 } Style;
+
+#define FG(color) \
+    .fg = color, .fg_set = TRUE
+
+#define BG(color) \
+    .bg = color, .bg_set = TRUE
 
 typedef struct {
     const char *name;
