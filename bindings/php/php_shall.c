@@ -537,6 +537,18 @@ typedef struct {
     } while (0);
 #endif /* PHP >= 7 */
 
+static union {
+    struct {
+        zval ZVALPX(start_document);
+        zval ZVALPX(end_document);
+        zval ZVALPX(start_token);
+        zval ZVALPX(write_token);
+        zval ZVALPX(end_token);
+        zval ZVALPX(start_lexing);
+        zval ZVALPX(end_lexing);
+    };
+    zval ZVALPX(all)[7];
+} fmt_callback_names;
 static zend_class_entry *Shall_Formatter_ce_ptr;
 
 zend_object_handlers Shall_Formatter_handlers;
@@ -549,7 +561,7 @@ typedef struct {
 } PHPFormatterData;
 
 static void PHP_CALLBACK(
-    const char *method, size_t method_len,
+    zval ZVALPX(fname),
     int argc,
 #if PHP_MAJOR_VERSION >= 7
     zval *params,
@@ -559,23 +571,20 @@ static void PHP_CALLBACK(
     String *out,
     void *data TSRMLS_DC
 ) {
-    zval fname;
     zend_fcall_info fci;
     zval ZVALPX(retval_ptr);
 //         zend_fcall_info_cache fcc;
     PHPFormatterData *mydata;
 
     mydata = (PHPFormatterData *) data;
-    ZVAL_STRINGL_COPY(&fname, method, method_len);
     fci.size = sizeof(fci);
-    // TODO: replace method, method_len by a zval ZVALPX(method) to avoid unnecessary allocation/copies
-#if PHP_MAJOR_VERSION >= 7
     fci.function_name = fname; // NULL
+#if PHP_MAJOR_VERSION >= 7
     fci.function_table = &Z_OBJCE/*_P*/(mydata->this)->function_table; // NULL
     fci.object = Z_OBJ/*_P*/(mydata->this);
     fci.retval = &retval_ptr;
 #else
-    fci.function_name = &fname; // NULL
+//     fci.function_name = fname; // NULL
     fci.function_table = &Z_OBJCE_P(mydata->this)->function_table; // NULL
     fci.object_ptr = mydata->this; // reflector_ptr
     fci.retval_ptr_ptr = &retval_ptr;
@@ -597,7 +606,7 @@ static void PHP_CALLBACK(
     if (FAILURE == zend_call_function(&fci, NULL/*&fcc*/ TSRMLS_CC)) {
         // error
     } else {
-        if (Z_ISUNDEF(retval_ptr)) {
+        if (!Z_ISUNDEF(retval_ptr)) {
 //                 COPY_PZVAL_TO_ZVAL(*return_value, retval_ptr);
             switch (Z_TYPE_P(ZVALRX(retval_ptr))) {
                 case IS_NULL:
@@ -609,6 +618,7 @@ static void PHP_CALLBACK(
                     // error
                     break;
             }
+            zval_ptr_dtor(&retval_ptr);
         }
     }
 }
@@ -616,7 +626,7 @@ static void PHP_CALLBACK(
 static int php_start_document(String *out, FormatterData *data)
 {
     TSRMLS_FETCH();
-    PHP_CALLBACK("start_document", STR_LEN("start_document"), 0, NULL, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.start_document, 0, NULL, out, data TSRMLS_CC);
 
     return 0;
 }
@@ -624,7 +634,7 @@ static int php_start_document(String *out, FormatterData *data)
 static int php_end_document(String *out, FormatterData *data)
 {
     TSRMLS_FETCH();
-    PHP_CALLBACK("end_document", STR_LEN("end_document"), 0, NULL, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.end_document, 0, NULL, out, data TSRMLS_CC);
 
     return 0;
 }
@@ -649,7 +659,7 @@ static int php_start_token(int token, String *out, FormatterData *data)
 
     TSRMLS_FETCH();
     ZVAL_LONG(ZVALRX(PARAM_1_NAME), token);
-    PHP_CALLBACK("start_token", STR_LEN("start_token"), 1, params, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.start_token, 1, params, out, data TSRMLS_CC);
     zval_ptr_dtor(&PARAM_1_NAME);
 
     return 0;
@@ -661,7 +671,7 @@ static int php_end_token(int token, String *out, FormatterData *data)
 
     TSRMLS_FETCH();
     ZVAL_LONG(ZVALRX(PARAM_1_NAME), token);
-    PHP_CALLBACK("end_token", STR_LEN("end_token"), 1, params, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.end_token, 1, params, out, data TSRMLS_CC);
     zval_ptr_dtor(&PARAM_1_NAME);
 
     return 0;
@@ -673,7 +683,7 @@ static int php_write_token(String *out, const char *token, size_t token_len, For
 
     TSRMLS_FETCH();
     ZVAL_STRINGL_COPY(ZVALRX(PARAM_1_NAME), token, token_len);
-    PHP_CALLBACK("write_token", STR_LEN("write_token"), 1, params, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.write_token, 1, params, out, data TSRMLS_CC);
     zval_ptr_dtor(&PARAM_1_NAME);
 
     return 0;
@@ -685,7 +695,7 @@ static int php_start_lexing(const char *lexname, String *out, FormatterData *dat
 
     TSRMLS_FETCH();
     ZVAL_STRING_COPY(ZVALRX(PARAM_1_NAME), lexname);
-    PHP_CALLBACK("start_lexing", STR_LEN("start_lexing"), 1, params, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.start_lexing, 1, params, out, data TSRMLS_CC);
     zval_ptr_dtor(&PARAM_1_NAME);
 
     return 0;
@@ -697,7 +707,7 @@ static int php_end_lexing(const char *lexname, String *out, FormatterData *data)
 
     TSRMLS_FETCH();
     ZVAL_STRING_COPY(ZVALRX(PARAM_1_NAME), lexname);
-    PHP_CALLBACK("end_lexing", STR_LEN("end_lexing"), 1, params, out, data TSRMLS_CC);
+    PHP_CALLBACK(fmt_callback_names.end_lexing, 1, params, out, data TSRMLS_CC);
     zval_ptr_dtor(&PARAM_1_NAME);
 
     return 0;
@@ -1317,9 +1327,21 @@ static void create_formatter_class_cb(const FormatterImplementation *imp, void *
 
 static PHP_MINIT_FUNCTION(shall)
 {
+    size_t i;
     zend_class_entry ce;
 
     REGISTER_INI_ENTRIES();
+
+    for (i = 0; i < ARRAY_SIZE(fmt_callback_names.all); i++) {
+        MAKE_STD_ZVAL(fmt_callback_names.all[i]);
+    }
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.start_document), "start_document", STR_LEN("start_document"));
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.end_document), "end_document", STR_LEN("end_document"));
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.start_token), "start_token", STR_LEN("start_token"));
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.write_token), "write_token", STR_LEN("write_token"));
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.end_token), "end_token", STR_LEN("end_token"));
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.start_lexing), "start_lexing", STR_LEN("start_lexing"));
+    ZVAL_STRINGL_COPY(ZVALRX(fmt_callback_names.end_lexing), "end_lexing", STR_LEN("end_lexing"));
 
     // TEST
     zend_hash_init(&lexer_classes, SHALL_LEXER_COUNT, NULL, NULL, 1);
@@ -1366,6 +1388,12 @@ static PHP_MINIT_FUNCTION(shall)
 
 static PHP_MSHUTDOWN_FUNCTION(shall)
 {
+    size_t i;
+
+    for (i = 0; i < ARRAY_SIZE(fmt_callback_names.all); i++) {
+        zval_dtor(ZVALRX(fmt_callback_names.all[i]));
+    }
+
     // TEST
     zend_hash_destroy(&lexer_classes);
     zend_hash_destroy(&formatters);

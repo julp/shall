@@ -58,9 +58,10 @@ var_dump(
     $phplexer->getOption('start_inline'),
     'secondary = ',
     $phplexer->getOption('secondary'),
-    $phplexer->setOption('secondary', new Shall\Lexer\XML),
+    $phplexer->setOption('secondary', new Shall\Lexer\XML), # 2 LEAKS
     'secondary = ',
     $phplexer->getOption('secondary'),
+# segfault si on commente la fin à partir d'ici
     Shall\highlight($code2, $phplexer, $htmlfmt),
 //     $x = new Shall\Lexer\Varnish,
 //     $x->getOption('version'),
