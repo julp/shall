@@ -23,6 +23,7 @@ extern char *__progname;
 #endif /* _MSC_VER */
 
 static HashTable lexers;
+static Options options[COUNT];
 static char optstr[] = "f:l:o:t:LO:";
 
 static struct option long_options[] = {
@@ -182,13 +183,21 @@ static void destroy_lexer_cb(void *ptr)
     lexer_destroy(lexer, (on_lexer_destroy_cb_t) lexer_destroy);
 }
 
+static void on_exit_cb(void)
+{
+    int o;
+
+    for (o = 0; o < COUNT; o++) {
+        options_free(&options[o]);
+    }
+}
+
 int main(int argc, char **argv)
 {
     int o;
     size_t i;
     Lexer *lexer;
     Formatter *fmt;
-    Options options[COUNT];
     const LexerImplementation *limp;
     const FormatterImplementation *fimp;
 
@@ -196,33 +205,45 @@ int main(int argc, char **argv)
     lexer = NULL;
     limp = NULL;
     fimp = termfmt;
+    for (o = 0; o < COUNT; o++) {
+        options_init(&options[o]);
+    }
+    atexit(on_exit_cb);
     while (-1 != (o = getopt_long(argc, argv, optstr, long_options, NULL))) {
         switch (o) {
             case 'L':
             {
-                puts("Available lexers are:");
-                lexer_implementation_each(print_lexer_cb, NULL);
-                puts("\nAvailable formatters are:");
-                formatter_implementation_each(print_formatter_cb, NULL);
-                puts("\nAvailable themes are:");
-                theme_each(print_theme_cb, NULL);
-                return EXIT_SUCCESS;
+                if (2 != argc) {
+                    usage();
+                } else {
+                    puts("Available lexers are:");
+                    lexer_implementation_each(print_lexer_cb, NULL);
+                    puts("\nAvailable formatters are:");
+                    formatter_implementation_each(print_formatter_cb, NULL);
+                    puts("\nAvailable themes are:");
+                    theme_each(print_theme_cb, NULL);
+                    return EXIT_SUCCESS;
+                }
             }
             case 't':
             {
-                const Theme *theme;
-
-                // TODO: do not allow mix of options (L, t and l/f/o/O are mutually exclusive ; L/t don't expect additionnal arg[cv]) - imply to do these checks after full options processing?
-                if (NULL == (theme = theme_by_name(optarg))) {
-                    fprintf(stderr, "unknown theme '%s'\n", optarg);
+                if (3 != argc) {
+                    usage();
                 } else {
-                    char *css;
+                    const Theme *theme;
 
-                    css = theme_export_as_css(theme, NULL, TRUE);
-                    fputs(css, stdout);
-                    free(css);
+                    // TODO: do not allow mix of options (L, t and l/f/o/O are mutually exclusive ; L/t don't expect additionnal arg[cv]) - imply to do these checks after full options processing?
+                    if (NULL == (theme = theme_by_name(optarg))) {
+                        fprintf(stderr, "unknown theme '%s'\n", optarg);
+                    } else {
+                        char *css;
+
+                        css = theme_export_as_css(theme, NULL, TRUE);
+                        fputs(css, stdout);
+                        free(css);
+                    }
+                    return NULL == theme ? EXIT_FAILURE : EXIT_SUCCESS;
                 }
-                return NULL == theme ? EXIT_FAILURE : EXIT_SUCCESS;
             }
             case 'l':
                 if (NULL == (limp = lexer_implementation_by_name(optarg))) {
@@ -250,10 +271,6 @@ int main(int argc, char **argv)
     argv += optind;
 
     hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
-    for (o = 0; o < COUNT; o++) {
-        options_init(&options[o]);
-    }
-
     if (NULL != limp) {
         lexer = lexer_create(limp);
         for (i = 0; i < options[LEXER].options_len; i++) {
@@ -279,9 +296,6 @@ int main(int argc, char **argv)
         lexer_destroy(lexer, (on_lexer_destroy_cb_t) lexer_destroy);
     }
     formatter_destroy(fmt);
-    for (o = 0; o < COUNT; o++) {
-        options_free(&options[o]);
-    }
     hashtable_destroy(&lexers);
 
     return EXIT_SUCCESS;
