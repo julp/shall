@@ -1,5 +1,8 @@
 #include <stddef.h>
 #include <string.h>
+// TODO: removal
+#include <stdio.h>
+#include <inttypes.h>
 
 #include "cpp.h"
 #include "utils.h"
@@ -107,13 +110,12 @@ struct hashed_style {
     };
 };
 
-static ht_hash_t hash_style(ht_key_t data)
+static ht_hash_t hash_style(const Style *style)
 {
-    Style *style;
     struct hashed_style h;
 
-    style = (void *) data;
     memcpy(&h.style, style, sizeof(*style));
+
 
     return h.h;
 }
@@ -126,55 +128,77 @@ static ht_hash_t hash_style(ht_key_t data)
  * 
  * @return a string describing the theme in CSS format
  */
-SHALL_API char *theme_css(const Theme *theme, const char *scope, bool pretty_print)
+SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool pretty_print)
 {
-    size_t i;
+    size_t i, j;
     String *buffer;
     HashTable groups;
-    Style **styles[_LAST_TOKEN][_LAST_TOKEN] = { { NULL } };
+    int *last[_LAST_TOKEN], grouped[_LAST_TOKEN][_LAST_TOKEN];
 
     buffer = string_new();
-    hashtable_init(&groups, 0, hash_style, value_equal, NULL, NULL, NULL);
-    // TODO: regroup output by token which share the same style
+    hashtable_init(&groups, _LAST_TOKEN, value_hash, NULL, NULL, NULL, NULL);
     for (i = 0; i < _LAST_TOKEN; i++) {
+        last[i] = &grouped[i][0];
+        for (j = 0; j < _LAST_TOKEN; j++) {
+            grouped[i][j] = -1;
+        }
         if (' ' != *map[i]) {
             bool has_fg, has_bg;
 
             has_fg = 0 != memcmp(&theme->styles[i].fg, &undefined_color, sizeof(undefined_color));
             has_bg = 0 != memcmp(&theme->styles[i].bg, &undefined_color, sizeof(undefined_color));
             if (has_fg || has_bg || theme->styles[i].bold || theme->styles[i].italic) {
+                int **ptr;
+
+                ptr = NULL;
+                if (hashtable_direct_put(&groups, HT_PUT_ON_DUP_KEY_PRESERVE, hash_style(&theme->styles[i]), &last[i], &ptr)) {
+                    *last[i] = i;
+                    ++last[i];
+                } else {
+                    **ptr = i;
+                    ++*ptr;
+                }
+            }
+        }
+    }
+    hashtable_destroy(&groups);
+    for (i = 0; i < _LAST_TOKEN; i++) {
+        if (-1 != grouped[i][0]) {
+            for (j = 0; j < _LAST_TOKEN && -1 != grouped[i][j]; j++) {
+                if (0 != j) {
+                    STRING_APPEND_STRING(buffer, ", ");
+                }
                 if (NULL != scope) {
                     string_append_string(buffer, scope);
                     string_append_char(buffer, ' ');
                 }
                 string_append_char(buffer, '.');
-                string_append_string(buffer, map[i]);
-                STRING_APPEND_STRING(buffer, " {\n"); // TODO: add a description in comment
-                if (has_bg) {
-                    STRING_APPEND_IDENT(buffer);
-                    STRING_APPEND_STRING(buffer, "background-color: ");
-                    STRING_APPEND_COLOR(buffer, theme->styles[i].bg);
-                    STRING_APPEND_STRING(buffer, ";\n");
-                }
-                if (has_fg) {
-                    STRING_APPEND_IDENT(buffer);
-                    STRING_APPEND_STRING(buffer, "color: ");
-                    STRING_APPEND_COLOR(buffer, theme->styles[i].fg);
-                    STRING_APPEND_STRING(buffer, ";\n");
-                }
-                if (theme->styles[i].bold) {
-                    STRING_APPEND_IDENT(buffer);
-                    STRING_APPEND_STRING(buffer, "font-weight: bold;\n");
-                }
-                if (theme->styles[i].italic) {
-                    STRING_APPEND_IDENT(buffer);
-                    STRING_APPEND_STRING(buffer, "font-style: italic;\n");
-                }
-                STRING_APPEND_STRING(buffer, "}\n");
+                string_append_string(buffer, map[grouped[i][j]]);
             }
+            STRING_APPEND_STRING(buffer, " {\n"); // TODO: add a description in comment
+            if (0 != memcmp(&theme->styles[i].bg, &undefined_color, sizeof(undefined_color))) {
+                STRING_APPEND_IDENT(buffer);
+                STRING_APPEND_STRING(buffer, "background-color: ");
+                STRING_APPEND_COLOR(buffer, theme->styles[i].bg);
+                STRING_APPEND_STRING(buffer, ";\n");
+            }
+            if (0 != memcmp(&theme->styles[i].fg, &undefined_color, sizeof(undefined_color))) {
+                STRING_APPEND_IDENT(buffer);
+                STRING_APPEND_STRING(buffer, "color: ");
+                STRING_APPEND_COLOR(buffer, theme->styles[i].fg);
+                STRING_APPEND_STRING(buffer, ";\n");
+            }
+            if (theme->styles[i].bold) {
+                STRING_APPEND_IDENT(buffer);
+                STRING_APPEND_STRING(buffer, "font-weight: bold;\n");
+            }
+            if (theme->styles[i].italic) {
+                STRING_APPEND_IDENT(buffer);
+                STRING_APPEND_STRING(buffer, "font-style: italic;\n");
+            }
+            STRING_APPEND_STRING(buffer, "}\n");
         }
     }
-    hashtable_destroy(&groups);
 
     return string_orphan(buffer);
 }

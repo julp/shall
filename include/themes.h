@@ -14,7 +14,7 @@ typedef struct {
 
 typedef struct {
     Color fg, bg;
-    bool bold, italic;
+    uint8_t bold, italic;
 } Style;
 
 typedef struct {
@@ -28,6 +28,6 @@ SHALL_API void theme_each(void (*) (const Theme *, void *), void *);
 
 SHALL_API const Theme *theme_by_name(const char *);
 
-SHALL_API char *theme_css(const Theme *, const char *, bool);
+SHALL_API char *theme_export_as_css(const Theme *, const char *, bool);
 
 #endif /* THEMES_H */

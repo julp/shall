@@ -196,10 +196,6 @@ int main(int argc, char **argv)
     lexer = NULL;
     limp = NULL;
     fimp = termfmt;
-    hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
-    for (o = 0; o < COUNT; o++) {
-        options_init(&options[o]);
-    }
     while (-1 != (o = getopt_long(argc, argv, optstr, long_options, NULL))) {
         switch (o) {
             case 'L':
@@ -220,7 +216,11 @@ int main(int argc, char **argv)
                 if (NULL == (theme = theme_by_name(optarg))) {
                     fprintf(stderr, "unknown theme '%s'\n", optarg);
                 } else {
-                    fputs(theme_css(theme, NULL, TRUE), stdout);
+                    char *css;
+
+                    css = theme_export_as_css(theme, NULL, TRUE);
+                    fputs(css, stdout);
+                    free(css);
                 }
                 return NULL == theme ? EXIT_FAILURE : EXIT_SUCCESS;
             }
@@ -248,6 +248,11 @@ int main(int argc, char **argv)
     }
     argc -= optind;
     argv += optind;
+
+    hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
+    for (o = 0; o < COUNT; o++) {
+        options_init(&options[o]);
+    }
 
     if (NULL != limp) {
         lexer = lexer_create(limp);
