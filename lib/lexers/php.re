@@ -711,14 +711,19 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_HEREDOC,ST_NOWDOC>ANY_CHAR {
-    YYCTYPE c;
+//     YYCTYPE c;
 
     if (YYCURSOR > YYLIMIT) {
         return 0;
     }
     YYCURSOR--;
-    while (YYCURSOR < YYLIMIT) {
-        switch (c = *YYCURSOR++) {
+    while (
+#if 1
+        // workaround for continue
+        (STATE(ST_HEREDOC) == YYSTATE || STATE(ST_NOWDOC) == YYSTATE)
+#endif
+        && YYCURSOR < YYLIMIT) {
+        switch (/*c = */*YYCURSOR++) {
             case '\r':
                 if (*YYCURSOR == '\n') {
                     YYCURSOR++;
@@ -740,7 +745,8 @@ NEWLINE = ("\r"|"\n"|"\r\n");
                             BEGIN(ST_END_HEREDOC);
                         }
 //                         goto nowdoc_scan_done;
-                        PUSH_TOKEN(default_token_type[YYSTATE]);
+//                         PUSH_TOKEN(default_token_type[YYSTATE]); // conflict with continue; and main loop
+                        break;
                     }
                 }
                 if (STATE(ST_HEREDOC) == YYSTATE) {
