@@ -25,16 +25,12 @@ endif("${srcdir}" STREQUAL "${bindir}")
 
 find_package(RE2C 0.13.7 REQUIRED)
 
+# TODO: commented because HashTable conflicts with PHP binding
 # if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 #     add_definitions(-DDEBUG -DTEST)
 # endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-include_directories(
-    ${PROJECT_SOURCE_DIR}/lib/
-    ${PROJECT_SOURCE_DIR}/shared/
-    ${PROJECT_SOURCE_DIR}/include/
-    ${PROJECT_BINARY_DIR}
-)
+set(COMMON_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/lib/;${PROJECT_SOURCE_DIR}/shared/;${PROJECT_SOURCE_DIR}/include/;${PROJECT_BINARY_DIR}")
 
 set(SOURCES #
     lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/lexers/helpers.c lib/darray.c
@@ -73,23 +69,28 @@ configure_file(
 add_library(common OBJECT EXCLUDE_FROM_ALL shared/utils.c)
 set_target_properties(common PROPERTIES COMPILE_FLAGS "-fPIC")
 
-add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/optparse.c)
+add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/shared/optparse.c)
 set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC")
 
 add_library(shall_lib SHARED ${SOURCES} $<TARGET_OBJECTS:common>)
 
 # add_library(shall_lib SHARED $<TARGET_OBJECTS:common>)
-# add_executable(shall_bin $<TARGET_OBJECTS:common> cli/shall.c)
-add_executable(shall_bin cli/shall.c shared/hashtable.c $<TARGET_OBJECTS:common_cli>)
+# add_executable(shall_bin $<TARGET_OBJECTS:common> cli/bin/shall.c)
+
+add_executable(shall_bin cli/bin/shall.c shared/hashtable.c $<TARGET_OBJECTS:common_cli>)
 target_link_libraries(shall_bin shall_lib)
 
-add_executable(shalltest cli/shalltest.c $<TARGET_OBJECTS:common> $<TARGET_OBJECTS:common_cli>)
+add_executable(shalltest cli/bin/shalltest.c $<TARGET_OBJECTS:common> $<TARGET_OBJECTS:common_cli>)
 target_link_libraries(shalltest shall_lib)
 
-add_executable(shalldoc cli/shalldoc.c $<TARGET_OBJECTS:common>)
+add_executable(shalldoc cli/bin/shalldoc.c $<TARGET_OBJECTS:common>)
 target_link_libraries(shalldoc shall_lib)
 
-set_target_properties(shall_lib PROPERTIES PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/bool.h;include/xtring.h")
+set_target_properties(shall_lib PROPERTIES
+    INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES}"
+    PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/bool.h;include/xtring.h"
+)
+set_target_properties(shall_bin shalltest shalldoc PROPERTIES INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")
 
 foreach(target "shall_lib;shall_bin")
     set_target_properties(${target} PROPERTIES OUTPUT_NAME "shall")
