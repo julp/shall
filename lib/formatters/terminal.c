@@ -86,11 +86,6 @@ static const char * const map[] = {
     [ GENERIC_DELETED ] = SEQ(DARKRED),
 };
 
-#define STRING_APPEND_STRING(dest, suffix) \
-    do { \
-        string_append_string_len(out, suffix, STR_LEN(suffix)); \
-    } while (0);
-
 static int terminal_start_document(String *UNUSED(out), FormatterData *UNUSED(data))
 {
     return 0;

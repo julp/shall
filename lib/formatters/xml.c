@@ -10,11 +10,6 @@ static const char * const map[] = {
 #undef TOKEN
 };
 
-#define STRING_APPEND_STRING(dest, suffix) \
-    do { \
-        string_append_string_len(out, suffix, STR_LEN(suffix)); \
-    } while (0);
-
 static int xml_start_document(String *out, FormatterData *UNUSED(data))
 {
     STRING_APPEND_STRING(out, "<shall>");

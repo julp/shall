@@ -23,6 +23,11 @@ typedef struct {
 # include "cpp.h"
 # include <inttypes.h>
 
+# define STRING_APPEND_STRING(string, suffix) \
+    do { \
+        string_append_string_len(string, suffix, STR_LEN(suffix)); \
+    } while (0);
+
 String *string_adopt_string(char *);
 String *string_adopt_string_len(char *, size_t);
 void string_append_char(String *, char);

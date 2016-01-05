@@ -78,12 +78,6 @@ static const char * const map[] = {
 
 #define IDENT_STRING "  "
 
-// TODO: DRY (html_formatter)
-#define STRING_APPEND_STRING(string, suffix) \
-    do { \
-        string_append_string_len(string, suffix, STR_LEN(suffix)); \
-    } while (0);
-
 #define STRING_APPEND_IDENT(string) \
     do { \
         if (pretty_print) { \

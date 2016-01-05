@@ -16,11 +16,6 @@ static const char * const map[] = {
 #undef TOKEN
 };
 
-#define STRING_APPEND_STRING(string, suffix) \
-    do { \
-        string_append_string_len(string, suffix, STR_LEN(suffix)); \
-    } while (0);
-
 static int html_start_document(String *out, FormatterData *data)
 {
     HTMLFormatterData *mydata;
