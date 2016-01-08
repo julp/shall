@@ -275,19 +275,19 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     //yy->yyleng = STR_LEN("<?php");
     yyless(STR_LEN("<?php"));
     BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<?=" {
     // NOTE: <?= does not depend on short_open_tag since PHP 5.4.0
     BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<?" {
     if (mydata->short_tags) {
         BEGIN(ST_IN_SCRIPTING);
-        PUSH_TOKEN(NAME_TAG);
+        TOKEN(NAME_TAG);
     } else {
         goto not_php; // if short_open_tag is off, give it to sublexer (if any)
     }
@@ -296,7 +296,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <INITIAL>"<%" {
     if (mydata->version < 7 && mydata->asp_tags) {
         BEGIN(ST_IN_SCRIPTING);
-        PUSH_TOKEN(NAME_TAG);
+        TOKEN(NAME_TAG);
     } else {
         goto not_php; // if asp_tags is off, give it to sublexer (if any)
     }
@@ -305,35 +305,35 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <INITIAL>'<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">" {
     if (mydata->version < 7) {
         BEGIN(ST_IN_SCRIPTING);
-        PUSH_TOKEN(NAME_TAG);
+        TOKEN(NAME_TAG);
     } else {
         goto not_php;
     }
 }
 
 <ST_IN_SCRIPTING> "=>" {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <ST_IN_SCRIPTING>"->" {
     PUSH_STATE(ST_LOOKING_FOR_PROPERTY);
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <ST_IN_SCRIPTING>'yield' WHITESPACE 'from' {
     if (mydata->version < 7) {
         yyless(STR_LEN("yield"));
     }
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <ST_LOOKING_FOR_PROPERTY>"->" {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <ST_LOOKING_FOR_PROPERTY>LABEL {
     POP_STATE();
-    PUSH_TOKEN(NAME_VARIABLE_INSTANCE);
+    TOKEN(NAME_VARIABLE_INSTANCE);
 }
 
 <ST_LOOKING_FOR_PROPERTY>ANY_CHAR {
@@ -348,11 +348,11 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         //yyless(STR_LEN("<="));
         yyless(YYLENG - 1);
     }
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <ST_IN_SCRIPTING> "++" | "--" | [!=]"==" | "<>" | [-+*/%.<>+&|^!=]"=" | ">>=" | "<<=" | "**=" | "<<" | ">>" | "**" | [-+.*/%=^&|!~<>?:@] {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <ST_IN_SCRIPTING>"#" | "//" {
@@ -381,18 +381,18 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         }
         break;
     }
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 /*
 <ST_IN_SCRIPTING>"(" TABS_AND_SPACES ('int' | 'integer' | 'bool' | 'boolean' | 'string' | 'binary' | 'real' | 'float' | 'double' | 'array' | 'object' | 'unset') TABS_AND_SPACES ")" {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 */
 
 <ST_IN_SCRIPTING>"{" {
     PUSH_STATE(ST_IN_SCRIPTING);
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <ST_IN_SCRIPTING>"}" {
@@ -400,28 +400,28 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         POP_STATE();
 //     }
     if (STATE(ST_IN_SCRIPTING) == YYSTATE) {
-        PUSH_TOKEN(PUNCTUATION);
+        TOKEN(PUNCTUATION);
     } else {
-        PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+        TOKEN(SEQUENCE_INTERPOLATED);
     }
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"${" {
     PUSH_STATE(ST_LOOKING_FOR_VARNAME);
-    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+    TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"{$" {
     PUSH_STATE(ST_IN_SCRIPTING);
     yyless(1);
-    PUSH_TOKEN(SEQUENCE_INTERPOLATED); // token is shorten to '{'
+    TOKEN(SEQUENCE_INTERPOLATED); // token is shorten to '{'
 }
 
 <ST_LOOKING_FOR_VARNAME>LABEL [[}] {
     yyless(YYLENG - 1);
     POP_STATE();
     PUSH_STATE(ST_IN_SCRIPTING);
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 <ST_LOOKING_FOR_VARNAME>ANY_CHAR {
@@ -434,88 +434,87 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <ST_DOUBLE_QUOTES,ST_HEREDOC,ST_BACKQUOTE>"$" LABEL "->" [a-zA-Z_\x7f-\xff] {
     yyless(YYLENG - 3);
     PUSH_STATE(ST_LOOKING_FOR_PROPERTY);
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 <ST_DOUBLE_QUOTES,ST_HEREDOC,ST_BACKQUOTE>"$" LABEL "[" {
     yyless(YYLENG - 1);
     PUSH_STATE(ST_VAR_OFFSET);
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 <ST_IN_SCRIPTING,ST_DOUBLE_QUOTES,ST_HEREDOC,ST_BACKQUOTE,ST_VAR_OFFSET>"$" LABEL {
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 <ST_VAR_OFFSET>"]" {
     POP_STATE();
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <ST_VAR_OFFSET>[0] | [1-9][0-9]* {
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <ST_VAR_OFFSET>LNUM | HNUM | BNUM {
     /* Offset must be treated as a string */
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <ST_VAR_OFFSET>"[" {
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <ST_VAR_OFFSET>LABEL {
-    PUSH_TOKEN(NAME_VARIABLE); // TODO: it's a constant
+    TOKEN(NAME_VARIABLE); // TODO: it's a constant
 }
 
 <ST_IN_SCRIPTING>[,;()] {
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <ST_IN_SCRIPTING,ST_LOOKING_FOR_PROPERTY>WHITESPACE+ {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <ST_IN_SCRIPTING>"/*" | "/**" WHITESPACE {
 #if 0
     BEGIN(ST_COMMENT_MULTI);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 #else
     YYCTYPE *end;
 
     if (YYCURSOR > YYLIMIT) {
-        DONE;
+        return DONE;
     }
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
     } else {
-        YYCURSOR = end + 1;
+        YYCURSOR = end + STR_LEN("*/") + 1;
     }
-    REPLAY(YYTEXT, YYCURSOR, &annotations_lexer, NULL);
-    goto restart;
+    DELEGATE_UNTIL(COMMENT_MULTILINE);
 #endif
 }
 
 <ST_COMMENT_MULTI>"*/" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <ST_IN_SCRIPTING> 'new' {
     data->next_label = CLASS;
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 /*
 <ST_IN_SCRIPTING> 'class' | 'interface' {
     data->next_label = CLASS;
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <ST_IN_SCRIPTING> 'function' {
     data->next_label = FUNCTION;
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 */
 
@@ -527,12 +526,12 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     // TODO: marquer si on a vu -> ou :: (on ne chercherait plus une fonction mais une méthode)
     for (i = 0; i < ARRAY_SIZE(functions); i++) {
         if (0 == ascii_strcasecmp_l(functions[i].name, functions[i].name_len, YYTEXT, YYLENG)) {
-            PUSH_TOKEN(NAME_FUNCTION);
+            TOKEN(NAME_FUNCTION);
         }
     }
 
-    PUSH_TOKEN(IGNORABLE);
-//     PUSH_TOKEN(NAME_FUNCTION);
+    TOKEN(IGNORABLE);
+//     TOKEN(NAME_FUNCTION);
 }
 */
 
@@ -540,13 +539,13 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <ST_IN_SCRIPTING> 'namespace' {
     data->next_label = NAMESPACE;
     mydata->in_namespace = 1;
-    PUSH_TOKEN(KEYWORD_NAMESPACE);
+    TOKEN(KEYWORD_NAMESPACE);
 }
 
 // TODO: at BOL "use" is related to namespace else to closure
 <ST_IN_SCRIPTING> 'use' {
     data->next_label = NAMESPACE;
-    PUSH_TOKEN(KEYWORD_NAMESPACE);
+    TOKEN(KEYWORD_NAMESPACE);
 }
 
 <ST_IN_SCRIPTING> LABEL | NAMESPACED_LABEL {
@@ -557,11 +556,11 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     switch (type) {
         case NAMESPACE:
         {
-            PUSH_TOKEN(NAME_NAMESPACE);
+            TOKEN(NAME_NAMESPACE);
         }
         case FUNCTION:
         {
-            PUSH_TOKEN(NAME_FUNCTION);
+            TOKEN(NAME_FUNCTION);
         }
         case CLASS:
         {
@@ -573,7 +572,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
                 }
             }
 #endif
-            PUSH_TOKEN(NAME_CLASS);
+            TOKEN(NAME_CLASS);
         }
         default:
         {
@@ -594,72 +593,72 @@ NEWLINE = ("\r"|"\n"|"\r\n");
             // par contre, si on marque le passage d'opérateurs objet (:: et ->) on devrait savoir que c'est un nom de méthode
             for (i = 0; i < ARRAY_SIZE(functions); i++) {
                 if (0 == ascii_strcasecmp_l(functions[i].name, functions[i].name_len, YYTEXT, YYLENG)) {
-                    PUSH_TOKEN(NAME_FUNCTION);
+                    TOKEN(NAME_FUNCTION);
                 }
             }
 #endif
-            PUSH_TOKEN(token);
+            TOKEN(token);
         }
     }
 }
 
 <ST_IN_SCRIPTING>LNUM {
     if ('0' == *YYTEXT) {
-        PUSH_TOKEN(NUMBER_OCTAL);
+        TOKEN(NUMBER_OCTAL);
     } else {
-        PUSH_TOKEN(NUMBER_DECIMAL);
+        TOKEN(NUMBER_DECIMAL);
     }
 }
 
 <ST_IN_SCRIPTING>HNUM {
-    PUSH_TOKEN(NUMBER_HEXADECIMAL);
+    TOKEN(NUMBER_HEXADECIMAL);
 }
 
 <ST_IN_SCRIPTING>BNUM {
-    PUSH_TOKEN(NUMBER_BINARY);
+    TOKEN(NUMBER_BINARY);
 }
 
 <ST_IN_SCRIPTING>DNUM | EXPONENT_DNUM {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <ST_IN_SCRIPTING>'</script' WHITESPACE* ">" NEWLINE? {
     if (mydata->version < 7) {
         BEGIN(INITIAL);
-        PUSH_TOKEN(NAME_TAG);
+        TOKEN(NAME_TAG);
     } else {
-        PUSH_TOKEN(IGNORABLE);
+        TOKEN(IGNORABLE);
     }
 }
 
 <ST_IN_SCRIPTING>"?>" NEWLINE? {
     BEGIN(INITIAL);
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <ST_IN_SCRIPTING>"%>" NEWLINE? {
     if (mydata->version < 7 && mydata->asp_tags) {
         yyless(STR_LEN("%>"));
         BEGIN(INITIAL);
-        PUSH_TOKEN(NAME_TAG);
+        TOKEN(NAME_TAG);
     } else {
-        PUSH_TOKEN(IGNORABLE);
+        TOKEN(IGNORABLE);
     }
 }
 
 <ST_IN_SCRIPTING>"`" {
     BEGIN(ST_BACKQUOTE);
-    PUSH_TOKEN(STRING_BACKTICK);
+    TOKEN(STRING_BACKTICK);
 }
 
 <ST_IN_SCRIPTING>"b"? "'" {
     BEGIN(ST_SINGLE_QUOTES);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <ST_IN_SCRIPTING>"b"? "\"" {
     BEGIN(ST_DOUBLE_QUOTES);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 // TODO: split "b"? "<<<" [ \t]* (["']?) LABEL \1 NEWLINE into separate tokens ?
@@ -707,7 +706,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         }
     }
 
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 
 <ST_HEREDOC,ST_NOWDOC>ANY_CHAR {
@@ -718,11 +717,11 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     }
     YYCURSOR--;
     while (
-#if 1
+#if 0
         // workaround for continue
-        (STATE(ST_HEREDOC) == YYSTATE || STATE(ST_NOWDOC) == YYSTATE)
+        (STATE(ST_HEREDOC) == YYSTATE || STATE(ST_NOWDOC) == YYSTATE) &&
 #endif
-        && YYCURSOR < YYLIMIT) {
+        YYCURSOR < YYLIMIT) {
         switch (/*c = */*YYCURSOR++) {
             case '\r':
                 if (*YYCURSOR == '\n') {
@@ -745,7 +744,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
                             BEGIN(ST_END_HEREDOC);
                         }
 //                         goto nowdoc_scan_done;
-//                         PUSH_TOKEN(default_token_type[YYSTATE]); // conflict with continue; and main loop
+                        TOKEN(default_token_type[YYSTATE]); // conflict with continue; and main loop
                         break;
                     }
                 }
@@ -778,7 +777,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     }
 
 // nowdoc_scan_done:
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 
 <ST_END_HEREDOC,ST_END_NOWDOC>ANY_CHAR {
@@ -791,58 +790,55 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     mydata->doclabel_len = 0;
 
     BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(default_token_type[old_state]);
+    TOKEN(default_token_type[old_state]);
 }
 
 <ST_DOUBLE_QUOTES>"\\u{" [0-9a-fA-F]+ "}" {
     if (mydata->version >= 7) {
-        PUSH_TOKEN(ESCAPED_CHAR);
+        TOKEN(ESCAPED_CHAR);
     } else {
-        PUSH_TOKEN(STRING_DOUBLE);
+        TOKEN(STRING_DOUBLE);
     }
 }
 
 <ST_DOUBLE_QUOTES>("\\0"[0-9]{2}) | ("\\" 'x' [0-9A-Fa-f]{2}) | ("\\"[$"efrntv\\]) {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <ST_DOUBLE_QUOTES>"\"" {
     BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <ST_IN_SCRIPTING> "$" LABEL {
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 <ST_BACKQUOTE>"\\" [\\`] {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <ST_BACKQUOTE>"`" {
     BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(STRING_BACKTICK);
+    TOKEN(STRING_BACKTICK);
 }
 
 <ST_SINGLE_QUOTES>"\\" [\\'] {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <ST_SINGLE_QUOTES>"'" {
     BEGIN(ST_IN_SCRIPTING);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL>ANY_CHAR {
-    Lexer *secondary;
-
 #define STRNCASECMP(s) \
     ascii_strncasecmp_l(s, STR_LEN(s), (char *) ptr, YYLIMIT - ptr, STR_LEN(s))
 not_php:
     if (YYCURSOR > YYLIMIT) {
-        DONE;
+        return DONE;
     }
-    secondary = LEXER_UNWRAP(mydata->secondary);
     while (1) {
         YYCTYPE *ptr;
 
@@ -924,19 +920,15 @@ not_php:
         break;
     }
 // debug("NON PHP = ---\n%.*s\n---", YYLENG, YYTEXT);
-    if (NULL == secondary) {
-        PUSH_TOKEN(IGNORABLE);
-    } else {
-        REPLAY(YYTEXT, YYCURSOR, secondary->imp, (LexerData *) secondary->optvals);
-    }
+    DELEGATE_UNTIL(IGNORABLE);
 }
 
 <*>ANY_CHAR { // should be the last "rule"
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 */
     }
-    DONE;
+    return DONE;
 }
 
 LexerImplementation php_lexer = {

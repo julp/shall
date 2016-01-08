@@ -27,45 +27,45 @@ DNUM = ([0-9]*"."[0-9]+)|([0-9]+"."[0-9]*);
 EXPONENT_DNUM = ((LNUM|DNUM)[eE][+-]?LNUM);
 
 <INITIAL> "true" | "false" | "null" {
-    PUSH_TOKEN(KEYWORD_CONSTANT);
+    TOKEN(KEYWORD_CONSTANT);
 }
 
 <INITIAL> LNUM {
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> DNUM | EXPONENT_DNUM {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> '"' {
     BEGIN(IN_STRING);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> [{}[\],:] {
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <IN_STRING> "\\" ( [\\"/bfnrt] | "u" [a-zA-Z0-9]{4} ) {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <IN_STRING> '"' {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <IN_STRING> [^] {
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> [^] {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 */
     }
-    DONE;
+    return DONE;
 }
 
 LexerImplementation json_lexer = {

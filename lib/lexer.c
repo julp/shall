@@ -11,44 +11,44 @@
 #include "options.h"
 
 #ifndef DOXYGEN
-extern const LexerImplementation apache_lexer;
-extern const LexerImplementation c_lexer;
-extern const LexerImplementation cmake_lexer;
-extern const LexerImplementation css_lexer;
-extern const LexerImplementation diff_lexer;
-extern const LexerImplementation dtd_lexer;
-extern const LexerImplementation erb_lexer; // provided by ruby lexer
-extern const LexerImplementation html_lexer; // provided by xml lexer
-extern const LexerImplementation js_lexer;
+// extern const LexerImplementation apache_lexer;
+// extern const LexerImplementation c_lexer;
+// extern const LexerImplementation cmake_lexer;
+// extern const LexerImplementation css_lexer;
+// extern const LexerImplementation diff_lexer;
+// extern const LexerImplementation dtd_lexer;
+// extern const LexerImplementation erb_lexer; // provided by ruby lexer
+// extern const LexerImplementation html_lexer; // provided by xml lexer
+// extern const LexerImplementation js_lexer;
 extern const LexerImplementation json_lexer;
-extern const LexerImplementation nginx_lexer;
+// extern const LexerImplementation nginx_lexer;
 extern const LexerImplementation php_lexer;
-extern const LexerImplementation postgresql_lexer;
-extern const LexerImplementation ruby_lexer;
+// extern const LexerImplementation postgresql_lexer;
+// extern const LexerImplementation ruby_lexer;
 extern const LexerImplementation text_lexer;
-extern const LexerImplementation varnish_lexer;
-extern const LexerImplementation xml_lexer;
+// extern const LexerImplementation varnish_lexer;
+// extern const LexerImplementation xml_lexer;
 #endif /* !DOXYGEN */
 
 // only final/public lexers
 static const LexerImplementation *available_lexers[] = {
-    &apache_lexer,
-    &c_lexer,
-    &cmake_lexer,
-    &css_lexer,
-    &diff_lexer,
-    &dtd_lexer,
-    &erb_lexer,
-    &html_lexer,
-    &js_lexer,
+//     &apache_lexer,
+//     &c_lexer,
+//     &cmake_lexer,
+//     &css_lexer,
+//     &diff_lexer,
+//     &dtd_lexer,
+//     &erb_lexer,
+//     &html_lexer,
+//     &js_lexer,
     &json_lexer,
-    &nginx_lexer,
+//     &nginx_lexer,
     &php_lexer,
-    &postgresql_lexer,
-    &ruby_lexer,
+//     &postgresql_lexer,
+//     &ruby_lexer,
     &text_lexer, // may be a good idea to keep it last?
-    &varnish_lexer,
-    &xml_lexer,
+//     &varnish_lexer,
+//     &xml_lexer,
 };
 
 /**

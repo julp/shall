@@ -4,13 +4,14 @@
 
 # include "types.h"
 # include "darray.h"
+# include "hashtable.h"
 
 # ifndef DOXYGEN
 #  define SHELLMAGIC "#!"
 #  define UTF8_BOM "\xEF\xBB\xBF"
 # endif /* !DOXYGEN */
 
-# define YYLEX_ARGS LexerInput *yy, LexerData *data, envent_cb_t cb, void *cb_data
+# define YYLEX_ARGS LexerInput *yy, LexerData *data, LexerReturnValue *rv
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
 // # define YYLINENO (yy->lineno)
@@ -46,29 +47,34 @@
 
 #define NEWLINE /* TODO */
 
-# define TOKEN(type) \
-    cb(EVENT_TOKEN, cb_data, type); \
+enum {
+    DONE,
+    TOKEN,
+    _DELEGATE = 8,
+    DELEGATE_FULL,
+    DELEGATE_UNTIL,
+};
 
-# define PUSH_TOKEN(type) \
-    cb(EVENT_TOKEN, cb_data, type); \
-    continue;
-
-# define PUSH(limp, ldata) \
+#define TOKEN(type) \
     do { \
-        cb(EVENT_PUSH, cb_data, limp, ldata); \
-        continue; \
+        rv->token_value = 0; \
+        rv->token_default_type = type; \
+        return TOKEN; \
     } while (0);
 
-# define DONE \
+#define VALUED_TOKEN(type, value) \
     do { \
-        cb(EVENT_DONE, cb_data); \
-        return 1; \
+        rv->token_value = value; \
+        rv->token_default_type = type; \
+        return TOKEN; \
     } while (0);
 
-# define REPLAY(cursor, limit, limp, ldata) \
+#define DELEGATE_UNTIL(type) \
     do { \
-        cb(EVENT_REPLAY, cb_data, cursor, limit, limp, ldata); \
-        continue; \
+        rv->token_value = 0; \
+        rv->child_limit = YYCURSOR; \
+        rv->token_default_type = type; \
+        return DELEGATE_UNTIL; \
     } while (0);
 
 #define PUSH_STATE(new_state) \
@@ -129,56 +135,6 @@ struct LexerInput {
 # define LEXER_UNWRAP(optval) \
     (NULL == OPT_LEXUWF(optval) ? (Lexer *) OPT_LEXPTR(optval) : (OPT_LEXUWF(optval)(OPT_LEXPTR(optval))))
 
-typedef enum {
-    /**
-     * Emitted when parsing is finished (ie YYLIMIT is reached)
-     *
-     * Parameters expected by the event callback: none
-     */
-    EVENT_DONE,
-    /**
-     * Emitted to step down current parsing to a sublexer
-     *
-     * Parameters expected by the event callback:
-     * - const LexerImplementation * : the lexer implementation to use from this point (YYCURSOR)
-     * - LexerData * or NULL : the lexer data to use or NULL to create one with default values
-     */
-    EVENT_PUSH,
-    /**
-     * Emitted to step down current parsing to a sublexer
-     *
-     * Parameters expected by the event callback:
-     * - int : the type of the encountered token
-     */
-    EVENT_TOKEN,
-    /**
-     * Emitted to replay a token with a sublexer.
-     *
-     * Difference with EVENT_PUSH:
-     * - EVENT_PUSH: this is the sublexer which decides when to return the control. It is intended for
-     * cases when current/top/parent lexer is not able to determine where the parsing for this sublexer
-     * should end.
-     * - EVENT_REPLAY: in the oppposite, with a "replay", the current lexer know exactly which part
-     * of the actual input it has to handle (from a start point - usually YYTEXT - to a specific end
-     * point - which may be not YYCURSOR)
-     *
-     * Parameters expected by the event callback:
-     * - YYCTYPE * : the start point of the token to replay (becomes again YYCURSOR for the sublexer)
-     * - YYCTYPE * : the end point of the token to replay (becomes YYLIMIT for the sublexer)
-     * - const LexerImplementation * : the lexer implementation to use from this point (YYCURSOR)
-     * - LexerData * or NULL : the lexer data to use or NULL to create one with default values
-     */
-    EVENT_REPLAY,
-    /**
-     * Emitted when a newline is encountered
-     *
-     * Parameters expected by the event callback: none
-     */
-    EVENT_NEWLINE
-} event_t;
-
-typedef void envent_cb_t(event_t, void *, ...);
-
 /**
  * Common data of any lexer
  *
@@ -236,6 +192,7 @@ typedef struct {
     { NULL, 0, 0, OPT_DEF_INT(0), NULL }
 
 typedef struct LexerInput LexerInput;
+typedef struct LexerReturnValue LexerReturnValue;
 
 /**
  * Define a lexer (acts as a class)
@@ -317,6 +274,15 @@ struct Lexer {
      * (Variable) Space to store current values of options
      */
     OptionValue optvals[];
+};
+
+struct LexerReturnValue {
+    int token_value;
+    HashTable lexers;
+    YYCTYPE *child_limit;
+    int token_default_type;
+    Lexer lexer_stack[100];
+    int lexer_stack_offset, current_lexer_offset;
 };
 
 void reset_lexer(LexerData *);

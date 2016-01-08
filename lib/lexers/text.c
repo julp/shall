@@ -11,7 +11,7 @@ static int textlex(YYLEX_ARGS) {
         YYCURSOR = YYLIMIT;
         TOKEN(IGNORABLE);
     }
-    DONE;
+    return DONE;
 }
 
 LexerImplementation text_lexer = {
