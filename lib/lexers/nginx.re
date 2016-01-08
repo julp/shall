@@ -86,7 +86,7 @@ SPACE = [ \n\r\t];
 }
 
 <IN_DIRECTIVE> LNUM {
-    return NUMBER_INTEGER;
+    PUSH_TOKEN(NUMBER_INTEGER);
 }
 
 <INITIAL,IN_DIRECTIVE> '"' {
