@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <stdio.h> // TODO: temporary?
 
 #include "lexer.h"
 #include "formatter.h"
@@ -9,6 +10,8 @@
 #include "shall.h"
 #undef TOKEN // TODO: conflict with "# define TOKEN(type)" of lexer.h
 #include "tokens.h"
+
+#define RECURSION_LIMIT 8
 
 typedef struct {
     LexerInput *yy;
@@ -317,10 +320,12 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
     delegation_stack ds;
     LexerReturnValue rv; // => ProcessingData?
     int what, prev, token;
-    size_t src_len, buffer_len;
+    YYCTYPE *prev_yycursor;
+    size_t src_len, buffer_len, yycursor_unchanged;
 
     yy = &xx;
     delegation_init(&ds);
+    yycursor_unchanged = 0;
     rv.lexer_stack_offset = rv.current_lexer_offset = 0;
     hashtable_init(&rv.lexers, 0, value_hash, value_equal, NULL, NULL, destroy_nonuser_lexer_data);
 
@@ -352,8 +357,8 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
             src = lf;
         }
     }
-    YYCURSOR = (YYCTYPE *) src;
     YYLIMIT = (YYCTYPE *) src + src_len;
+    prev_yycursor = YYCURSOR = (YYCTYPE *) src;
     // TODO: prendre le token avant de rencontrer la fin
     // YYFILL ne doit pas permettre de prendre en compte le type du token au début sur un token de plusieurs caractères
     if (NULL != fmt->imp->start_lexing) {
@@ -362,6 +367,14 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
     do {
         // TODO: s'assurer qu'on ne fait pas plus de X itérations avec un YYCURSOR à la même position (boucle infinie)
         what = lexer->imp->yylex(yy, (LexerData *) lexer->optvals, &rv);
+        if (YYCURSOR == prev_yycursor) {
+            if (++yycursor_unchanged >= RECURSION_LIMIT) {
+                fputs("RECURSION FOUND", stderr);
+                what = 0;
+            }
+        } else {
+            prev_yycursor == YYCURSOR;
+        }
         switch (what) {
             case TOKEN:
             {

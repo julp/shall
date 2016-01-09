@@ -11,6 +11,35 @@
 #  define UTF8_BOM "\xEF\xBB\xBF"
 # endif /* !DOXYGEN */
 
+#if 0
+# ifdef DEBUG
+#  define SHALL_FILE_LINE_FUNC_D \
+    const char *__ugrep_file, const unsigned int __ugrep_line, const char *__ugrep_func
+
+#  define SHALL_FILE_LINE_FUNC_DC \
+    SHALL_FILE_LINE_FUNC_D,
+
+#  define SHALL_FILE_LINE_FUNC_C \
+    __FILE__, __LINE__, __func__
+
+#  define SHALL_FILE_LINE_FUNC_CC \
+    SHALL_FILE_LINE_FUNC_C,
+
+#  define SHALL_FILE_LINE_FUNC_RELAY_C \
+    __ugrep_file, __ugrep_line, __ugrep_func
+
+#  define SHALL_FILE_LINE_FUNC_RELAY_CC \
+    SHALL_FILE_LINE_FUNC_RELAY_C,
+# else
+#  define SHALL_FILE_LINE_FUNC_D        /* NOP */
+#  define SHALL_FILE_LINE_FUNC_DC       /* NOP */
+#  define SHALL_FILE_LINE_FUNC_C        /* NOP */
+#  define SHALL_FILE_LINE_FUNC_CC       /* NOP */
+#  define SHALL_FILE_LINE_FUNC_RELAY_C  /* NOP */
+#  define SHALL_FILE_LINE_FUNC_RELAY_CC /* NOP */
+# endif /* DEBUG */
+#endif
+
 # define YYLEX_ARGS LexerInput *yy, LexerData *data, LexerReturnValue *rv
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
@@ -45,11 +74,12 @@
 
 # define yymore() goto yymore_restart
 
-#define NEWLINE /* TODO */
+# define SIZE_T(v) ((size_t) (v))
 
 enum {
     DONE,
     TOKEN,
+//     NEWLINE,
     _DELEGATE = 8,
     DELEGATE_FULL,
     DELEGATE_UNTIL,
@@ -58,6 +88,7 @@ enum {
 #define TOKEN(type) \
     do { \
         rv->token_value = 0; \
+        rv->child_limit = NULL; \
         rv->token_default_type = type; \
         return TOKEN; \
     } while (0);
@@ -65,9 +96,20 @@ enum {
 #define VALUED_TOKEN(type, value) \
     do { \
         rv->token_value = value; \
+        rv->child_limit = NULL; \
         rv->token_default_type = type; \
         return TOKEN; \
     } while (0);
+
+/*
+#define NEWLINE(type) \
+    do { \
+        rv->token_value = 0; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return NEWLINE; \
+    } while (0);
+*/
 
 #define DELEGATE_UNTIL(type) \
     do { \

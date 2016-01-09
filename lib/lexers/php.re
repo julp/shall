@@ -690,7 +690,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     mydata->doclabel_len = YYCURSOR - p - quoted - STR_LEN("\n") - ('\r' == YYCURSOR[-2]);
     mydata->doclabel = strndup((char *) p, mydata->doclabel_len);
     // optimisation for empty string, avoid an useless pass into <ST_HEREDOC,ST_NOWDOC>ANY_CHAR ?
-    if (mydata->doclabel_len < YYLIMIT - YYCURSOR && !memcmp(YYCURSOR, p, mydata->doclabel_len)) {
+    if (mydata->doclabel_len < SIZE_T(YYLIMIT - YYCURSOR) && !memcmp(YYCURSOR, p, mydata->doclabel_len)) {
         YYCTYPE *end = YYCURSOR + mydata->doclabel_len;
 
         if (*end == ';') {
@@ -730,7 +730,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
                 /* fall through */
             case '\n':
                 /* Check for ending label on the next line */
-                if (IS_LABEL_START(*YYCURSOR) && mydata->doclabel_len < YYLIMIT - YYCURSOR && !memcmp(YYCURSOR, mydata->doclabel, mydata->doclabel_len)) {
+                if (IS_LABEL_START(*YYCURSOR) && mydata->doclabel_len < SIZE_T(YYLIMIT - YYCURSOR) && !memcmp(YYCURSOR, mydata->doclabel, mydata->doclabel_len)) {
                     YYCTYPE *end = YYCURSOR + mydata->doclabel_len;
 
                     if (*end == ';') {
