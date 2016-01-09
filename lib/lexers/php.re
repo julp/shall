@@ -103,7 +103,7 @@ static int default_token_type[] = {
     { NAME_BUILTIN_PSEUDO, s, STR_LEN(s) },
 
 // https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html#Designated-Inits
-static int case_insentive[_LAST_TOKEN] = {
+static int case_insentive[_TOKEN_COUNT] = {
     [ OPERATOR ] = 1,
     [ KEYWORD ] = 1,
     [ KEYWORD_CONSTANT ] = 1,
@@ -928,7 +928,7 @@ not_php:
 }
 */
     }
-    return DONE;
+    DONE();
 }
 
 LexerImplementation php_lexer = {

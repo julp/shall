@@ -52,97 +52,97 @@ DECIMAL_LITERAL = ("0" | [1-9][0-9]*) ("." [0-9]*)? EXPONENT_PART? | "." [0-9]+ 
 HEXADECIMAL_LITERAL = ('0x' HEXDIGIT+)+;
 
 <INITIAL>"//" [^\r\n\u2028\u2029]* {
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> "/*" {
     BEGIN(IN_COMMENT);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 // part of § 7.7
 <INITIAL> [!=] "==" | [-+*/%&|^!<>=] "="? | [~?:] | [-+&|]{2} | [<>]{2} "="? | ">"{3} "="? {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 // § 7.8.[12]
 <INITIAL> "null" | "true" | "false" {
-    PUSH_TOKEN(KEYWORD_CONSTANT);
+    TOKEN(KEYWORD_CONSTANT);
 }
 
 // reserved words § 7.6.1.1
 <INITIAL> "break" | "do" | "instanceof" | "typeof" | "case" | "else" | "new" | "var" | "catch" | "finally" | "return" | "void" | "continue" | "for" | "switch" | "while" | "debugger" | "function" | "this" | "with" | "default" | "if" | "throw" | "delete" | "in" | "try" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 // future reserved words § 7.6.1.2
 <INITIAL> "class" | "enum" | "extends" | "super" | "const" | "export" | "import" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 // future reserved words § 7.6.1.2 (same) but only in strict mode
 <INITIAL> "implements" | "let" | "private" | "public" | "yield" | "interface" | "package" | "protected" | "static" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> IDENTIFIER_NAME {
     // TODO
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 // § 7.8.4
 <INITIAL> "'" {
     BEGIN(IN_STRING_SINGLE);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> '"' {
     BEGIN(IN_STRING_DOUBLE);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 // TODO: line continuation
 <IN_STRING_SINGLE> "'" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <IN_STRING_DOUBLE> '"' {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <IN_STRING_SINGLE,IN_STRING_DOUBLE> "\\" ([\\'"bfnrtv] | "x" HEXDIGIT{2} | "u" HEXDIGIT{4}) {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 // § 7.8.5
 <INITIAL> "/" {
     BEGIN(IN_REGEXP);
-    PUSH_TOKEN(STRING_REGEX);
+    TOKEN(STRING_REGEX);
 }
 
 <IN_REGEXP> "\\" . {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 // flags are defined by § 15.10.4.1
 <IN_REGEXP> "/" [gim]* {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_REGEX);
+    TOKEN(STRING_REGEX);
 }
 
 <*> [^] {
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation js_lexer = {

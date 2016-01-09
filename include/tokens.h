@@ -7,7 +7,16 @@ enum {
     constant,
 #include "keywords.h"
 #undef TOKEN
-    _LAST_TOKEN
+    _TOKEN_COUNT
 };
+
+typedef struct {
+    int value;
+    const char *name;
+    const char *description;
+    const char *cssclass;
+} Token;
+
+/*SHALL_API */const Token tokens[_TOKEN_COUNT];
 
 #endif /* !TOKENS_H */

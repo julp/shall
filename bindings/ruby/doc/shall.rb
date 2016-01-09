@@ -1,11 +1,21 @@
 module Shall
     module Lexer
+        # For CSS (Cascading Style Sheets)
+        class CSS < Base ; end
+        # A lexer for DTDs (Document Type Definitions)
+        class DTD < Base ; end
+        # XXX
+        class HTML < Base ; end
+        # TODO
+        class Javascript < Base ; end
         # For JSON data structures
         class JSON < Base ; end
         # For PHP source code
         class PHP < Base ; end
         # A "dummy" lexer that doesn't highlight anything
         class Text < Base ; end
+        # Generic lexer for XML (eXtensible Markup Language)
+        class XML < Base ; end
     end
     module Formatter
         # Format tokens as HTML 4 <span> tags within a <pre> tag

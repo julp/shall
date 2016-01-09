@@ -171,27 +171,29 @@ NDataDecl = S "NDATA" S Name; // [76]
 
 <INITIAL>'<!--' {
     BEGIN(IN_COMMENT);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT>[^-]'-->' {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL> CDStart {
     BEGIN(IN_CDATA);
-    PUSH_TOKEN(TAG_PREPROC);
+    TOKEN(TAG_PREPROC);
 }
 
 <IN_CDATA> CDEnd {
     BEGIN(INITIAL);
-    PUSH_TOKEN(TAG_PREPROC);
+    TOKEN(TAG_PREPROC);
 }
 
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
     yyless(0);
-    PUSH(&dtd_lexer, NULL);
+    //PUSH(&dtd_lexer, NULL);
+    stack_lexer(rv, &dtd_lexer, NULL);
+    DELEGATE_FULL(IGNORABLE);
 }
 
 // "<!DOCTYPE" S Name (S ExternalID)? S? ">"
@@ -200,124 +202,128 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     yyless(STR_LEN("<!DOCTYPE")); // cette ligne fait tout foirer ?
 debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     PUSH_STATE(IN_TAG);
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <INITIAL>"<!" {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <INITIAL>"<?" Name {
     PUSH_STATE(IN_PREPROC);
-    PUSH_TOKEN(TAG_PREPROC);
+    TOKEN(TAG_PREPROC);
 }
 
 <INITIAL> "<" Name {
     if (mydata->html) {
         if (0 == YYSTRNCASECMP("<style")) {
             mydata->css = 1;
+            stack_lexer(rv, &css_lexer, NULL);
         } else if (0 == YYSTRNCASECMP("<script")) {
             mydata->js = 1;
+            stack_lexer(rv, &js_lexer, NULL);
         }
     }
     PUSH_STATE(IN_TAG);
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <INITIAL> ETag {
     if (mydata->css && 0 == YYSTRNCASECMP("</style>")) {
         mydata->css = 0;
+        unstack_lexer(rv, &css_lexer);
     } else if (mydata->js && 0 == YYSTRNCASECMP("</script>")) {
         mydata->js = 0;
+        unstack_lexer(rv, &js_lexer);
     }
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <IN_TAG,IN_PREPROC> S {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <IN_TAG>">" {
     //BEGIN(INITIAL);
     POP_STATE();
-    PUSH_TOKEN(NAME_TAG);
+    TOKEN(NAME_TAG);
 }
 
 <IN_PREPROC> "?>" {
     //BEGIN(INITIAL);
     POP_STATE();
-    PUSH_TOKEN(TAG_PREPROC);
+    TOKEN(TAG_PREPROC);
 }
 
 <IN_TAG,IN_PREPROC> Name Eq {
     PUSH_STATE(IN_ATTRIBUTE);
-    PUSH_TOKEN(NAME_ATTRIBUTE);
+    TOKEN(NAME_ATTRIBUTE);
 }
 
 <IN_TAG> Name {
-    PUSH_TOKEN(NAME_ATTRIBUTE);
+    TOKEN(NAME_ATTRIBUTE);
 }
 
 <IN_ATTRIBUTE> "'" {
     //PUSH_STATE(IN_SINGLE_QUOTES);
     BEGIN(IN_SINGLE_QUOTES);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_SINGLE_QUOTES> "'" {
     POP_STATE();
     //POP_STATE();
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_ATTRIBUTE> '"' {
     //PUSH_STATE(IN_DOUBLE_QUOTES);
     BEGIN(IN_DOUBLE_QUOTES);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_DOUBLE_QUOTES> '"' {
     POP_STATE();
     //POP_STATE();
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL,IN_SINGLE_QUOTES,IN_DOUBLE_QUOTES> EntityRef {
-    PUSH_TOKEN(NAME_ENTITY);
+    TOKEN(NAME_ENTITY);
 }
 
 <INITIAL> [^] {
     if (mydata->css) {
         YYCTYPE *end;
 
+        // TODO: case insensitive search of "</style>"
         if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "</style>", STR_LEN("</style>"), (const char *) YYLIMIT))) {
             YYCURSOR = YYLIMIT;
         } else {
             YYCURSOR = end;
         }
-        REPLAY(YYTEXT, YYCURSOR, &css_lexer, NULL);
-        goto restart;
+        DELEGATE_UNTIL(IGNORABLE);
     } else if (mydata->js) {
         YYCTYPE *end;
 
+        // TODO: case insensitive search of "</script>"
         if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "</script>", STR_LEN("</script>"), (const char *) YYLIMIT))) {
             YYCURSOR = YYLIMIT;
         } else {
             YYCURSOR = end;
         }
-        REPLAY(YYTEXT, YYCURSOR, &js_lexer, NULL);
-        goto restart;
+        DELEGATE_UNTIL(IGNORABLE);
     } else {
-        PUSH_TOKEN(IGNORABLE);
+        TOKEN(IGNORABLE);
     }
 }
 
 <*>[^] {
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation xml_lexer = {

@@ -11,35 +11,6 @@
 #  define UTF8_BOM "\xEF\xBB\xBF"
 # endif /* !DOXYGEN */
 
-#if 0
-# ifdef DEBUG
-#  define SHALL_FILE_LINE_FUNC_D \
-    const char *__ugrep_file, const unsigned int __ugrep_line, const char *__ugrep_func
-
-#  define SHALL_FILE_LINE_FUNC_DC \
-    SHALL_FILE_LINE_FUNC_D,
-
-#  define SHALL_FILE_LINE_FUNC_C \
-    __FILE__, __LINE__, __func__
-
-#  define SHALL_FILE_LINE_FUNC_CC \
-    SHALL_FILE_LINE_FUNC_C,
-
-#  define SHALL_FILE_LINE_FUNC_RELAY_C \
-    __ugrep_file, __ugrep_line, __ugrep_func
-
-#  define SHALL_FILE_LINE_FUNC_RELAY_CC \
-    SHALL_FILE_LINE_FUNC_RELAY_C,
-# else
-#  define SHALL_FILE_LINE_FUNC_D        /* NOP */
-#  define SHALL_FILE_LINE_FUNC_DC       /* NOP */
-#  define SHALL_FILE_LINE_FUNC_C        /* NOP */
-#  define SHALL_FILE_LINE_FUNC_CC       /* NOP */
-#  define SHALL_FILE_LINE_FUNC_RELAY_C  /* NOP */
-#  define SHALL_FILE_LINE_FUNC_RELAY_CC /* NOP */
-# endif /* DEBUG */
-#endif
-
 # define YYLEX_ARGS LexerInput *yy, LexerData *data, LexerReturnValue *rv
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
@@ -85,8 +56,26 @@ enum {
     DELEGATE_UNTIL,
 };
 
+# ifdef DEBUG
+#  define TRACK_ORIGIN \
+    do { \
+        rv->return_line = __LINE__; \
+        rv->return_file = __FILE__; \
+        rv->return_func = __func__; \
+    } while (0);
+# else
+#  define TRACK_ORIGIN
+# endif
+
+#define DONE() \
+    do { \
+        TRACK_ORIGIN; \
+        return DONE; \
+    } while (0);
+
 #define TOKEN(type) \
     do { \
+        TRACK_ORIGIN; \
         rv->token_value = 0; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -95,6 +84,7 @@ enum {
 
 #define VALUED_TOKEN(type, value) \
     do { \
+        TRACK_ORIGIN; \
         rv->token_value = value; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -104,6 +94,7 @@ enum {
 /*
 #define NEWLINE(type) \
     do { \
+        TRACK_ORIGIN; \
         rv->token_value = 0; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -113,10 +104,20 @@ enum {
 
 #define DELEGATE_UNTIL(type) \
     do { \
+        TRACK_ORIGIN; \
         rv->token_value = 0; \
         rv->child_limit = YYCURSOR; \
         rv->token_default_type = type; \
         return DELEGATE_UNTIL; \
+    } while (0);
+
+#define DELEGATE_FULL(type) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = 0; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return DELEGATE_FULL; \
     } while (0);
 
 #define PUSH_STATE(new_state) \
@@ -323,7 +324,15 @@ struct LexerReturnValue {
     HashTable lexers;
     YYCTYPE *child_limit;
     int token_default_type;
-    Lexer lexer_stack[100];
+    struct {
+        LexerData *data;
+        const LexerImplementation *imp;
+    } lexer_stack[100];
+#ifdef DEBUG
+    int return_line;
+    const char *return_file;
+    const char *return_func;
+#endif
     int lexer_stack_offset, current_lexer_offset;
 };
 
@@ -351,5 +360,8 @@ typedef struct {
 
 int named_elements_cmp(const void *a, const void *b);
 int named_elements_casecmp(const void *a, const void *b);
+
+void stack_lexer(LexerReturnValue *, const LexerImplementation *, LexerData *);
+void unstack_lexer(LexerReturnValue *, const LexerImplementation *);
 
 #endif /* !LEXER_H */

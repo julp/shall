@@ -122,13 +122,13 @@ SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool 
     size_t i, j;
     String *buffer;
     HashTable groups;
-    int *last[_LAST_TOKEN], grouped[_LAST_TOKEN][_LAST_TOKEN];
+    int *last[_TOKEN_COUNT], grouped[_TOKEN_COUNT][_TOKEN_COUNT];
 
     buffer = string_new();
-    hashtable_init(&groups, _LAST_TOKEN, value_hash, NULL, NULL, NULL, NULL);
-    for (i = 0; i < _LAST_TOKEN; i++) {
+    hashtable_init(&groups, _TOKEN_COUNT, value_hash, NULL, NULL, NULL, NULL);
+    for (i = 0; i < _TOKEN_COUNT; i++) {
         last[i] = &grouped[i][0];
-        for (j = 0; j < _LAST_TOKEN; j++) {
+        for (j = 0; j < _TOKEN_COUNT; j++) {
             grouped[i][j] = -1;
         }
         if (' ' != *map[i] && 0 != theme->styles[i].flags) {
@@ -145,9 +145,9 @@ SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool 
         }
     }
     hashtable_destroy(&groups);
-    for (i = 0; i < _LAST_TOKEN; i++) {
+    for (i = 0; i < _TOKEN_COUNT; i++) {
         if (-1 != grouped[i][0]) {
-            for (j = 0; j < _LAST_TOKEN && -1 != grouped[i][j]; j++) {
+            for (j = 0; j < _TOKEN_COUNT && -1 != grouped[i][j]; j++) {
                 if (0 != j) {
                     STRING_APPEND_STRING(buffer, ", ");
                 }

@@ -33,7 +33,7 @@ typedef struct {
 
 typedef struct {
     const char *name;
-    Style styles[_LAST_TOKEN];
+    Style styles[_TOKEN_COUNT];
 } Theme;
 
 SHALL_API const char *theme_name(const Theme *);
