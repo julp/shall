@@ -10,6 +10,13 @@
 
 # include "types.h"
 
+typedef uint8_t Version[3];
+
+# define SHALL_VERSION { SHALL_VERSION_MAJOR, SHALL_VERSION_MINOR, SHALL_VERSION_PATCH }
+
+SHALL_API void shall_version_get(Version);
+SHALL_API bool shall_version_check(const Version);
+
 typedef void (*on_lexer_destroy_cb_t)(void *);
 
 SHALL_API const size_t SHALL_LEXER_COUNT;
