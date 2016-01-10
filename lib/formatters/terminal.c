@@ -86,8 +86,17 @@ static const char * const map[] = {
     [ GENERIC_DELETED ] = SEQ(DARKRED),
 };
 
+// static const char *cache[_TOKEN_COUNT];
+
 static int terminal_start_document(String *UNUSED(out), FormatterData *UNUSED(data))
 {
+#if 0
+// #define violet { 0xAF, 0x87, 0xFF } or { 175, 135, 255 }
+    STRING_APPEND_STRING(out, "\e[38;2;175;135;255m");
+    STRING_APPEND_STRING(out, "test");
+    STRING_APPEND_STRING(out, "\e[39;49;00m");
+#endif
+
     return 0;
 }
 
