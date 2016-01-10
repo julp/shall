@@ -30,6 +30,9 @@ static void destroy_nonuser_lexer_data(void *rawdata)
     if (!HAS_FLAG(data->flags, LEXER_FLAG_KEEP)) {
         lexer_data_destroy(data);
         free(data);
+    } else {
+        data->state = 0;
+        darray_set_size(data->state_stack, 0);
     }
 }
 
@@ -475,6 +478,7 @@ abandon_or_done:
     }
     hashtable_destroy(&rv.lexers);
 
+    // set result string
     buffer_len = buffer->len;
     *dest = string_orphan(buffer);
 
