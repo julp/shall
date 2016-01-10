@@ -57,7 +57,7 @@ MIME type(s): text/x-php, application/x-httpd-php
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
 | start_inline | boolean | false | if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language="php">` is required at top) |
-| version | int | 5 | TODO |
+| version | int | 7 | TODO |
 | asp_tags | boolean | false | support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7) |
 | short_tags | boolean | true | support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag)) |
 | secondary | lexer | null/none | Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted) |
