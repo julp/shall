@@ -198,9 +198,9 @@ NDataDecl = S "NDATA" S Name; // [76]
 
 // "<!DOCTYPE" S Name (S ExternalID)? S? ">"
 <INITIAL>"<!DOCTYPE" S {
-debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
+debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
     yyless(STR_LEN("<!DOCTYPE")); // cette ligne fait tout foirer ?
-debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
+debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
     PUSH_STATE(IN_TAG);
     TOKEN(NAME_TAG);
 }
