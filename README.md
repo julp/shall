@@ -1,29 +1,34 @@
 # Introduction
 
-Shall is not intented to validate any code.
+Shall is a syntax highlighter written in C.
+
+Intended goals:
+* self-descriptive (buid documentation and other helps from shall itself)
+* lexer stacking (switch from one language to another, eg: postgresql => python (plpython) or php => html => css/js)
+* realist and strict lexing (but shall is not intented to validate any code)
 
 ## Available lexers:
 
-See README in lexers/ subfolder
+See README.md in lexers/ subfolder
 
 ## Available formatters:
 
-See README in formatters/ subfolder
+See README.md in formatters/ subfolder
 
 # Prerequisites
 
 * cmake (>= 2.8.8)
 * a C compiler
 * re2c (>= 0.13.7)
-* doxygen (optionnal)
+* doxygen (optionnal) (currently disabled)
 
 # Installation
 
-* Download, extract and move to shall sources directory
+* Download sources or clone the repository
 * Use a temporary directory for building (eg: `mkdir /tmp/shallbuild && cd /tmp/shallbuild`)
 * Generate Makefiles: `cmake /path/to/shall/sources -DCMAKE_INSTALL_PREFIX:PATH=/usr/local` (outsource build required)
 * Compile: `make`
-* Install it: `(sudo) make install`
+* Install it (optionnal): `(sudo) make install`
 
 # Usage
 
@@ -33,11 +38,12 @@ shall include a command line tool with the same name to highlight directely docu
 
 | Option | Description |
 | ------ | ----------- |
-| -F | list available lexers |
+| -L | list available lexers/formatters/themes and their options |
 | -l \<name> | force use of *name* lexer (default is to guess the appropriate lexer from filename else to try to guess one from file's content) |
 | -o \<name>=\<value> | set lexer option *name* to *value* |
 | -f \<name> | switch to formatter *name* (default is: terminal) |
 | -O \<name>=\<value> | set formatter option *name* to *value* |
+| -t \<name> | dump CSS to use *name* theme for the html formatter |
 
 Examples:
 
@@ -46,9 +52,9 @@ Examples:
 
 # Credits
 
-* Largely inspired on: pygments
-* PHP lexer : the PHP developpers
-* PostgreSQL lexer : the PostgreSQL developpers
+* Largely inspired on: pygments and rouge
+* PHP lexer : PHP developpers
+* PostgreSQL lexer : PostgreSQL developpers
 
 # Current limitations
 
