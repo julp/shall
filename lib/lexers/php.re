@@ -272,7 +272,6 @@ ANY_CHAR = [^];
 NEWLINE = ("\r"|"\n"|"\r\n");
 
 <INITIAL>'<?php' ([ \t]|NEWLINE) {
-    //yy->yyleng = STR_LEN("<?php");
     yyless(STR_LEN("<?php"));
     BEGIN(ST_IN_SCRIPTING);
     TOKEN(NAME_TAG);
@@ -485,7 +484,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     YYCTYPE *end;
 
     if (YYCURSOR > YYLIMIT) {
-        return DONE;
+        DONE();
     }
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
@@ -709,20 +708,33 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     TOKEN(default_token_type[YYSTATE]);
 }
 
-<ST_HEREDOC,ST_NOWDOC>ANY_CHAR {
-//     YYCTYPE c;
+<ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"\\u{" [0-9a-fA-F]+ "}" {
+    if (mydata->version >= 7) {
+        TOKEN(ESCAPED_CHAR);
+    } else {
+        TOKEN(default_token_type[YYSTATE]);
+    }
+}
 
+<ST_DOUBLE_QUOTES>"\\\"" {
+    TOKEN(ESCAPED_CHAR);
+}
+
+<ST_BACKQUOTE>"\\`" {
+    TOKEN(ESCAPED_CHAR);
+}
+
+<ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>("\\0"[0-9]{2}) | ("\\" 'x' [0-9A-Fa-f]{2}) | ("\\"[$efrntv\\]) {
+    TOKEN(ESCAPED_CHAR);
+}
+
+<ST_HEREDOC,ST_NOWDOC>ANY_CHAR {
     if (YYCURSOR > YYLIMIT) {
-        return 0;
+        DONE();
     }
     YYCURSOR--;
-    while (
-#if 0
-        // workaround for continue
-        (STATE(ST_HEREDOC) == YYSTATE || STATE(ST_NOWDOC) == YYSTATE) &&
-#endif
-        YYCURSOR < YYLIMIT) {
-        switch (/*c = */*YYCURSOR++) {
+    while (YYCURSOR < YYLIMIT) {
+        switch (*YYCURSOR++) {
             case '\r':
                 if (*YYCURSOR == '\n') {
                     YYCURSOR++;
@@ -793,18 +805,6 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     TOKEN(default_token_type[old_state]);
 }
 
-<ST_DOUBLE_QUOTES>"\\u{" [0-9a-fA-F]+ "}" {
-    if (mydata->version >= 7) {
-        TOKEN(ESCAPED_CHAR);
-    } else {
-        TOKEN(STRING_DOUBLE);
-    }
-}
-
-<ST_DOUBLE_QUOTES>("\\0"[0-9]{2}) | ("\\" 'x' [0-9A-Fa-f]{2}) | ("\\"[$"efrntv\\]) {
-    TOKEN(ESCAPED_CHAR);
-}
-
 <ST_DOUBLE_QUOTES>"\"" {
     BEGIN(ST_IN_SCRIPTING);
     TOKEN(STRING_DOUBLE);
@@ -837,7 +837,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     ascii_strncasecmp_l(s, STR_LEN(s), (char *) ptr, YYLIMIT - ptr, STR_LEN(s))
 not_php:
     if (YYCURSOR > YYLIMIT) {
-        return DONE;
+        DONE();
     }
     while (1) {
         YYCTYPE *ptr;
@@ -945,7 +945,7 @@ LexerImplementation php_lexer = {
     sizeof(PHPLexerData),
     (/*const*/ LexerOption /*const*/ []) {
         { "start_inline", OPT_TYPE_BOOL,  offsetof(LexerData, state),         OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
-        { "version",      OPT_TYPE_INT,   offsetof(PHPLexerData, version),    OPT_DEF_INT(5),  "TODO" },
+        { "version",      OPT_TYPE_INT,   offsetof(PHPLexerData, version),    OPT_DEF_INT(7),  "TODO" },
         { "asp_tags",     OPT_TYPE_BOOL,  offsetof(PHPLexerData, asp_tags),   OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7)" },
         { "short_tags",   OPT_TYPE_BOOL,  offsetof(PHPLexerData, short_tags), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
         { "secondary",    OPT_TYPE_LEXER, offsetof(PHPLexerData, secondary),  OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
