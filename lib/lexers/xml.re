@@ -192,7 +192,7 @@ NDataDecl = S "NDATA" S Name; // [76]
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
     yyless(0);
     //PUSH(&dtd_lexer, NULL);
-    stack_lexer(rv, &dtd_lexer, NULL);
+    stack_lexer(rv, &dtd_lexer, NULL); // TODO: unstack
     DELEGATE_FULL(IGNORABLE);
 }
 
@@ -214,7 +214,7 @@ debug("%d >%.*s<", __LINE__, YYLENG, YYTEXT);
     TOKEN(TAG_PREPROC);
 }
 
-<INITIAL> "<" Name {
+<INITIAL>"<" Name {
     if (mydata->html) {
         if (0 == YYSTRNCASECMP("<style")) {
             mydata->css = 1;
