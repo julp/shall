@@ -9,13 +9,6 @@ typedef struct {
     OptionValue cssclass;
 } HTMLFormatterData;
 
-static const char * const map[] = {
-#define TOKEN(constant, description, cssclass) \
-    cssclass,
-#include "keywords.h"
-#undef TOKEN
-};
-
 static int html_start_document(String *out, FormatterData *data)
 {
     HTMLFormatterData *mydata;
@@ -43,16 +36,16 @@ static int html_end_document(String *out, FormatterData *UNUSED(data))
 static int html_start_token(int token, String *out, FormatterData *UNUSED(data))
 {
     if (IGNORABLE != token) {
-        if ('\0' == map[token][1]) {
+        if ('\0' == tokens[token].cssclass[1]) {
             char buffer[] = "<span class=\"X\">";
 
-            buffer[13] = map[token][0];
+            buffer[13] = tokens[token].cssclass[0];
             STRING_APPEND_STRING(out, buffer);
         } else {
             char buffer[] = "<span class=\"XX\">";
 
-            buffer[13] = map[token][0];
-            buffer[14] = map[token][1];
+            buffer[13] = tokens[token].cssclass[0];
+            buffer[14] = tokens[token].cssclass[1];
             STRING_APPEND_STRING(out, buffer);
         }
     }
@@ -76,6 +69,7 @@ static int html_write_token(String *out, const char *token, size_t token_len, Fo
     return 0;
 }
 
+// NOTE: for debugging and testing, span tag is voluntarily in uppercase to be easier to identify
 static int html_start_lexing(const char *lexname, String *out, FormatterData *UNUSED(data))
 {
     STRING_APPEND_STRING(out, "<SPAN class=\"");

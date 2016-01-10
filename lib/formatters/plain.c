@@ -4,16 +4,6 @@
 #include "tokens.h"
 #include "formatter.h"
 
-static const struct {
-    const char *name;
-    size_t name_len;
-} map[] = {
-#define TOKEN(constant, description, cssclass) \
-    { #constant, STR_LEN(#constant) },
-#include "keywords.h"
-#undef TOKEN
-};
-
 #if 0
 static int start_document(String *out, FormatterData *data)
 {
@@ -32,7 +22,7 @@ static int end_document(String *out, FormatterData *UNUSED(data))
 
 static int start_token(int token, String *out, FormatterData *UNUSED(data))
 {
-    string_append_string_len(out, map[token].name, map[token].name_len);
+    string_append_string(out, tokens[token].name); // TODO: string_append_string_len
     STRING_APPEND_STRING(out, ": ");
 
     return 0;

@@ -15,13 +15,6 @@
 
 #define LEXER_FLAG_KEEP (1<<0)
 
-static const char * const map[] = {
-#define TOKEN(constant, description, cssclass) \
-    cssclass,
-#include "keywords.h"
-#undef TOKEN
-};
-
 static void destroy_nonuser_lexer_data(void *rawdata)
 {
     LexerData *data;
@@ -269,6 +262,9 @@ void stack_lexer(LexerReturnValue *pdata, const LexerImplementation *limp, Lexer
         if (!(known = hashtable_direct_get(&pdata->lexers, limp, &ldata))) {
             ldata = malloc(limp->data_size);
             lexer_data_init(ldata, limp->data_size);
+            if (NULL != limp->init) {
+                limp->init(ldata);
+            }
         }
     } else {
 //         reset_lexer(data);
@@ -378,6 +374,12 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
         fmt->imp->start_lexing(lexer->imp->name, buffer, &fmt->optvals);
     }
     stack_lexer(&rv, imp = lexer->imp, ldata = (LexerData *) lexer->optvals);
+    // TODO/temporary
+    if (0 == strcmp(imp->name, "PHP")) {
+        extern const LexerImplementation html_lexer;
+
+        stack_lexer(&rv, &html_lexer, NULL);
+    }
     while (1) {
 // debug("DO");
 // debug("YYLEX %s %p %p", imp->name, lexer, ldata);
@@ -397,9 +399,11 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
 debug("[DONE] %s", imp->name);
                 if (prev != -1/* && prev != IGNORABLE*/) {
                     fmt->imp->end_token(token, buffer, &fmt->optvals);
+                    prev = IGNORABLE;
                 }
                 if (NULL != fmt->imp->end_lexing) {
                     fmt->imp->end_lexing(imp->name, buffer, &fmt->optvals);
+                    prev = IGNORABLE;
                 }
 //                 if (YYCURSOR < YYLIMIT) {
 // debug("rv.current_lexer_offset = %d, rv.lexer_stack_offset = %d", rv.current_lexer_offset, rv.lexer_stack_offset);
@@ -411,6 +415,7 @@ debug("[DONE] %s", imp->name);
 debug("POP LEXER (%s => %s)", imp_before_pop->name, imp->name);
                         if (NULL != fmt->imp->start_lexing) {
                             fmt->imp->start_lexing(imp->name, buffer, &fmt->optvals);
+                            prev = IGNORABLE;
                         }
                         YYCTYPE *yylimit_before_pop = YYLIMIT;
                         delegation_pop(&ds, yy);
@@ -434,6 +439,7 @@ debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, imp->name, rv.r
 debug("[DELEGATE] TO %s", imp->name);
                     if (NULL != fmt->imp->start_lexing) {
                         fmt->imp->start_lexing(imp->name, buffer, &fmt->optvals);
+                        prev = IGNORABLE;
                     }
                     delegation_push(&ds, yy);
                     if (DELEGATE_UNTIL == what) {
@@ -453,7 +459,7 @@ debug("lexer stack is empty");
 
                 token = rv.token_default_type;
                 yyleng = YYCURSOR - YYTEXT;
-// debug("[TOKEN] %s: >%.*s< (as %s)", imp->name, yyleng, YYTEXT, tokens[token].name);
+// debug("[TOKEN] %s: >%.*s< (%s %s)", imp->name, yyleng, YYTEXT, tokens[token].name, tokens[prev].name);
                 if (prev != token) {
                     if (prev != -1/* && prev != IGNORABLE*/) {
                         fmt->imp->end_token(prev, buffer, &fmt->optvals);

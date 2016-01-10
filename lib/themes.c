@@ -68,14 +68,6 @@ SHALL_API const Theme *theme_by_name(const char *name)
     return NULL;
 }
 
-// TODO: DRY (html_formatter)
-static const char * const map[] = {
-#define TOKEN(constant, description, cssclass) \
-    cssclass,
-#include "keywords.h"
-#undef TOKEN
-};
-
 #define IDENT_STRING "  "
 
 #define STRING_APPEND_IDENT(string) \
@@ -131,7 +123,7 @@ SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool 
         for (j = 0; j < _TOKEN_COUNT; j++) {
             grouped[i][j] = -1;
         }
-        if (' ' != *map[i] && 0 != theme->styles[i].flags) {
+        if (' ' != *tokens[i].cssclass && 0 != theme->styles[i].flags) {
             int **ptr;
 
             ptr = NULL;
@@ -156,7 +148,7 @@ SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool 
                     string_append_char(buffer, ' ');
                 }
                 string_append_char(buffer, '.');
-                string_append_string(buffer, map[grouped[i][j]]);
+                string_append_string(buffer, tokens[grouped[i][j]].cssclass);
             }
             STRING_APPEND_STRING(buffer, " {\n"); // TODO: add a description in comment
             if (theme->styles[i].bg_set) {
