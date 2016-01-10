@@ -3,13 +3,6 @@
 #include "tokens.h"
 #include "formatter.h"
 
-static const char * const map[] = {
-#define TOKEN(constant, description, cssclass) \
-    cssclass,
-#include "keywords.h"
-#undef TOKEN
-};
-
 static int xml_start_document(String *out, FormatterData *UNUSED(data))
 {
     STRING_APPEND_STRING(out, "<shall>");
@@ -27,8 +20,8 @@ static int start_token(int token, String *out, FormatterData *UNUSED(data))
 {
     char buffer[] = "<\"XX\">";
 
-    buffer[2] = map[token][0];
-    buffer[3] = map[token][1];
+    buffer[2] = tokens[token].cssclass[0];
+    buffer[3] = tokens[token].cssclass[1];
     STRING_APPEND_STRING(out, buffer);
 
     return 0;
@@ -38,8 +31,8 @@ static int end_token(int token, String *out, FormatterData *UNUSED(data))
 {
     char buffer[] = "</\"XX\">";
 
-    buffer[3] = map[token][0];
-    buffer[4] = map[token][1];
+    buffer[3] = tokens[token].cssclass[0];
+    buffer[4] = tokens[token].cssclass[1];
     STRING_APPEND_STRING(out, buffer);
 
     return 0;
