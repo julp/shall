@@ -316,11 +316,13 @@ static void delegation_pop(delegation_stack *stack, LexerInput *yy)
  * @param lexer the lexer to tokenize the input string
  * @param fmt the formatter to generate output from tokens
  * @param src the input string
- * @param dest the output string
+ * @param src_len its length
+ * @param dst the output string
+ * @param dst_len its length if not null
  *
- * @return the length of *dest
+ * @return zero if successfull
  */
-SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src, char **dest/* uint32_t flags*/)
+SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, size_t src_len, char **dst, size_t *dst_len/*, uint32_t flags*/)
 {
     String *buffer;
     LexerData *ldata;
@@ -330,7 +332,8 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
     int what, prev, token;
     YYCTYPE *prev_yycursor;
     const LexerImplementation *imp;
-    size_t src_len, buffer_len, yycursor_unchanged;
+    size_t buffer_len, yycursor_unchanged;
+    const char * const src_end = src + src_len;
 
     yy = &xx;
     delegation_init(&ds);
@@ -338,8 +341,6 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
     rv.lexer_stack_offset = rv.current_lexer_offset = 0;
     hashtable_init(&rv.lexers, 0, value_hash, value_equal, NULL, NULL, destroy_nonuser_lexer_data);
 
-    src_len = strlen(src);
-    const char * const src_end = src + src_len;
     // skip UTF-8 BOM
     if (src_len >= STR_LEN(UTF8_BOM) && 0 == memcmp(src, UTF8_BOM, STR_LEN(UTF8_BOM))) {
         src += STR_LEN(UTF8_BOM);
@@ -375,7 +376,7 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
     }
     stack_lexer(&rv, imp = lexer->imp, ldata = (LexerData *) lexer->optvals);
     // TODO/temporary
-    if (0 == strcmp(imp->name, "PHP")) {
+    if (0 == strcmp(imp->name, "PHP") || 0 == strcmp(imp->name, "ERB")) {
         extern const LexerImplementation html_lexer;
 
         stack_lexer(&rv, &html_lexer, NULL);
@@ -486,7 +487,10 @@ abandon_or_done:
 
     // set result string
     buffer_len = buffer->len;
-    *dest = string_orphan(buffer);
+    *dst = string_orphan(buffer);
+    if (NULL != dst_len) {
+        *dst_len = buffer_len;
+    }
 
-    return buffer_len;
+    return 0;
 }

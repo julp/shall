@@ -52,79 +52,79 @@ FS = [fFlL];
 IS = [uUlL]*;
 
 <INITIAL> "break" | "case" | "continue" | "default" | "do" | "else" | "extern" | "if" | "for" | "goto" | "return" | "sizeof" | "static" | "switch" | "typedef" | "while" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> "NULL" {
-    PUSH_TOKEN(NAME_BUILTIN);
+    TOKEN(NAME_BUILTIN);
 }
 
 <INITIAL> "auto" | "register" | "volatile" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> "char" | "double" | "enum" | "float" | "int" | "long" | "short" | "struct" | "union" | "void" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> "const" | "signed" | "unsigned" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> L (L | D)* {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <INITIAL> D+ E FS? {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> D* "." D+ E? FS? {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> D+ "." D* E? FS? {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> "0" 'x' H+ IS? {
-    PUSH_TOKEN(NUMBER_HEXADECIMAL);
+    TOKEN(NUMBER_HEXADECIMAL);
 }
 
 <INITIAL> "0" D+ IS? {
-    PUSH_TOKEN(NUMBER_OCTAL);
+    TOKEN(NUMBER_OCTAL);
 }
 
 <INITIAL> D+ IS? {
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> "L"? "'" {
     BEGIN(IN_SINGLE_STRING);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_SINGLE_STRING> "'" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> "L"? "\"" {
     BEGIN(IN_DOUBLE_STRING);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <IN_DOUBLE_STRING> "\"" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL> [[\]{}(),;.] {
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <INITIAL> [?:=&|!~^%<>*/+-] {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <INITIAL> '//' {
@@ -143,44 +143,43 @@ IS = [uUlL]*;
         }
         break;
     }
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> "/*" {
-#if 0
+#if 1
     BEGIN(IN_COMMENT);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 #else
     YYCTYPE *end;
 
     if (YYCURSOR > YYLIMIT) {
-        DONE;
+        DONE();
     }
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "*/", STR_LEN("*/"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
     } else {
         YYCURSOR = end + 1;
     }
-    REPLAY(YYTEXT, YYCURSOR, &annotations_lexer, NULL);
-    goto restart;
+    DELEGATE_UNTIL(COMMENT_MULTILINE);
 #endif
 }
 
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL> "..." | ">>" "="? | "<<" "="? | [!=<>|&~^*/%-]"=" | "--" | "++" | "->" {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <*> [^] {
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation c_lexer = {

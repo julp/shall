@@ -11,6 +11,7 @@ extern const LexerImplementation c_lexer;
 
 enum {
     STATE(INITIAL),
+    STATE(IN_C),
     STATE(IN_COMMENT),
     STATE(IN_STRING),
     STATE(IN_LONG_STRING),
@@ -18,6 +19,7 @@ enum {
 
 static int default_token_type[] = {
     IGNORABLE,         // INITIAL
+    IGNORABLE,         // IN_C
     COMMENT_MULTILINE, // IN_COMMENT
     STRING_SINGLE,     // IN_STRING
     STRING_SINGLE,     // IN_LONG_STRING
@@ -254,21 +256,21 @@ SPACE = [ \f\n\r\t\v]+;
 // return action/keyword?
 
 <INITIAL> (LNUM | DNUM) ("ms" | [smhdwy]) {
-    PUSH_TOKEN(LITERAL_DURATION);
+    TOKEN(LITERAL_DURATION);
 }
 
 <INITIAL> LNUM [KMGT]? 'B' {
-    PUSH_TOKEN(LITERAL_SIZE);
+    TOKEN(LITERAL_SIZE);
 }
 
 <INITIAL> "/*" {
     BEGIN(IN_COMMENT);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <IN_COMMENT> "*/" {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL> "//" | "#" {
@@ -287,7 +289,7 @@ SPACE = [ \f\n\r\t\v]+;
         }
         break;
     }
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 // vcl statement really expects a float
@@ -296,28 +298,51 @@ SPACE = [ \f\n\r\t\v]+;
     // NOTE: don't use strtod to parse version number as it depends on locale for decimal separator
     yyless(STR_LEN("vcl"));
     mydata->version = 4;
-    PUSH_TOKEN(KEYWORD_DECLARATION);
+    TOKEN(KEYWORD_DECLARATION);
 }
 
 <INITIAL> "sub" {
     data->next_label = FUNCTION;
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> "remove" {
     if (mydata->version < 4) {
-        PUSH_TOKEN(KEYWORD);
+        TOKEN(KEYWORD);
     } else {
-        PUSH_TOKEN(IGNORABLE);
+        TOKEN(IGNORABLE);
     }
 }
 
 <INITIAL> "set" | "unset" | "include" | "import" | "if" | "else" | "elseif" | "elif" | "elsif" {
-    PUSH_TOKEN(KEYWORD);
+    TOKEN(KEYWORD);
 }
 
 <INITIAL> "true" | "false" {
-    PUSH_TOKEN(KEYWORD_CONSTANT);
+    TOKEN(KEYWORD_CONSTANT);
+}
+
+<INITIAL>"C{" {
+    BEGIN(IN_C);
+    TOKEN(IGNORABLE);
+}
+
+<IN_C>"}C" {
+    BEGIN(INITIAL);
+    unstack_lexer(rv, &c_lexer);
+    TOKEN(IGNORABLE);
+}
+
+<IN_C>[^] {
+    YYCTYPE *end;
+
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
+        YYCURSOR = YYLIMIT;
+    } else {
+        YYCURSOR = end;
+    }
+    stack_lexer(rv, &c_lexer, NULL);
+    DELEGATE_UNTIL(IGNORABLE);
 }
 
 <INITIAL> [a-zA-Z_.-]+ {
@@ -358,78 +383,55 @@ SPACE = [ \f\n\r\t\v]+;
             }
         }
     }
-    PUSH_TOKEN(type);
+    TOKEN(type);
 }
 
 <INITIAL> [{}();.,] {
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <INITIAL> "++" | "--" | "&&" | "||" | [<=>!*/+-]"=" | "<<" | ">>" | "!~" | [-+*/%><=!&|~] {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <INITIAL> LNUM {
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> DNUM {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> '{"' {
     BEGIN(IN_LONG_STRING);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_LONG_STRING> '"}' {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
-}
-
-<INITIAL> "C{" {
-    YYCTYPE *end;
-
-    // handle "C{"
-    TOKEN(IGNORABLE);
-    // send text between "C{" and "}C" to C lexer
-    YYTEXT += STR_LEN("C{");
-    YYCURSOR += STR_LEN("C{");
-    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
-        YYCURSOR = YYLIMIT;
-    } else {
-        YYCURSOR = end;
-    }
-    cb(EVENT_REPLAY, cb_data, YYTEXT, YYCURSOR, &c_lexer, NULL);
-    // handle "}C"
-    if (NULL != end) {
-        YYTEXT = YYCURSOR;
-        YYCURSOR += STR_LEN("}C");
-        TOKEN(IGNORABLE);
-    }
-    continue;
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> '"' {
     BEGIN(IN_STRING);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_STRING> '\\'[\\"nt] {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <IN_STRING> '"' {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <*> [^] {
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation varnish_lexer = {

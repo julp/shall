@@ -173,13 +173,13 @@ restart_comment_bracket:
                 }
             }
             if (']' == *YYCURSOR++) {
-                PUSH_TOKEN(COMMENT_MULTILINE);
+                TOKEN(COMMENT_MULTILINE);
             }
         }
     }
     YYCURSOR = YYLIMIT; // if we reach this point, comment is unterminated
 #endif
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <INITIAL>bracket_open {
@@ -201,13 +201,13 @@ restart_string_bracket:
                 }
             }
             if (']' == *YYCURSOR++) {
-                PUSH_TOKEN(STRING_DOUBLE);
+                TOKEN(STRING_DOUBLE);
             }
         }
     }
     YYCURSOR = YYLIMIT; // if we reach this point, comment is unterminated
 #endif
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <IN_BRACKET_STRING,IN_BRACKET_COMMENT>bracket_close {
@@ -217,31 +217,31 @@ restart_string_bracket:
     if (YYLENG == mydata->bracket_len) {
         BEGIN(INITIAL);
     }
-    PUSH_TOKEN(default_token_type[old_state]);
+    TOKEN(default_token_type[old_state]);
 }
 
 <INITIAL>["] {
     BEGIN(IN_QUOTED_ARGUMENT);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <IN_QUOTED_ARGUMENT> "\\" [()#" \\$@^trn;] {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <INITIAL,IN_QUOTED_ARGUMENT,IN_BRACKET_STRING,IN_VARIABLE_REFERENCE>"${" {
     PUSH_STATE(IN_VARIABLE_REFERENCE);
-    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+    TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <IN_VARIABLE_REFERENCE>"}" {
     POP_STATE();
-    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+    TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <IN_QUOTED_ARGUMENT>["] {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_DOUBLE);
+    TOKEN(STRING_DOUBLE);
 }
 
 <INITIAL>"#" {
@@ -256,7 +256,7 @@ restart_string_bracket:
         }
         break;
     }
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL>identifier space* "(" {
@@ -272,22 +272,22 @@ restart_string_bracket:
     yyless(key.name_len);
 #endif
     if (NULL != bsearch(&key, builtin_commands, ARRAY_SIZE(builtin_commands), sizeof(builtin_commands[0]), named_elements_casecmp)) {
-        PUSH_TOKEN(NAME_BUILTIN);
+        TOKEN(NAME_BUILTIN);
     } else {
-        PUSH_TOKEN(NAME_FUNCTION);
+        TOKEN(NAME_FUNCTION);
     }
 }
 
 <INITIAL>[()] {
-    PUSH_TOKEN(PUNCTUATION);
+    TOKEN(PUNCTUATION);
 }
 
 <*>[^] {
-    PUSH_TOKEN(default_token_type[YYSTATE]);
+    TOKEN(default_token_type[YYSTATE]);
 }
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation cmake_lexer = {

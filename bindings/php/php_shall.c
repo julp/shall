@@ -1146,7 +1146,7 @@ PHP_FUNCTION(Shall_highlight)
     }
     SHALL_FETCH_LEXER(l, lexer, TRUE);
     SHALL_FETCH_FORMATTER(f, formatter, TRUE);
-    dest_len = highlight_string(l->lexer, f->formatter, source, &dest);
+    highlight_string(l->lexer, f->formatter, source, source_len, &dest, &dest_len);
 
     RETURN_STRINGL_COPY(dest, dest_len);
 }

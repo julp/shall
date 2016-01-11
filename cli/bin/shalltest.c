@@ -255,7 +255,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
             STWARN("option '%s' rejected by %s formatter", options[FORMATTER].options[i].name, formatter_implementation_name(formatter_implementation(fmt)));
         }
     }
-    result_len = highlight_string(lexer, fmt, ctxt->source->ptr, &result);
+    highlight_string(lexer, fmt, ctxt->source->ptr, ctxt->source->len, &result, &result_len);
     if (verbosity) {
         printf("=== <source> ===\n%s\n=== </source> ===\n", ctxt->source->ptr);
         printf("=== <get> ===\n%s\n=== </get> ===\n", result);

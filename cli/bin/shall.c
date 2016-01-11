@@ -102,7 +102,7 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
     } else {
         lexer = default_lexer;
     }
-    highlight_string(lexer, fmt, buffer->ptr, &result);
+    highlight_string(lexer, fmt, buffer->ptr, buffer->len, &result, NULL);
     // print result
     puts(result);
     // free

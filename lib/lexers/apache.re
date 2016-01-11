@@ -48,20 +48,20 @@ SPACE = [ \f\n\r\t\v];
 EOS = [\000];
 
 <INITIAL> SPACE+ {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> "\\"[\n] {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> [\n] {
     BEGIN(INITIAL);
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <IN_DIRECTIVE> [ \f\r\t\v]+ {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <INITIAL> [#] {
@@ -80,60 +80,60 @@ EOS = [\000];
         }
         break;
     }
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 <*> "${" {
     PUSH_STATE(X);
-    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+    TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <X> "}" {
     POP_STATE();
-    PUSH_TOKEN(SEQUENCE_INTERPOLATED);
+    TOKEN(SEQUENCE_INTERPOLATED);
 }
 
 <INITIAL> [^ #\f\n\r\t\v][^ \f\n\r\t\v]* {
     BEGIN(IN_DIRECTIVE);
     if ('<' == YYTEXT[0]) {
-        PUSH_TOKEN(NAME_TAG);
+        TOKEN(NAME_TAG);
     } else {
-        PUSH_TOKEN(KEYWORD_BUILTIN);
+        TOKEN(KEYWORD_BUILTIN);
     }
 }
 
 <IN_DIRECTIVE> [^ \f\n\r\t\v\000]+ {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_DIRECTIVE> LNUM {
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL,IN_DIRECTIVE> '"' {
     BEGIN(IN_DOUBLE_STRING);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL,IN_DIRECTIVE> '\'' {
     BEGIN(IN_SINGLE_STRING);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <IN_DOUBLE_STRING> '\\'[\\"] {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <IN_SINGLE_STRING> '\\'[\\'] {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <*> EOS {
-    return 0;
+    DONE();
 }
 
 <X> [^] {
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 /*
@@ -143,7 +143,7 @@ EOS = [\000];
 */
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation apache_lexer = {

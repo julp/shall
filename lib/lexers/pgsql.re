@@ -626,60 +626,60 @@ other = .;
  * Needed to highlight oneline comment.
  **/
 <INITIAL> comment {
-    PUSH_TOKEN(COMMENT_SINGLE);
+    TOKEN(COMMENT_SINGLE);
 }
 
 <INITIAL> space {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <INITIAL> xcstart {
     BEGIN(xc);
     yyless(2);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> xcstart {
     yyless(2);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> xcstop {
     BEGIN(INITIAL);
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> xcinside {
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> op_chars  {
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 <xc> [*]+ {
-    PUSH_TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_MULTILINE);
 }
 
 // <xc><<EOF>>
 
 <INITIAL> xbstart {
     BEGIN(xb);
-    PUSH_TOKEN(NUMBER_BINARY);
+    TOKEN(NUMBER_BINARY);
 }
 
 <xb> quotestop | quotefail {
     yyless(1);
     BEGIN(INITIAL);
-    PUSH_TOKEN(NUMBER_BINARY);
+    TOKEN(NUMBER_BINARY);
 }
 
 <xb> xbinside {
-    PUSH_TOKEN(NUMBER_BINARY);
+    TOKEN(NUMBER_BINARY);
 }
 
 <xh> xhinside {
-    PUSH_TOKEN(NUMBER_HEXADECIMAL);
+    TOKEN(NUMBER_HEXADECIMAL);
 }
 
 // <xh>{quotecontinue} | <xb>{quotecontinue}
@@ -688,13 +688,13 @@ other = .;
 
 <INITIAL> xhstart {
     BEGIN(xh);
-    PUSH_TOKEN(NUMBER_HEXADECIMAL);
+    TOKEN(NUMBER_HEXADECIMAL);
 }
 
 <xh> quotestop | quotefail {
     yyless(1);
     BEGIN(INITIAL);
-    PUSH_TOKEN(NUMBER_HEXADECIMAL);
+    TOKEN(NUMBER_HEXADECIMAL);
 }
 
 // <xh><<EOF>>
@@ -709,57 +709,57 @@ other = .;
     } else {
         BEGIN(xe);
     }
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xestart {
     BEGIN(xe);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xusstart {
 //     if (!mydata->standard_conforming_strings)
     BEGIN(xus);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xq,xe> quotestop | quotefail {
     yyless(1);
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xus> quotestop | quotefail {
     yyless(1);
     BEGIN(xusend);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xusend> whitespace {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xusend> other | xustop1 {
     yyless(0);
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xusend> xustop2 {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xq,xe,xus> xqdouble {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xq,xus> xqinside {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xe> xeinside {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xe> xeunicode {
@@ -772,12 +772,12 @@ other = .;
 #else
 //     BEGIN(xeu);
 #endif
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <xeu> xeunicode {
     BEGIN(xe);
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 // <xeu> .
@@ -786,23 +786,23 @@ other = .;
 // <xe,xeu> xeunicodefail
 
 <xe> xeescape {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <xe> xeoctesc {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <xe> xehexesc {
-    PUSH_TOKEN(ESCAPED_CHAR);
+    TOKEN(ESCAPED_CHAR);
 }
 
 <xq,xe,xus> quotecontinue {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xe> . {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 // <xq,xe,xus><<EOF>>
@@ -811,12 +811,12 @@ other = .;
     BEGIN(xdolq);
     mydata->dolqstart_len = YYCURSOR - YYTEXT;
     mydata->dolqstart = strndup((char *) YYTEXT, mydata->dolqstart_len);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> dolqfailed {
     yyless(1);
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <xdolq> dolqdelim {
@@ -827,112 +827,112 @@ other = .;
     } else {
         yyless((YYCURSOR - YYTEXT) - 1);
     }
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xdolq> dolqinside {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xdolq> dolqfailed {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xdolq> . {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 // <xdolq><<EOF>>
 
 <INITIAL> xdstart {
     BEGIN(xd);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xuistart {
     BEGIN(xui);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xd> xdstop {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xui> dquote {
     yyless(1);
     BEGIN(xuiend);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xuiend> whitespace {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 <xuiend> other | xustop1 {
     yyless(0);
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xuiend> xustop2 {
     BEGIN(INITIAL);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xd,xui> xddouble  {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <xd,xui> xdinside {
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 // <xd,xui><<EOF>>
 
 <INITIAL> xufailed {
     yyless(1);
-    PUSH_TOKEN(STRING_SINGLE);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> typecast | dot_dot | colon_equals | equals_greater | less_equals | greater_equals | less_greater | not_equals | self {
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <INITIAL> operator {
     // TODO: stricter
-    PUSH_TOKEN(OPERATOR);
+    TOKEN(OPERATOR);
 }
 
 <INITIAL> param {
-    PUSH_TOKEN(NAME_VARIABLE);
+    TOKEN(NAME_VARIABLE);
 }
 
 <INITIAL> integer {
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> decimal {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> decimalfail {
     yyless((YYCURSOR - YYTEXT) - 2);
-    PUSH_TOKEN(NUMBER_DECIMAL);
+    TOKEN(NUMBER_DECIMAL);
 }
 
 <INITIAL> real {
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> realfail1 {
     yyless((YYCURSOR - YYTEXT) - 1);
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> realfail2 {
     yyless((YYCURSOR - YYTEXT) - 2);
-    PUSH_TOKEN(NUMBER_FLOAT);
+    TOKEN(NUMBER_FLOAT);
 }
 
 <INITIAL> identifier {
@@ -947,20 +947,20 @@ other = .;
                 *p = ascii_toupper((int) *p);
             }
         }
-        PUSH_TOKEN(match->type);
+        TOKEN(match->type);
     } else {
-        PUSH_TOKEN(IGNORABLE);
+        TOKEN(IGNORABLE);
     }
 }
 
 <INITIAL> other {
-    PUSH_TOKEN(IGNORABLE);
+    TOKEN(IGNORABLE);
 }
 
 // <<EOF>>
 */
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation postgresql_lexer = {

@@ -860,7 +860,7 @@ static VALUE rb_shall_highlight(VALUE module, VALUE string, VALUE lexer, VALUE f
     }
     UNWRAP_LEXER(lexer, l);
     UNWRAP_FORMATTER(formatter, f);
-    dest_len = highlight_string(l->lexer, f->formatter, StringValueCStr(string), &dest);
+    highlight_string(l->lexer, f->formatter, StringValueCStr(string), RSTRING_LEN(string), &dest, &dest_len);
 
     return rb_str_new(dest, dest_len);
 }

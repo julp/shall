@@ -808,16 +808,17 @@ static PyObject *shall_lexer_for_filename(PyObject *UNUSED(self), PyObject *args
 static PyObject *shall_highlight(PyObject *self, PyObject *args)
 {
     const char *string;
+    Py_ssize_t string_len;
     PyObject *ret, *lexer, *fmt;
 
     ret = Py_None;
-    if (PyArg_ParseTuple(args, "sO!O!", &string, &ShallLexerBaseType, &lexer, &ShallFormatterBaseType, &fmt)/* && 1 == PyObject_IsInstance(lexer, (PyObject *) &ShallLexerBaseType)*/) {
+    if (PyArg_ParseTuple(args, "s#O!O!", &string, &string_len, &ShallLexerBaseType, &lexer, &ShallFormatterBaseType, &fmt)/* && 1 == PyObject_IsInstance(lexer, (PyObject *) &ShallLexerBaseType)*/) {
         char *dest;
         size_t dest_len;
 
 // print issubclass(shall.PHP, shall.Base)
 // printf("PyObject_IsInstance = %d\n", PyObject_IsInstance(lexer, (PyObject *) &ShallLexerBaseType));
-        dest_len = highlight_string(((ShallLexerObject *) lexer)->lexer, ((ShallFormatterObject *) fmt)->fmt, string, &dest);
+        highlight_string(((ShallLexerObject *) lexer)->lexer, ((ShallFormatterObject *) fmt)->fmt, string, string_len, &dest, &dest_len);
         ret = PyUnicode_FromStringAndSize(dest, dest_len);
     }
     Py_INCREF(ret);
