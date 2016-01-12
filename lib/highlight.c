@@ -588,6 +588,9 @@ abandon_or_done:
     if (NULL != fmt->imp->end_document) {
         fmt->imp->end_document(buffer, &fmt->optvals);
     }
+#ifndef WITHOUT_DLIST
+    dlist_destroy(&rv.lexer_stack);
+#endif
     hashtable_destroy(&rv.lexers);
 
     // set result string
