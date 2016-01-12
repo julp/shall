@@ -37,8 +37,9 @@ static int canalyse(const char *src, size_t src_len)
  * - C99 types? (conditionnal? - on option)
  **/
 static int clex(YYLEX_ARGS) {
+    (void) data;
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
-restart:
         YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
@@ -184,7 +185,6 @@ IS = [uUlL]*;
 
 LexerImplementation c_lexer = {
     "C",
-    0,
     "For C source code with preprocessor directives",
     NULL,
     (const char * const []) { "*.[ch]", NULL },

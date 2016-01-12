@@ -18,6 +18,8 @@ enum {
  * - pour l'interpolation, lever toute ambiguité notamment, le nom d'une variable peut être entourée d'accolades
  **/
 static int nginxlex(YYLEX_ARGS) {
+    (void) data;
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -117,7 +119,6 @@ SPACE = [ \n\r\t];
 
 LexerImplementation nginx_lexer = {
     "Nginx",
-    0,
     "Lexer for Nginx configuration files",
     (const char * const []) { "nginxconf", NULL },
     (const char * const []) { "nginx.conf", NULL },

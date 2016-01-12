@@ -142,6 +142,7 @@ static const named_element_t builtin_commands[] = {
 static int cmakelex(YYLEX_ARGS) {
     CMakeLexerData *mydata;
 
+    (void) options;
     mydata = (CMakeLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
@@ -292,7 +293,6 @@ restart_string_bracket:
 
 LexerImplementation cmake_lexer = {
     "CMake",
-    0,
     "Lexer for CMake files",
     NULL,
     (const char * const []) { "CMakeLists.txt", "*.cmake", NULL },

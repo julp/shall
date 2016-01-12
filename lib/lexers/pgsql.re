@@ -17,11 +17,14 @@
 
 typedef struct {
     LexerData data;
-    int uppercase_keywords;
-    int standard_conforming_strings;
     char *dolqstart; // TODO: may leak
     size_t dolqstart_len;
 } PgLexerData;
+
+typedef struct {
+    bool uppercase_keywords ALIGNED(sizeof(OptionValue));
+    bool standard_conforming_strings ALIGNED(sizeof(OptionValue));
+} PgLexerOption;
 
 enum {
     STATE(INITIAL),
@@ -518,8 +521,10 @@ PG_KEYWORD("zone", UNRESERVED_KEYWORD)
 
 static int pglex(YYLEX_ARGS) {
     PgLexerData *mydata;
+    PgLexerOption *myoptions;
 
     mydata = (PgLexerData *) data;
+    myoptions = (PgLexerOption *) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 
@@ -704,7 +709,7 @@ other = .;
 }
 
 <INITIAL> xqstart {
-    if (mydata->standard_conforming_strings) {
+    if (myoptions->standard_conforming_strings) {
         BEGIN(xq);
     } else {
         BEGIN(xe);
@@ -718,7 +723,7 @@ other = .;
 }
 
 <INITIAL> xusstart {
-//     if (!mydata->standard_conforming_strings)
+//     if (!myoptions->standard_conforming_strings)
     BEGIN(xus);
     TOKEN(STRING_SINGLE);
 }
@@ -940,7 +945,7 @@ other = .;
     typed_named_element_t *match;
 
     if (NULL != (match = bsearch(&key, keywords, ARRAY_SIZE(keywords), sizeof(keywords[0]), named_elements_casecmp))) {
-        if (mydata->uppercase_keywords/* && KEYWORD == match->type*/) {
+        if (myoptions->uppercase_keywords/* && KEYWORD == match->type*/) {
             YYCTYPE *p;
 
             for (p = YYTEXT; p <= YYCURSOR; p++) {
@@ -965,7 +970,6 @@ other = .;
 
 LexerImplementation postgresql_lexer = {
     "PostgreSQL",
-    0,
     "Lexer for the PostgreSQL dialect of SQL",
     (const char * const []) { "pgsql", "postgre", NULL },
     NULL, // "*.sql" but it may conflict with future mysql & co?
@@ -976,8 +980,8 @@ LexerImplementation postgresql_lexer = {
     pglex,
     sizeof(PgLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "uppercase_keywords", OPT_TYPE_BOOL, offsetof(PgLexerData, uppercase_keywords), OPT_DEF_BOOL(0), "when true, PostgreSQL keywords are uppercased" },
-        { "standard_conforming_strings", OPT_TYPE_BOOL, offsetof(PgLexerData, standard_conforming_strings), OPT_DEF_BOOL(1), "To treat backslashes literally in ordinary string literals (`'...'`) or not" },
+        { "uppercase_keywords",          OPT_TYPE_BOOL, offsetof(PgLexerOption, uppercase_keywords),          OPT_DEF_BOOL(0), "when true, PostgreSQL keywords are uppercased" },
+        { "standard_conforming_strings", OPT_TYPE_BOOL, offsetof(PgLexerOption, standard_conforming_strings), OPT_DEF_BOOL(1), "To treat backslashes literally in ordinary string literals (`'...'`) or not" },
         END_OF_LEXER_OPTIONS
     },
     NULL

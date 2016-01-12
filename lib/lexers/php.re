@@ -34,14 +34,18 @@ extern const LexerImplementation annotations_lexer;
 
 typedef struct {
     LexerData data;
-    int short_tags ALIGNED(sizeof(OptionValue));
-    int asp_tags ALIGNED(sizeof(OptionValue));
-    int version ALIGNED(sizeof(OptionValue));
-    OptionValue secondary ALIGNED(sizeof(OptionValue));
     int in_namespace;
     char *doclabel; // (?:now|here)doc label // TODO: may leak
     size_t doclabel_len;
 } PHPLexerData;
+
+typedef struct {
+    int version ALIGNED(sizeof(OptionValue));
+    bool start_inline ALIGNED(sizeof(OptionValue));
+    bool asp_tags ALIGNED(sizeof(OptionValue));
+    bool short_open_tag ALIGNED(sizeof(OptionValue));
+    OptionValue secondary ALIGNED(sizeof(OptionValue));
+} PHPLexerOption;
 
 static int phpanalyse(const char *src, size_t src_len)
 {
@@ -68,6 +72,21 @@ enum {
     STATE(ST_LOOKING_FOR_VARNAME),
     STATE(ST_LOOKING_FOR_PROPERTY)
 };
+
+static void phpinit(LexerReturnValue *rv, LexerData *data, OptionValue *options)
+{
+    Lexer *secondary;
+    PHPLexerOption *myoptions;
+
+    myoptions = (PHPLexerOption *) options;
+    if (myoptions->start_inline) {
+        BEGIN(ST_IN_SCRIPTING);
+    }
+    secondary = LEXER_UNWRAP(myoptions->secondary);
+    if (NULL != secondary) {
+        stack_lexer(rv, secondary);
+    }
+}
 
 static int default_token_type[] = {
     IGNORABLE, // INITIAL
@@ -248,8 +267,10 @@ static named_element_t classes[] = {
 
 static int phplex(YYLEX_ARGS) {
     PHPLexerData *mydata;
+    PHPLexerOption *myoptions;
 
     mydata = (PHPLexerData *) data;
+    myoptions = (PHPLexerOption *) options;
     while (YYCURSOR < YYLIMIT) {
 restart:
         YYTEXT = YYCURSOR;
@@ -284,7 +305,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <INITIAL>"<?" {
-    if (mydata->short_tags) {
+    if (myoptions->short_open_tag) {
         BEGIN(ST_IN_SCRIPTING);
         TOKEN(NAME_TAG);
     } else {
@@ -293,7 +314,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <INITIAL>"<%" {
-    if (mydata->version < 7 && mydata->asp_tags) {
+    if (myoptions->version < 7 && myoptions->asp_tags) {
         BEGIN(ST_IN_SCRIPTING);
         TOKEN(NAME_TAG);
     } else {
@@ -302,7 +323,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <INITIAL>'<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">" {
-    if (mydata->version < 7) {
+    if (myoptions->version < 7) {
         BEGIN(ST_IN_SCRIPTING);
         TOKEN(NAME_TAG);
     } else {
@@ -320,7 +341,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_IN_SCRIPTING>'yield' WHITESPACE 'from' {
-    if (mydata->version < 7) {
+    if (myoptions->version < 7) {
         yyless(STR_LEN("yield"));
     }
     TOKEN(KEYWORD);
@@ -342,7 +363,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_IN_SCRIPTING>"??" | "<=>" {
-    if (mydata->version >= 7) {
+    if (myoptions->version >= 7) {
         //yyless(STR_LEN("?"));
         //yyless(STR_LEN("<="));
         yyless(YYLENG - 1);
@@ -365,7 +386,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
             case '\n':
                 break;
             case '%':
-                if (!mydata->asp_tags) {
+                if (!myoptions->asp_tags) {
                     continue;
                 }
                 /* fall through */
@@ -395,7 +416,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_IN_SCRIPTING>"}" {
-//     if (darray_length(&mydata->state_stack)) {
+//     if (darray_length(&myoptions->state_stack)) {
         POP_STATE();
 //     }
     if (STATE(ST_IN_SCRIPTING) == YYSTATE) {
@@ -477,10 +498,11 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_IN_SCRIPTING>"/*" | "/**" WHITESPACE {
-#if 0
+#if 1
     BEGIN(ST_COMMENT_MULTI);
     TOKEN(COMMENT_MULTILINE);
 #else
+    // TODO
     YYCTYPE *end;
 
     if (YYCURSOR > YYLIMIT) {
@@ -496,7 +518,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_COMMENT_MULTI>"*/" {
-    BEGIN(INITIAL);
+    BEGIN(ST_IN_SCRIPTING);
     TOKEN(COMMENT_MULTILINE);
 }
 
@@ -622,7 +644,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_IN_SCRIPTING>'</script' WHITESPACE* ">" NEWLINE? {
-    if (mydata->version < 7) {
+    if (myoptions->version < 7) {
         BEGIN(INITIAL);
         TOKEN(NAME_TAG);
     } else {
@@ -636,7 +658,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_IN_SCRIPTING>"%>" NEWLINE? {
-    if (mydata->version < 7 && mydata->asp_tags) {
+    if (myoptions->version < 7 && myoptions->asp_tags) {
         yyless(STR_LEN("%>"));
         BEGIN(INITIAL);
         TOKEN(NAME_TAG);
@@ -709,7 +731,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"\\u{" [0-9a-fA-F]+ "}" {
-    if (mydata->version >= 7) {
+    if (myoptions->version >= 7) {
         TOKEN(ESCAPED_CHAR);
     } else {
         TOKEN(default_token_type[YYSTATE]);
@@ -852,18 +874,18 @@ not_php:
             ptr += STR_LEN("<X");
             switch (*YYCURSOR) {
                 case '?':
-                    if ((mydata->version < 7 && mydata->short_tags) || 0 == STRNCASECMP("php") || ('=' == *(YYCURSOR + 1))) { /* Assume [ \t\n\r] follows "php" */
+                    if ((myoptions->version < 7 && myoptions->short_open_tag) || 0 == STRNCASECMP("php") || ('=' == *(YYCURSOR + 1))) { /* Assume [ \t\n\r] follows "php" */
                         break;
                     }
                     continue;
                 case '%':
-                    if (mydata->version < 7 && mydata->asp_tags) {
+                    if (myoptions->version < 7 && myoptions->asp_tags) {
                         break;
                     }
                     continue;
                 case 's':
                 case 'S':
-                    if (mydata->version < 7) {
+                    if (myoptions->version < 7) {
                         // '<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">"
                         if (0 == STRNCASECMP("cript")) {
                             ptr += STR_LEN("cript");
@@ -933,22 +955,21 @@ not_php:
 
 LexerImplementation php_lexer = {
     "PHP",
-    0,
     "For PHP source code",
     (const char * const []) { "php3", "php4", "php5", NULL },
     (const char * const []) { "*.php", "*.php[345]", "*.inc", NULL },
     (const char * const []) { "text/x-php", "application/x-httpd-php", NULL },
     (const char * const []) { "php", "php-cli", "php5*", NULL },
-    NULL,
+    phpinit,
     phpanalyse,
     phplex,
     sizeof(PHPLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "start_inline", OPT_TYPE_BOOL,  offsetof(LexerData, state),         OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
-        { "version",      OPT_TYPE_INT,   offsetof(PHPLexerData, version),    OPT_DEF_INT(7),  "TODO" },
-        { "asp_tags",     OPT_TYPE_BOOL,  offsetof(PHPLexerData, asp_tags),   OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7)" },
-        { "short_tags",   OPT_TYPE_BOOL,  offsetof(PHPLexerData, short_tags), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
-        { "secondary",    OPT_TYPE_LEXER, offsetof(PHPLexerData, secondary),  OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
+        { "version",        OPT_TYPE_INT,   offsetof(PHPLexerOption, version),        OPT_DEF_INT(7),  "major versions of PHP brings some changes, use this parameter to parse PHP code as a newer or older version" },
+        { "asp_tags",       OPT_TYPE_BOOL,  offsetof(PHPLexerOption, asp_tags),       OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7)" },
+        { "start_inline",   OPT_TYPE_BOOL,  offsetof(PHPLexerOption, start_inline),   OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
+        { "short_open_tag", OPT_TYPE_BOOL,  offsetof(PHPLexerOption, short_open_tag), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
+        { "secondary",      OPT_TYPE_LEXER, offsetof(PHPLexerOption, secondary),      OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
     },
     NULL

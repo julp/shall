@@ -16,6 +16,8 @@ enum {
  * (for re2c, by default, without --case-inverted or --case-insensitive)
  **/
 static int jsonlex(YYLEX_ARGS) {
+    (void) data;
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -65,12 +67,11 @@ EXPONENT_DNUM = ((LNUM|DNUM)[eE][+-]?LNUM);
 }
 */
     }
-    return DONE;
+    DONE();
 }
 
 LexerImplementation json_lexer = {
     "JSON",
-    0,
     "For JSON data structures",
     NULL,
     (const char * const []) { "*.json", NULL },

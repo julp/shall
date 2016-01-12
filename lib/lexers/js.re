@@ -21,6 +21,8 @@ static int default_token_type[] = {
 };
 
 static int jslex(YYLEX_ARGS) {
+    (void) data;
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -147,7 +149,6 @@ HEXADECIMAL_LITERAL = ('0x' HEXDIGIT+)+;
 
 LexerImplementation js_lexer = {
     "Javascript",
-    0,
     "TODO",
     (const char * const []) { "JS", NULL },
     (const char * const []) { "*.js", NULL },

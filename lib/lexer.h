@@ -4,6 +4,7 @@
 
 # include "types.h"
 # include "darray.h"
+# include "dlist.h"
 # include "hashtable.h"
 
 # ifndef DOXYGEN
@@ -11,7 +12,7 @@
 #  define UTF8_BOM "\xEF\xBB\xBF"
 # endif /* !DOXYGEN */
 
-# define YYLEX_ARGS LexerInput *yy, LexerData *data, LexerReturnValue *rv
+# define YYLEX_ARGS LexerInput *yy, LexerData *data, OptionValue *options, LexerReturnValue *rv
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
 // # define YYLINENO (yy->lineno)
@@ -151,6 +152,32 @@ enum {
 };
 
 /**
+ * Common data of any lexer for its internal state
+ *
+ * May be overriden by each lexer
+ */
+typedef struct {
+#if 0
+    /**
+     * Flags
+     */
+    uint16_t flags;
+#endif
+    /**
+     * Lexer's state/condition
+     */
+    int state;
+    /**
+     * States stack
+     */
+    DArray *state_stack;
+    /**
+     * Mark next token kind
+     */
+    int next_label;
+} LexerData;
+
+/**
  * Different positionning stuffs for tokenization
  */
 struct LexerInput {
@@ -177,32 +204,6 @@ struct LexerInput {
 
 # define LEXER_UNWRAP(optval) \
     (NULL == OPT_LEXUWF(optval) ? (Lexer *) OPT_LEXPTR(optval) : (OPT_LEXUWF(optval)(OPT_LEXPTR(optval))))
-
-/**
- * Common data of any lexer
- *
- * @note each member have to be ALIGNED(sizeof(OptionValue)),
- * this is a shortcut to union with an OptionValue and let us
- * to have a direct access to the final value.
- */
-typedef struct {
-    /**
-     * Lexer internal flags
-     */
-    uint16_t flags ALIGNED(sizeof(OptionValue));
-    /**
-     * Lexer's state/condition
-     */
-    int state ALIGNED(sizeof(OptionValue));
-    /**
-     * States stack
-     */
-    DArray *state_stack ALIGNED(sizeof(OptionValue));
-    /**
-     * Mark next token kind
-     */
-    int next_label ALIGNED(sizeof(OptionValue));
-} LexerData;
 
 /**
  * Lexer option
@@ -247,10 +248,6 @@ struct LexerImplementation {
      */
     const char *name;
     /**
-     * Flags
-     */
-    uint16_t flags;
-    /**
      * A string for self documentation
      */
     const char *docstr;
@@ -276,10 +273,10 @@ struct LexerImplementation {
      */
     const char * const *interpreters;
     /**
-     * Optionnal (may be NULL) callback for additionnal initialization that can be
-     * done elsewhere
+     * Optionnal (may be NULL) callback for additionnal initialization before
+     * beginning tokenization
      */
-    void (*init)(LexerData *);
+    void (*init)(LexerReturnValue *, LexerData *, OptionValue *);
     /**
      * Optionnal (may be NULL) callback to find out a suitable lexer
      * for an input string. Higher is the returned value more accurate
@@ -292,7 +289,7 @@ struct LexerImplementation {
     int (*yylex)(YYLEX_ARGS);
     /**
      * Size to allocate to create a Lexer
-     * default is `sizeof(LexerData)`
+     * default is `TODO`
      */
     size_t data_size;
     /**
@@ -314,7 +311,7 @@ struct Lexer {
      */
     const LexerImplementation *imp;
     /**
-     * (Variable) Space to store current values of options
+     * Variable space to store current values of options
      */
     OptionValue optvals[];
 };
@@ -324,29 +321,31 @@ struct LexerReturnValue {
     HashTable lexers;
     YYCTYPE *child_limit;
     int token_default_type;
+#ifndef WITHOUT_DLIST
+    DList lexer_stack;
+    DListElement *current_lexer_offset;
+#else
     struct {
+        Lexer *lexer;
         LexerData *data;
-        const LexerImplementation *imp;
     } lexer_stack[100];
-#ifdef DEBUG
+    int lexer_stack_offset, current_lexer_offset;
+#endif
+# ifdef DEBUG
     int return_line;
     const char *return_file;
     const char *return_func;
-#endif
-    int lexer_stack_offset, current_lexer_offset;
+# endif
 };
 
-void reset_lexer(LexerData *);
-bool lexer_data_init(LexerData *, size_t);
-void lexer_data_destroy(LexerData *);
-
-#define YYSTRNCMP(x) \
+# define YYSTRNCMP(x) \
     strcmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)
 
-#define YYSTRNCASECMP(x) \
+# define YYSTRNCASECMP(x) \
     ascii_strcasecmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)
 
-#define NE(s) { s, STR_LEN(s) }
+# define NE(s) \
+    { s, STR_LEN(s) }
 
 typedef struct {
     const char *name;
@@ -361,7 +360,8 @@ typedef struct {
 int named_elements_cmp(const void *a, const void *b);
 int named_elements_casecmp(const void *a, const void *b);
 
-void stack_lexer(LexerReturnValue *, const LexerImplementation *, LexerData *);
+void stack_lexer(LexerReturnValue *, Lexer *);
+void stack_lexer_implementation(LexerReturnValue *, const LexerImplementation *);
 void unstack_lexer(LexerReturnValue *, const LexerImplementation *);
 
 #endif /* !LEXER_H */

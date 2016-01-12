@@ -37,6 +37,7 @@ static char *find_ending_var(GlobalState *yy, char *start, char *end)
  * - expressions ? (SetEnvIfExpr, If, ElseIf, RewriteCond expr, Require expr, SSLRequire)
  **/
 static int apachelex(YYLEX_ARGS) {
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -148,7 +149,6 @@ EOS = [\000];
 
 LexerImplementation apache_lexer = {
     "Apache",
-    0,
     "Lexer for configuration files following the Apache configuration file format (including .htaccess)",
     (const char * const []) { "apacheconf", NULL },
     (const char * const []) { "httpd.conf", "apache.conf", "apache2.conf", ".htaccess", NULL },

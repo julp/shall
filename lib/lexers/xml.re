@@ -12,9 +12,9 @@ extern const LexerImplementation js_lexer;
 
 typedef struct {
     LexerData data;
-    int html;
-    int css;
-    int js;
+    bool html;
+    bool css;
+    bool js;
 } XMLLexerData;
 
 enum {
@@ -28,13 +28,13 @@ enum {
     STATE(IN_DOUBLE_QUOTES),
 };
 
-static void htmlinit(LexerData *data)
+static void htmlinit(LexerReturnValue *UNUSED(rv), LexerData *data, OptionValue *UNUSED(options))
 {
     XMLLexerData *mydata;
 
     BEGIN(INITIAL);
     mydata = (XMLLexerData *) data;
-    mydata->html = 1;
+    mydata->html = true;
 }
 
 static int xmlanalyse(const char *src, size_t src_len)
@@ -69,9 +69,9 @@ static int default_token_type[] = {
 static int xmllex(YYLEX_ARGS) {
     XMLLexerData *mydata;
 
+    (void) options;
     mydata = (XMLLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
-restart:
         YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
@@ -192,7 +192,7 @@ NDataDecl = S "NDATA" S Name; // [76]
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
     yyless(0);
     //PUSH(&dtd_lexer, NULL);
-    stack_lexer(rv, &dtd_lexer, NULL); // TODO: unstack
+    stack_lexer_implementation(rv, &dtd_lexer); // TODO: unstack
     DELEGATE_FULL(IGNORABLE);
 }
 
@@ -217,11 +217,11 @@ debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
 <INITIAL>"<" Name {
     if (mydata->html) {
         if (0 == YYSTRNCASECMP("<style")) {
-            mydata->css = 1;
-            stack_lexer(rv, &css_lexer, NULL);
+            mydata->css = true;
+            stack_lexer_implementation(rv, &css_lexer);
         } else if (0 == YYSTRNCASECMP("<script")) {
-            mydata->js = 1;
-            stack_lexer(rv, &js_lexer, NULL);
+            mydata->js = true;
+            stack_lexer_implementation(rv, &js_lexer);
         }
     }
     PUSH_STATE(IN_TAG);
@@ -230,10 +230,10 @@ debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
 
 <INITIAL> ETag {
     if (mydata->css && 0 == YYSTRNCASECMP("</style>")) {
-        mydata->css = 0;
+        mydata->css = false;
         unstack_lexer(rv, &css_lexer);
     } else if (mydata->js && 0 == YYSTRNCASECMP("</script>")) {
-        mydata->js = 0;
+        mydata->js = false;
         unstack_lexer(rv, &js_lexer);
     }
     TOKEN(NAME_TAG);
@@ -328,7 +328,6 @@ debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
 
 LexerImplementation xml_lexer = {
     "XML",
-    0,
     "Generic lexer for XML (eXtensible Markup Language)",
     NULL,
     (const char * const []) { "*.xml", "*.xsd", NULL },
@@ -344,7 +343,6 @@ LexerImplementation xml_lexer = {
 
 LexerImplementation html_lexer = {
     "HTML",
-    0,
     "XXX",
     NULL,
     (const char * const []) { "*.html", NULL },

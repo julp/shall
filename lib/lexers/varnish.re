@@ -50,6 +50,20 @@ typedef struct {
     int version;
 } VarnishLexerData;
 
+typedef struct {
+    int version ALIGNED(sizeof(OptionValue));
+} VarnishLexerOption;
+
+static void varnishinit(LexerReturnValue *UNUSED(rv), LexerData *data, OptionValue *options)
+{
+    VarnishLexerData *mydata;
+    VarnishLexerOption *myoptions;
+
+    mydata = (VarnishLexerData *) data;
+    myoptions = (VarnishLexerOption *) options;
+    mydata->version = myoptions->version;
+}
+
 #define VAR(s) \
     { 1, Um, UM, s, STR_LEN(s) },
 
@@ -234,6 +248,7 @@ static int varnish_named_elements_cmp(const void *a, const void *b)
 static int varnishlex(YYLEX_ARGS) {
     VarnishLexerData *mydata;
 
+    (void) options;
     mydata = (VarnishLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
@@ -341,7 +356,7 @@ SPACE = [ \f\n\r\t\v]+;
     } else {
         YYCURSOR = end;
     }
-    stack_lexer(rv, &c_lexer, NULL);
+    stack_lexer_implementation(rv, &c_lexer);
     DELEGATE_UNTIL(IGNORABLE);
 }
 
@@ -436,18 +451,17 @@ SPACE = [ \f\n\r\t\v]+;
 
 LexerImplementation varnish_lexer = {
     "Varnish",
-    0,
     "A lexer for Varnish configuration language",
     (const char * const []) { "varnishconf", "VCL", NULL },
     (const char * const []) { "*.vcl", NULL },
     (const char * const []) { "text/x-varnish", NULL },
     NULL,
-    NULL,
+    varnishinit,
     varnishanalyse,
     varnishlex,
     sizeof(VarnishLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "version", OPT_TYPE_INT, offsetof(VarnishLexerData, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },
+        { "version", OPT_TYPE_INT, offsetof(VarnishLexerOption, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },
         END_OF_LEXER_OPTIONS
     },
     (const LexerImplementation * const []) { &c_lexer, NULL }

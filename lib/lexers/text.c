@@ -6,17 +6,17 @@
 
 static int textlex(YYLEX_ARGS) {
     (void) data;
+    (void) options;
     YYTEXT = YYCURSOR;
     if (YYCURSOR < YYLIMIT) {
         YYCURSOR = YYLIMIT;
         TOKEN(IGNORABLE);
     }
-    return DONE;
+    DONE();
 }
 
 LexerImplementation text_lexer = {
     "Text",
-    0,
     "A \"dummy\" lexer that doesn't highlight anything",
     (const char * const []) { "txt", NULL },
     (const char * const []) { "*.txt", NULL },

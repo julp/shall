@@ -104,10 +104,10 @@ MIME type(s): text/x-php, application/x-httpd-php
 
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
-| start_inline | boolean | false | if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language="php">` is required at top) |
-| version | int | 7 | TODO |
+| version | int | 7 | major versions of PHP brings some changes, use this parameter to parse PHP code as a newer or older version |
 | asp_tags | boolean | false | support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7) |
-| short_tags | boolean | true | support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag)) |
+| start_inline | boolean | false | if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language="php">` is required at top) |
+| short_open_tag | boolean | true | support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag)) |
 | secondary | lexer | null/none | Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted) |
 
 ## PostgreSQL

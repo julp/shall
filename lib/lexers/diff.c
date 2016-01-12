@@ -23,6 +23,7 @@ static int diffanalyse(const char *src, size_t src_len)
 static int difflex(YYLEX_ARGS)
 {
     (void) data;
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 
@@ -35,36 +36,35 @@ static int difflex(YYLEX_ARGS)
             ++YYCURSOR; // skip '\n' for next call
             switch (*YYTEXT) {
                 case '+':
-                    PUSH_TOKEN(GENERIC_INSERTED);
+                    TOKEN(GENERIC_INSERTED);
                 case '-':
-                    PUSH_TOKEN(GENERIC_DELETED);
+                    TOKEN(GENERIC_DELETED);
                 case '!':
-                    PUSH_TOKEN(GENERIC_STRONG);
+                    TOKEN(GENERIC_STRONG);
                 case '@':
-                    PUSH_TOKEN(GENERIC_SUBHEADING);
+                    TOKEN(GENERIC_SUBHEADING);
                 case '=':
-                    PUSH_TOKEN(GENERIC_HEADING);
+                    TOKEN(GENERIC_HEADING);
                 case 'i':
                 case 'I':
                     if (((size_t) YYLENG) >= STR_LEN("index") && 0 == memcmp(YYTEXT + 1, "ndex", STR_LEN("ndex"))) {
-                        PUSH_TOKEN(GENERIC_HEADING);
+                        TOKEN(GENERIC_HEADING);
                     }
                     break;
                 case 'd':
                     if (((size_t) YYLENG) >= STR_LEN("diff") && 0 == memcmp(YYTEXT + 1, "iff", STR_LEN("iff"))) {
-                        PUSH_TOKEN(GENERIC_HEADING);
+                        TOKEN(GENERIC_HEADING);
                     }
                     break;
             }
         }
-        PUSH_TOKEN(IGNORABLE);
+        TOKEN(IGNORABLE);
     }
-    DONE;
+    DONE();
 }
 
 LexerImplementation diff_lexer = {
     "Diff",
-    0,
     "Lexer for unified or context-style diffs or patches",
     (const char * const []) { "udiff", NULL },
     (const char * const []) { "*.diff", "*.patch", NULL },

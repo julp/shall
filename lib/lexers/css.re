@@ -704,6 +704,8 @@ static named_element_t builtins[] = {
 };
 
 static int csslex(YYLEX_ARGS) {
+    (void) data;
+    (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -868,7 +870,6 @@ invalid = invalid1 | invalid2;
 
 LexerImplementation css_lexer = {
     "CSS",
-    0,
     "For CSS (Cascading Style Sheets)",
     NULL,
     (const char * const []) { "*.css", NULL },

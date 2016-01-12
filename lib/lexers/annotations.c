@@ -11,6 +11,7 @@
 static int annotationslex(YYLEX_ARGS)
 {
     (void) data;
+    (void) options;
     YYTEXT = YYCURSOR;
     YYCURSOR += STR_LEN("/*"); // should be safe as this should be the prealable condition to the call of annotations_lexer
     while (YYCURSOR < YYLIMIT) {
@@ -50,7 +51,6 @@ end:
 
 LexerImplementation annotations_lexer = {
     "Annotations", // unused
-    0,
     "", // unused
     NULL,
     NULL,

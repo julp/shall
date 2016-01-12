@@ -48,28 +48,34 @@ static struct {
 
 typedef struct {
     LexerData data;
-    OptionValue secondary;
-    int erb;
+    bool erb;
     int quote_char;
     enum string_type string_type;
 } RubyLexerData;
 
-static void rubyinit(LexerData *data)
-{
-//     RubyLexerData *mydata;
+typedef struct {
+    OptionValue secondary ALIGNED(sizeof(OptionValue));
+} RubyLexerOption;
 
+static void rubyinit(LexerReturnValue *UNUSED(rv), LexerData *data, OptionValue *UNUSED(options))
+{
     BEGIN(IN_RUBY);
-//     mydata = (RubyLexerData *) data;
-//     mydata->erb = 0; // implicit
 }
 
-static void erbinit(LexerData *data)
+static void erbinit(LexerReturnValue *rv, LexerData *data, OptionValue *options)
 {
+    Lexer *secondary;
     RubyLexerData *mydata;
+    RubyLexerOption *myoptions;
 
     BEGIN(INITIAL);
     mydata = (RubyLexerData *) data;
-    mydata->erb = 1;
+    myoptions = (RubyLexerOption *) options;
+    mydata->erb = true;
+    secondary = LEXER_UNWRAP(myoptions->secondary);
+    if (NULL != secondary) {
+        stack_lexer(rv, secondary);
+    }
 }
 
 #if 0
@@ -104,9 +110,9 @@ https://raw.githubusercontent.com/ruby/ruby/trunk/parse.y
 static int rubylex(YYLEX_ARGS) {
     RubyLexerData *mydata;
 
+    (void) options;
     mydata = (RubyLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
-restart:
         YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
@@ -358,12 +364,10 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 
 <INITIAL> [^] {
     YYCTYPE *end;
-    Lexer *secondary;
 
     if (YYCURSOR > YYLIMIT) {
         DONE();
     }
-    secondary = LEXER_UNWRAP(mydata->secondary);
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "<%", STR_LEN("<%"), (const char *) YYLIMIT))) {
         YYCURSOR = YYLIMIT;
     } else {
@@ -378,7 +382,6 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
 
 LexerImplementation ruby_lexer = {
     "Ruby",
-    0,
     "For Ruby source code",
     NULL,
     (const char * const []) { "*.rb", NULL },
@@ -394,7 +397,6 @@ LexerImplementation ruby_lexer = {
 
 LexerImplementation erb_lexer = {
     "ERB",
-    0,
     "For ERB (Ruby) templates. Use the \"secondary\" option to delegate tokenization of parts which are outside of ERB tags.",
     NULL,
     (const char * const []) { "*.erb", NULL },
@@ -405,7 +407,7 @@ LexerImplementation erb_lexer = {
     rubylex,
     sizeof(RubyLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "secondary", OPT_TYPE_LEXER, offsetof(RubyLexerData, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of ERB tags (if none, these parts will not be highlighted)" },
+        { "secondary", OPT_TYPE_LEXER, offsetof(RubyLexerOption, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of ERB tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
     },
     NULL

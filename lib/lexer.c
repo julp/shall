@@ -497,24 +497,6 @@ SHALL_API const LexerImplementation *lexer_implementation(Lexer *lexer)
     return lexer->imp;
 }
 
-bool lexer_data_init(LexerData *data, size_t data_size)
-{
-    bzero(data, data_size);
-    if (NULL != (data->state_stack = malloc(sizeof(*data->state_stack)))) {
-        darray_init(data->state_stack, 0, sizeof(data->state));
-    }
-
-    return NULL != data->state_stack;
-}
-
-void lexer_data_destroy(LexerData *data)
-{
-    if (NULL != data->state_stack) {
-        darray_destroy(data->state_stack);
-        free(data->state_stack);
-    }
-}
-
 /**
  * Creates a new lexer from a lexer implementation
  *
@@ -525,35 +507,22 @@ void lexer_data_destroy(LexerData *data)
 SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
 {
     Lexer *lexer;
+    LexerOption *lo;
+    size_t additionnal_size_to_alloc;
 
-    if (NULL != (lexer = malloc(sizeof(*lexer) + imp->data_size))) {
-        LexerData *data;
-
+    additionnal_size_to_alloc = 0;
+    if (NULL != imp->options) {
+        for (lo = imp->options; NULL != lo->name; lo++)
+            ;
+        additionnal_size_to_alloc = (lo - imp->options) * sizeof(OptionValue);
+    }
+    if (NULL != (lexer = malloc(sizeof(*lexer) + additionnal_size_to_alloc))) {
         lexer->imp = imp;
-        data = (LexerData *) &lexer->optvals;
-#if 0
-        bzero(data, imp->data_size);
-        if (NULL == (data->state_stack = malloc(sizeof(*data->state_stack)))) {
-            free(lexer);
-            return NULL;
-        }
-        darray_init(data->state_stack, 0, sizeof(data->state));
-#else
-        if (!lexer_data_init(data, imp->data_size)) {
-            free(lexer);
-            return NULL;
-        }
-#endif
         if (NULL != imp->options) {
-            LexerOption *lo;
-
             for (lo = imp->options; NULL != lo->name; lo++) {
 // debug("%s = %zu (%zu/%zu)", lo->name, lo->offset / sizeof(OptionValue), lo->offset, sizeof(OptionValue));
                 memcpy(&lexer->optvals[lo->offset / sizeof(OptionValue)], &lo->defval, sizeof(lo->defval));
             }
-        }
-        if (NULL != imp->init) {
-            imp->init((LexerData *) lexer->optvals);
         }
 #ifdef TEST
         if (NULL != imp->implicit) {
@@ -611,9 +580,6 @@ SHALL_API void lexer_each_sublexers(Lexer *lexer, on_lexer_destroy_cb_t cb)
  */
 SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
 {
-    LexerData *data;
-
-    data = (LexerData *) &lexer->optvals;
     if (NULL != lexer->imp->options) {
         LexerOption *lo;
 
@@ -647,14 +613,6 @@ SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
             }
         }
     }
-#if 0
-    if (NULL != data->state_stack) {
-        darray_destroy(data->state_stack);
-        free(data->state_stack);
-    }
-#else
-    lexer_data_destroy(data);
-#endif
     free(lexer);
 }
 
