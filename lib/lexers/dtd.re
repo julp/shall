@@ -62,6 +62,7 @@ typedef struct {
 static int dtdlex(YYLEX_ARGS) {
     DTDLexerData *mydata;
 
+    (void) options;
     mydata = (DTDLexerData *) data;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
