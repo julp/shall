@@ -4,7 +4,7 @@
 
 # include <stddef.h> /* uintptr_t */
 # include <stdint.h> /* uint32_t */
-# include "bool.h"
+# include <stdbool.h>
 
 typedef struct _HashTable HashTable;
 

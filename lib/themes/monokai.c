@@ -16,17 +16,17 @@
 const SHALL_API Theme monokai = {
     "monokai",
     {
-#define COMMON_STYLE FG(dimgrey), .italic = TRUE
+#define COMMON_STYLE FG(dimgrey), .italic = true
         [ COMMENT_SINGLE ]         = { COMMON_STYLE },
         [ COMMENT_MULTILINE ]      = { COMMON_STYLE },
-        [ COMMENT_DOCUMENTATION ]  = { COMMON_STYLE, .bold = TRUE },
+        [ COMMENT_DOCUMENTATION ]  = { COMMON_STYLE, .bold = true },
 #undef COMMON_STYLE
         [ GENERIC_INSERTED ]       = { FG(white), BG(dimgreen) },
         [ GENERIC_DELETED ]        = { FG(white), BG(dimred) },
         [ GENERIC_HEADING ]        = { FG(grey) },
-        [ GENERIC_STRONG ]         = { .bold = TRUE },
+        [ GENERIC_STRONG ]         = { .bold = true },
         [ GENERIC_SUBHEADING ]     = { FG(light_grey) },
-#define COMMON_STYLE FG(soft_cyan), .bold = TRUE
+#define COMMON_STYLE FG(soft_cyan), .bold = true
         [ KEYWORD ]                = { COMMON_STYLE },
         [ KEYWORD_DEFAULT ]        = { COMMON_STYLE },
         [ KEYWORD_BUILTIN ]        = { COMMON_STYLE },
@@ -36,7 +36,7 @@ const SHALL_API Theme monokai = {
         [ KEYWORD_RESERVED ]       = { COMMON_STYLE },
         [ KEYWORD_TYPE ]           = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE FG(bright_pink), .bold = TRUE
+#define COMMON_STYLE FG(bright_pink), .bold = true
         [ KEYWORD_NAMESPACE ]      = { COMMON_STYLE },
         [ OPERATOR ]               = { COMMON_STYLE },
 #undef COMMON_STYLE
@@ -53,7 +53,7 @@ const SHALL_API Theme monokai = {
         [ STRING_BACKTICK ]        = { COMMON_STYLE },
         [ STRING_INTERNED ]        = { COMMON_STYLE },
 #undef COMMON_STYLE
-#define COMMON_STYLE FG(bright_green), .bold = TRUE
+#define COMMON_STYLE FG(bright_green), .bold = true
         [ NAME_CLASS ]             = { COMMON_STYLE },
         [ NAME_FUNCTION ]          = { COMMON_STYLE },
 #undef COMMON_STYLE

@@ -2,7 +2,9 @@
 
 # define DARRAY_H
 
-# include "bool.h"
+# include <stdbool.h>
+# include <stddef.h> /* size_t */
+# include <stdint.h> /* uint\d+_t */
 
 typedef struct {
     uint8_t *data;

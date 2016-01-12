@@ -1,6 +1,5 @@
-# include <stdlib.h>
+#include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 #include "cpp.h"
 #include "darray.h"
@@ -54,9 +53,9 @@ bool darray_at(DArray *da, unsigned int offset, void *value)
 {
     if (offset < da->length) {
         memcpy(value, OFFSET_TO_ADDR(da, offset), LENGTH(da, 1));
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -67,9 +66,9 @@ bool darray_shift(DArray *da, void *value)
         if (--da->length > 0) {
             memmove(OFFSET_TO_ADDR(da, 0), OFFSET_TO_ADDR(da, 1), LENGTH(da, da->length));
         }
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -77,9 +76,9 @@ bool darray_pop(DArray *da, void *value)
 {
     if (da->length > 0) {
         memcpy(value, OFFSET_TO_ADDR(da, --da->length), LENGTH(da, 1));
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -117,9 +116,9 @@ bool darray_remove_at(DArray *da, unsigned int offset)
     if (offset < da->length) {
         memmove(OFFSET_TO_ADDR(da, offset), OFFSET_TO_ADDR(da, offset + 1), LENGTH(da, da->length - offset - 1));
         da->length--;
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 

@@ -95,7 +95,7 @@ static void handle_event(event_t event, void *data, ...)
             LexerData *data;
             const LexerImplementation *imp;
 
-            known = FALSE;
+            known = false;
             imp = va_arg(ap, const LexerImplementation *);
 // debug("PUSH %s", imp->name);
             if (NULL == (data = va_arg(ap, LexerData *))) {
@@ -131,7 +131,7 @@ static void handle_event(event_t event, void *data, ...)
             const LexerImplementation *imp;
             YYCTYPE *saved_limit/*, *saved_cursor*/;
 
-            known = FALSE;
+            known = false;
 //             saved_cursor = x->yy->cursor;
 //             if (x->yy->cursor < x->yy->limit) {
                 saved_limit = x->yy->limit;
@@ -325,12 +325,12 @@ debug("[STACK] %s", lexer->imp->name);
 
 void stack_lexer(LexerReturnValue *pdata, Lexer *lexer)
 {
-    _stack_lexer_real(pdata, lexer, TRUE);
+    _stack_lexer_real(pdata, lexer, true);
 }
 
 void stack_lexer_implementation(LexerReturnValue *pdata, const LexerImplementation *limp)
 {
-    _stack_lexer_real(pdata, lexer_create(limp), FALSE);
+    _stack_lexer_real(pdata, lexer_create(limp), false);
 }
 
 void unstack_lexer(LexerReturnValue *pdata, const LexerImplementation *limp)

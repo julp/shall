@@ -12,6 +12,13 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99 -Wwrite-strings -Ws
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
+include(CheckIncludeFiles)
+check_include_files("inttypes.h" HAVE_INTTYPES_H)
+check_include_files("stdint.h" HAVE_STDINT_H)
+check_include_files("stdbool.h" HAVE_STDBOOL_H)
+include(CheckFunctionExists)
+check_function_exists("fnmatch" HAVE_FNMATCH)
+
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
 if("${srcdir}" STREQUAL "${bindir}")

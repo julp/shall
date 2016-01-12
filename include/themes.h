@@ -3,8 +3,8 @@
 # define THEMES_H
 
 # include <stddef.h> /* size_t */
+# include <stdbool.h>
 # include <stdint.h> /* uint\d+_t */
-# include "bool.h"
 # include "tokens.h"
 # include "shall.h"
 
@@ -26,10 +26,10 @@ typedef struct {
 } Style;
 
 #define FG(color) \
-    .fg = color, .fg_set = TRUE
+    .fg = color, .fg_set = true
 
 #define BG(color) \
-    .bg = color, .bg_set = TRUE
+    .bg = color, .bg_set = true
 
 typedef struct {
     const char *name;

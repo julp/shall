@@ -173,9 +173,9 @@ static bool hashtable_put_real(HashTable *this, uint32_t flags, ht_hash_t h, ht_
                     this->value_dtor(n->data);
                 }
                 n->data = value;
-                return TRUE;
+                return true;
             }
-            return FALSE;
+            return false;
         }
         n = n->nNext;
     }
@@ -207,7 +207,7 @@ static bool hashtable_put_real(HashTable *this, uint32_t flags, ht_hash_t h, ht_
     ++this->count;
     hashtable_maybe_resize(this);
 
-    return TRUE;
+    return true;
 }
 
 bool _hashtable_quick_put(HashTable *this, uint32_t flags, ht_hash_t h, ht_key_t key, void *value, void **oldvalue)
@@ -236,12 +236,12 @@ bool _hashtable_quick_contains(HashTable *this, ht_hash_t h, ht_key_t key)
     n = this->nodes[index];
     while (NULL != n) {
         if (n->hash == h && this->ef(key, n->key)) {
-            return TRUE;
+            return true;
         }
         n = n->nNext;
     }
 
-    return FALSE;
+    return false;
 }
 
 bool _hashtable_contains(HashTable *this, ht_key_t key)
@@ -267,12 +267,12 @@ bool _hashtable_quick_get(HashTable *this, ht_hash_t h, ht_key_t key, void **val
     while (NULL != n) {
         if (n->hash == h && this->ef(key, n->key)) {
             *value = n->data;
-            return TRUE;
+            return true;
         }
         n = n->nNext;
     }
 
-    return FALSE;
+    return false;
 }
 
 bool _hashtable_get(HashTable *this, ht_key_t key, void **value)
@@ -322,12 +322,12 @@ static bool hashtable_delete_real(HashTable *this, ht_hash_t h, ht_key_t key, bo
             }
             free(n);
             --this->count;
-            return TRUE;
+            return true;
         }
         n = n->nNext;
     }
 
-    return FALSE;
+    return false;
 }
 
 bool _hashtable_quick_delete(HashTable *this, ht_hash_t h, ht_key_t key, bool call_dtor)

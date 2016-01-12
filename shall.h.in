@@ -9,6 +9,8 @@
 
 # define SHALL_API
 
+# include <stddef.h> /* size_t */
+# include <stdbool.h>
 # include "types.h"
 
 typedef uint8_t Version[3];

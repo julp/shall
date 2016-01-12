@@ -238,7 +238,7 @@ int main(int argc, char **argv)
                     } else {
                         char *css;
 
-                        css = theme_export_as_css(theme, NULL, TRUE);
+                        css = theme_export_as_css(theme, NULL, true);
                         fputs(css, stdout);
                         free(css);
                     }
