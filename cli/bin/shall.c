@@ -69,10 +69,22 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
                 return;
             }
         }
-        do {
-            read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
+        read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
+        if (read > 0) {
             string_append_string_len(buffer, bufraw, read);
-        } while (ARRAY_SIZE(bufraw) == read);
+#ifdef TEST
+            debug("encoding = %s", encoding_guess(buffer->ptr, buffer->len, NULL));
+//             if (NULL == encoding) {
+                if (NULL != memchr(buffer->ptr, '\0', buffer->len)) {
+                    debug("binary file detected");
+                }
+//             }
+#endif
+            while (ARRAY_SIZE(bufraw) == read) {
+                read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
+                string_append_string_len(buffer, bufraw, read);
+            }
+        }
         if (stdin != fp) {
             fclose(fp);
         }

@@ -1,3 +1,5 @@
+#include "cpp.h"
+#include "shall.h"
 
 #if defined(WITH_ICU)
 
@@ -19,7 +21,7 @@
  *
  * @return NULL or the name of the encoding
  */
-static const char *guess_encoding(const char *string, size_t string_len, size_t *signature_len)
+SHALL_API const char *encoding_guess(const char *string, size_t string_len, size_t *signature_len)
 {
     UErrorCode status;
     const char *encoding;
@@ -64,6 +66,10 @@ end:
 
 #else
 
+# define S(s) s, STR_LEN(s)
+
+# include <string.h>
+
 static struct {
     const char *encoding;
     const char *signature;
@@ -91,7 +97,9 @@ static const char *detect_signature(const char *string, size_t string_len, size_
 
     for (i = 0; i < ARRAY_SIZE(signatures); i++) {
         if (string_len >= signatures[i].signature_len && 0 == memcmp(string, signatures[i].signature, signatures[i].signature_len)) {
-            *signature_len = signatures[i].signature_len;
+            if (NULL != signature_len) {
+                *signature_len = signatures[i].signature_len;
+            }
             return signatures[i].encoding;
         }
     }
@@ -114,7 +122,7 @@ static const char *detect_signature(const char *string, size_t string_len, size_
  *
  * @return NULL or the name of the encoding
  */
-static const char *guess_encoding(const char *string, size_t string_len, size_t *signature_len)
+SHALL_API const char *encoding_guess(const char *string, size_t string_len, size_t *signature_len)
 {
     const char *encoding;
 

@@ -40,7 +40,7 @@ endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 set(COMMON_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/lib/;${PROJECT_SOURCE_DIR}/shared/;${PROJECT_SOURCE_DIR}/include/;${PROJECT_BINARY_DIR}")
 
 set(SOURCES #
-    lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/tokens.c lib/lexers/helpers.c lib/version.c
+    lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/tokens.c lib/lexers/helpers.c lib/version.c lib/encoding.c
     lib/darray.c lib/dlist.c
     shared/xtring.c shared/hashtable.c
 )
