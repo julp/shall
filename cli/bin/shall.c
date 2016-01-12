@@ -51,11 +51,9 @@ static void usage(void)
 static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt, Options *lexer_options)
 {
     size_t o;
-    ht_hash_t h;
     char *result;
     Lexer *lexer;
     String *buffer;
-    const char *imp_name;
 
     buffer = string_new();
     {
@@ -88,16 +86,18 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
                 return;
             }
         }
-        imp_name = lexer_implementation_name(limp);
-        h = hashtable_hash(&lexers, imp_name);
-        if (!hashtable_quick_get(&lexers, h, imp_name, &lexer)) {
+        if (!hashtable_direct_get(&lexers, limp, &lexer)) {
             lexer = lexer_create(limp);
             for (o = 0; o < lexer_options->options_len; o++) {
                 if (0 != lexer_set_option_as_string(lexer, lexer_options->options[o].name, lexer_options->options[o].value, lexer_options->options[o].value_len)) {
                     fprintf(stderr, "option '%s' rejected by %s lexer\n", lexer_options->options[o].name, lexer_implementation_name(lexer_implementation(lexer)));
                 }
             }
-            hashtable_quick_put(&lexers, 0, h, imp_name, lexer, NULL);
+            hashtable_direct_put(&lexers, 0, limp, lexer, NULL);
+#ifdef DEBUG
+        } else {
+            debug("[CACHE] Hit for %s", lexer_implementation_name(lexer_implementation(lexer)));
+#endif
         }
     } else {
         lexer = default_lexer;
@@ -125,7 +125,6 @@ static void print_lexer_option_cb(int type, const char *name, OptionValue defval
         {
             static const char *map[] = { "false", "true" };
 
-//             printf("%s", map[OPT_GET_BOOL(defval)]);
             fputs(map[!!OPT_GET_BOOL(defval)], stdout);
             break;
         }
@@ -133,7 +132,6 @@ static void print_lexer_option_cb(int type, const char *name, OptionValue defval
             printf("%d", OPT_GET_INT(defval));
             break;
         case OPT_TYPE_STRING:
-//             printf("%s", OPT_STRVAL(defval));
             fputs(OPT_STRVAL(defval), stdout);
             break;
         case OPT_TYPE_LEXER:
@@ -196,15 +194,15 @@ int main(int argc, char **argv)
 {
     int o;
     size_t i;
-    Lexer *lexer;
     Formatter *fmt;
+    Lexer *first_lexer, *last_lexer;
     const LexerImplementation *limp;
     const FormatterImplementation *fimp;
 
     fmt = NULL;
-    lexer = NULL;
     limp = NULL;
     fimp = termfmt;
+    first_lexer = last_lexer = NULL;
     for (o = 0; o < COUNT; o++) {
         options_init(&options[o]);
     }
@@ -272,10 +270,10 @@ int main(int argc, char **argv)
 
     hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
     if (NULL != limp) {
-        lexer = lexer_create(limp);
+        first_lexer = lexer_create(limp);
         for (i = 0; i < options[LEXER].options_len; i++) {
-            if (0 != lexer_set_option_as_string(lexer, options[LEXER].options[i].name, options[LEXER].options[i].value, options[LEXER].options[i].value_len)) {
-                fprintf(stderr, "option '%s' rejected by %s lexer\n", options[LEXER].options[i].name, lexer_implementation_name(lexer_implementation(lexer)));
+            if (0 != lexer_set_option_as_string(first_lexer, options[LEXER].options[i].name, options[LEXER].options[i].value, options[LEXER].options[i].value_len)) {
+                fprintf(stderr, "option '%s' rejected by %s lexer\n", options[LEXER].options[i].name, lexer_implementation_name(lexer_implementation(first_lexer)));
             }
         }
     }
@@ -286,14 +284,14 @@ int main(int argc, char **argv)
         }
     }
     if (0 == argc) {
-        procfile("-", lexer, fmt, &options[LEXER]);
+        procfile("-", first_lexer, fmt, &options[LEXER]);
     } else {
         for ( ; argc--; ++argv) {
-            procfile(*argv, lexer, fmt, &options[LEXER]);
+            procfile(*argv, first_lexer, fmt, &options[LEXER]);
         }
     }
-    if (NULL != lexer) {
-        lexer_destroy(lexer, (on_lexer_destroy_cb_t) lexer_destroy);
+    if (NULL != first_lexer) {
+        lexer_destroy(first_lexer, (on_lexer_destroy_cb_t) lexer_destroy);
     }
     formatter_destroy(fmt);
     hashtable_destroy(&lexers);
