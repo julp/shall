@@ -79,6 +79,13 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
                     debug("binary file detected");
                 }
 //             }
+            {
+                const char *errp;
+
+                if (!encoding_utf8_check(buffer->ptr, buffer->len, &errp)) {
+                    debug("Invalid byte found: 0x%02" PRIx8 " at offset %ld", (uint8_t) *errp, errp - buffer->ptr);
+                }
+            }
 #endif
             while (ARRAY_SIZE(bufraw) == read) {
                 read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);

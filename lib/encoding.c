@@ -150,3 +150,62 @@ SHALL_API const char *encoding_guess(const char *string, size_t string_len, size
 }
 
 #endif /* WITH_ICU */
+
+#undef S
+#define S(state) STATE_##state
+
+enum {
+    S(__), // error/invalid, have to be 0
+    S(OK), // accept
+    S(FB),
+    S(32),
+    S(32E0),
+    S(32ED),
+    S(42),
+    S(42F0),
+    S(42F4),
+    S(43),
+    _STATE_COUNT
+};
+
+static const uint8_t state_transition_table[_STATE_COUNT][256] = {
+    // handle first byte
+    [ S(OK) ]   = { [ 0 ... 0x7F ] = S(OK), [ 0xC2 ... 0xDF ] = S(FB), [ 0xE0 ] = S(32E0), [ 0xE1 ... 0xEC ] = S(32), [ 0xED ] = S(32ED), [ 0xEE ... 0xEF ] = S(32), [ 0xF0 ] = S(42F0), [ 0xF1 ... 0xF3 ] = S(42), [ 0xF4 ] = S(42F4) },
+    // final regular byte
+    [ S(FB) ]   = { [ 0x80 ... 0xBF ] = S(OK) },
+    // 3 bytes encoded code point
+    [ S(32) ]   = { [ 0x80 ... 0xBF ] = S(FB) }, // 2nd byte, normal case
+    [ S(32E0) ] = { [ 0xA0 ... 0xBF ] = S(FB) }, // 2nd byte, special case for 0xE0
+    [ S(32ED) ] = { [ 0x80 ... 0x9F ] = S(FB) }, // 2nd byte, special case for 0xED
+    // 4 bytes encoded code point
+    [ S(42) ]   = { [ 0x80 ... 0xBF ] = S(43) }, // 2nd byte, normal case
+    [ S(42F0) ] = { [ 0x90 ... 0xBF ] = S(43) }, // 2nd byte, special case for 0xF0
+    [ S(42F4) ] = { [ 0x80 ... 0x8F ] = S(43) }, // 2nd byte, special case for 0xF4
+    [ S(43) ]   = { [ 0x80 ... 0xBF ] = S(FB) }, // 3rd byte
+};
+
+SHALL_API bool encoding_utf8_check(const char *string, size_t string_len, const char **errp)
+{
+    int state;
+    const uint8_t *s;
+    const uint8_t * const end = (const uint8_t *) string + string_len;
+
+    state = S(OK);
+    for (s = (const uint8_t *) string; S(__) != state && s < end; s++) {
+//         int prev = state;
+        state = state_transition_table[state][*s];
+//         printf("%ld 0x%02X %d => %d\n", s - (const uint8_t *) string, *s, prev, state);
+    }
+//     if (S(OK) != state) {
+//         printf("%d at %ld (0x%02X)\n", state, s - (const uint8_t *) string, *s);
+//     }
+    if (NULL != errp) {
+        if (S(OK) == state) {
+            *errp = NULL;
+        } else {
+            *errp = (const char *) s;
+        }
+    }
+
+    return S(OK) == state;
+}
