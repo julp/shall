@@ -164,17 +164,17 @@ SHALL_API const char *encoding_guess(const char *string, size_t string_len, size
 #define S(state) STATE_##state
 
 enum {
-    S(__), // error/invalid, have to be 0
-    S(OK), // accept
-    S(FB),
-    S(32),
-    S(32E0),
-    S(32ED),
-    S(42),
-    S(42F0),
-    S(42F4),
-    S(43),
-    _STATE_COUNT
+    S(__),       // error/invalid, have to be 0
+    S(OK),       // accept
+    S(FB),       // last byte (always in range [0x80;0xBF) for a code point encoded on more than a single byte
+    S(32),       // normal case for the 2nd byte of a 3 bytes code point ([0x80;0xBF])
+    S(32E0),     // still 3 bytes encoded code point but when 2nd byte is 0xE0, its range is restricted to [0xA0;0xBF]
+    S(32ED),     // still 3 bytes encoded code point but when 2nd byte is 0xED, its range is restricted to [0x80;0x9F]
+    S(42),       // normal case for the 2nd byte of a 4 bytes code point ([0x80;0xBF])
+    S(42F0),     // still 4 bytes encoded code point but when 2nd byte is 0xF0, its range is restricted to [0x90;0xBF]
+    S(42F4),     // still 4 bytes encoded code point but when 2nd byte is 0xF4, its range is restricted to [0x80;0x8F]
+    S(43),       // 3rd byte of a 4 bytes encoded code point
+    _STATE_COUNT // number of states
 };
 
 static const uint8_t state_transition_table[_STATE_COUNT][256] = {
@@ -199,7 +199,7 @@ SHALL_API bool encoding_utf8_check(const char *string, size_t string_len, const 
     const uint8_t *s;
     const uint8_t * const end = (const uint8_t *) string + string_len;
 
-    state = S(OK);
+    state = S(OK); // accept empty string
     for (s = (const uint8_t *) string; S(__) != state && s < end; s++) {
 //         int prev = state;
         state = state_transition_table[state][*s];
@@ -215,6 +215,16 @@ SHALL_API bool encoding_utf8_check(const char *string, size_t string_len, const 
             *errp = (const char *) s;
         }
     }
-
+#if 0
+    if (S(OK) != state) {
+        if (S(__) != state && s == end) {
+            return TRUNCATED;
+        } else {
+            return INVALID;
+        }
+    } else {
+        return OK;
+    }
+#endif
     return S(OK) == state;
 }
