@@ -80,6 +80,15 @@ static struct {
     { "UTF-32BE", S("\x00\x00\xFE\xFF") },
     { "UTF-16LE", S("\xFF\xFE") },
     { "UTF-16BE", S("\xFE\xFF") },
+#if 0
+    { "SCSU",       S("\x0E\xFE\xFF") },
+    { "BOCU-1",     S("\xFB\xEE\x28") },
+    { "UTF-7",      S("\x2B\x2F\x76\x38") },
+    { "UTF-7",      S("\x2B\x2F\x76\x39") },
+    { "UTF-7",      S("\x2B\x2F\x76\x2B") },
+    { "UTF-7",      S("\x2B\x2F\x76\x2F") },
+    { "UTF-EBCDIC", S("\xDD\x73\x66\x73") },
+#endif
 };
 
 /**
