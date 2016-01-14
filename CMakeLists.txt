@@ -18,6 +18,7 @@ check_include_files("stdint.h" HAVE_STDINT_H)
 check_include_files("stdbool.h" HAVE_STDBOOL_H)
 include(CheckFunctionExists)
 check_function_exists("fnmatch" HAVE_FNMATCH)
+check_function_exists("stpcpy" HAVE_STPCPY)
 
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
