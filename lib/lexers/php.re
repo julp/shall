@@ -49,8 +49,8 @@ typedef struct {
 
 static int phpanalyse(const char *src, size_t src_len)
 {
-    // TODO: "<?php" is case insentive
-    if (src_len >= STR_LEN("<?XXX") && (0 == memcmp(src, "<?php", STR_LEN("<?php")) || (0 == memcmp(src, "<?", STR_LEN("<?")) && 0 != memcmp(src, "<?xml", STR_LEN("<?xml"))))) {
+    // TODO: look anywhere into the string?
+    if (src_len >= STR_LEN("<?XXX") && (0 == ascii_memcasecmp(src, "<?php", STR_LEN("<?php")) || (0 == memcmp(src, "<?", STR_LEN("<?")) && 0 != memcmp(src, "<?xml", STR_LEN("<?xml"))))) {
         return 999;
     }
 
