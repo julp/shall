@@ -541,7 +541,6 @@ debug("rv.current_lexer_offset = %d, rv.lexer_stack_offset = %d", rv.current_lex
                     current_lexer = rv.lexer_stack[rv.current_lexer_offset].lexer;
                     ldata = rv.lexer_stack[rv.current_lexer_offset].data;
 #endif
-                    // TODO: pourquoi on n'a le même lexer ?!?
 debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->imp->name, rv.return_file, rv.return_func, rv.return_line);
                     if (NULL != fmt->imp->start_lexing) {
                         fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);

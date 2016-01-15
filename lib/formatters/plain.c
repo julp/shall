@@ -22,7 +22,7 @@ static int end_document(String *out, FormatterData *UNUSED(data))
 
 static int start_token(int token, String *out, FormatterData *UNUSED(data))
 {
-    string_append_string(out, tokens[token].name); // TODO: string_append_string_len
+    string_append_string_len(out, tokens[token].name, tokens[token].name_len);
     STRING_APPEND_STRING(out, ": ");
 
     return 0;

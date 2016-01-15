@@ -2,6 +2,8 @@
 
 # define TOKENS_H
 
+# include <stddef.h> /* size_t */
+
 enum {
 #define TOKEN(constant, description, cssclass) \
     constant,
@@ -13,6 +15,7 @@ enum {
 typedef struct {
     int value;
     const char *name;
+    size_t name_len;
     const char *description;
     const char *cssclass;
 } Token;
