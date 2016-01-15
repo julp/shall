@@ -40,7 +40,10 @@
 
 typedef struct {
     const Theme *theme ALIGNED(sizeof(OptionValue));
-    const char *sequences[_TOKEN_COUNT];
+    struct {
+        size_t value_len;
+        const char *value;
+    } sequences[_TOKEN_COUNT];
 } TerminalFormatterData;
 
 // bold (1) + italic (3) + underline (4) (unused for now) + fg (38;2;R;G;B) + bg (48;2;R;G;B)
@@ -58,7 +61,8 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
         theme = theme_by_name("molokai");
     }
     for (i = 0; i < _TOKEN_COUNT; i++) {
-        mydata->sequences[i] = NULL;
+        mydata->sequences[i].value_len = 0;
+        mydata->sequences[i].value = NULL;
         if (theme->styles[i].flags) {
             char *w, buffer[STR_SIZE(LONGEST_ANSI_ESCAPE_SEQUENCE)];
 
@@ -77,7 +81,8 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
                 w += sprintf(w, "48;2;%" PRIu8 ";%" PRIu8 ";%" PRIu8 ";", theme->styles[i].bg.r, theme->styles[i].bg.g, theme->styles[i].bg.b);
             }
             w[-1] = 'm'; // overwrite last ';'
-            mydata->sequences[i] = strdup(buffer);
+            mydata->sequences[i].value = strdup(buffer);
+            mydata->sequences[i].value_len = w - buffer;
         }
     }
 
@@ -91,8 +96,8 @@ static int terminal_end_document(String *UNUSED(out), FormatterData *data)
 
     mydata = (TerminalFormatterData *) data;
     for (i = 0; i < _TOKEN_COUNT; i++) {
-        if (NULL != mydata->sequences[i]/* && '\0' != *mydata->sequences[i]*/) {
-            free((void *) mydata->sequences[i]);
+        if (mydata->sequences[i].value_len > 0) {
+            free((void *) mydata->sequences[i].value);
         }
     }
 
@@ -104,8 +109,8 @@ static int terminal_start_token(int token, String *out, FormatterData *data)
     TerminalFormatterData *mydata;
 
     mydata = (TerminalFormatterData *) data;
-    if (NULL != mydata->sequences[token]/* && '\0' != *mydata->sequences[token]*/) {
-        string_append_string(out, mydata->sequences[token]);
+    if (mydata->sequences[token].value_len > 0) {
+        string_append_string_len(out, mydata->sequences[token].value, mydata->sequences[token].value_len);
     }
 
     return 0;
@@ -116,7 +121,7 @@ static int terminal_end_token(int token, String *out, FormatterData *data)
     TerminalFormatterData *mydata;
 
     mydata = (TerminalFormatterData *) data;
-    if (NULL != mydata->sequences[token]/* && '\0' != *mydata->sequences[token]*/) {
+    if (mydata->sequences[token].value_len > 0) {
         STRING_APPEND_STRING(out, "\e[39;49;00m");
     }
 
