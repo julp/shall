@@ -1,6 +1,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "cpp.h"
 #include "tokens.h"
