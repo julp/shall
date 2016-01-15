@@ -7,6 +7,7 @@
 #include "cpp.h"
 #include "tokens.h"
 #include "types.h"
+#include "themes.h"
 #include "shall.h"
 #include "xtring.h"
 
@@ -139,6 +140,15 @@ static void option_cb(int opt_type, const char *name, OptionValue defval, const 
                 fprintf(fp, "\"%s\"", OPT_STRVAL(defval));
             }
             break;
+        case OPT_TYPE_THEME:
+        {
+            if (NULL == OPT_THEMPTR(defval)) {
+                fputs("null/none", fp);
+            } else {
+                fputs(theme_name(OPT_THEMPTR(defval)), fp);
+            }
+            break;
+        }
         case OPT_TYPE_LEXER:
         {
             if (NULL == OPT_LEXPTR(defval)) {

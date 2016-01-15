@@ -588,8 +588,9 @@ SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
 
             optval = lexer->optvals[lo->offset / sizeof(OptionValue)];
             switch (lo->type) {
-                case OPT_TYPE_BOOL:
                 case OPT_TYPE_INT:
+                case OPT_TYPE_BOOL:
+                case OPT_TYPE_THEME:
                     /* NOP */
                     break;
                 case OPT_TYPE_STRING:

@@ -270,9 +270,10 @@ SHALL_API void formatter_destroy(Formatter *fmt)
 
         for (fo = fmt->imp->options; NULL != fo->name; fo++) {
             switch (fo->type) {
-                case OPT_TYPE_LEXER:
-                case OPT_TYPE_BOOL:
                 case OPT_TYPE_INT:
+                case OPT_TYPE_BOOL:
+                case OPT_TYPE_LEXER:
+                case OPT_TYPE_THEME:
                     /* NOP */
                     break;
                 case OPT_TYPE_STRING:

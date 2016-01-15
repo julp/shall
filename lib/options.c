@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "options.h"
 #include "shall.h"
+#include "themes.h"
 
 /**
  * Copies an OptionValue from one to another.
@@ -23,6 +24,7 @@ void opt_copy(OptionType type, OptionValue *dest, OptionValue src, OptionValue d
         case OPT_TYPE_BOOL:
         case OPT_TYPE_INT:
         case OPT_TYPE_LEXER:
+        case OPT_TYPE_THEME:
             memcpy(dest, &src, sizeof(*dest));
             break;
         case OPT_TYPE_STRING:
@@ -90,6 +92,17 @@ int parse_option_as_string(OptionValue *optvalptr, int type, const char *value, 
             OPT_STRVAL(*optvalptr) = strdup(value);
             OPT_STRLEN(*optvalptr) = value_len;
             return OPT_SUCCESS;
+        }
+        case OPT_TYPE_THEME:
+        {
+            const Theme *theme;
+
+            if (NULL == (theme = theme_by_name(value))) {
+                return OPT_ERR_UNKNOWN_THEME;
+            } else {
+                OPT_THEMPTR(*optvalptr) = theme;
+                return OPT_SUCCESS;
+            }
         }
         case OPT_TYPE_LEXER:
             if (reject_lexer_type) {

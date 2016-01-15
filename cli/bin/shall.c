@@ -133,7 +133,8 @@ static const char *type2string[] = {
     [ OPT_TYPE_INT ]    = "int",
     [ OPT_TYPE_BOOL ]   = "boolean",
     [ OPT_TYPE_STRING ] = "string",
-    [ OPT_TYPE_LEXER ]  = "lexer"
+    [ OPT_TYPE_THEME ]  = "theme",
+    [ OPT_TYPE_LEXER ]  = "lexer",
 };
 
 static void print_lexer_option_cb(int type, const char *name, OptionValue defval, const char *docstr, void *UNUSED(data))
@@ -151,7 +152,22 @@ static void print_lexer_option_cb(int type, const char *name, OptionValue defval
             printf("%d", OPT_GET_INT(defval));
             break;
         case OPT_TYPE_STRING:
-            fputs(OPT_STRVAL(defval), stdout);
+        {
+            size_t i;
+
+            fputc('"', stdout);
+            for (i = 0; i < OPT_STRLEN(defval); i++) {
+                if ('"' == OPT_STRVAL(defval)[i]) {
+                    fputs("\"", stdout);
+                } else {
+                    fputc(OPT_STRVAL(defval)[i], stdout);
+                }
+            }
+            fputc('"', stdout);
+            break;
+        }
+        case OPT_TYPE_THEME:
+            fputs("null/default", stdout);
             break;
         case OPT_TYPE_LEXER:
 //             if (0 == defval) {

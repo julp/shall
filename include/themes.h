@@ -31,10 +31,21 @@ typedef struct {
 #define BG(color) \
     .bg = color, .bg_set = true
 
-typedef struct {
+#define HL(color) \
+    .hl = color, .hl_set = true
+
+struct Theme {
     const char *name;
+#if 0
+    // color to hightlight lines
+    Color hl;
+    bool hl_set;
+    // global background color
+    Color bg;
+    bool bg_set;
+#endif
     Style styles[_TOKEN_COUNT];
-} Theme;
+};
 
 SHALL_API const char *theme_name(const Theme *);
 
