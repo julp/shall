@@ -467,10 +467,11 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
         if (YYCURSOR == prev_yycursor) {
             if (++yycursor_unchanged >= RECURSION_LIMIT) {
                 // TODO: return an error code and add a size_t * argument to set, if not NULL, the output string length
-                fputs("RECURSION FOUND\n", stderr);
+                fputs("[ ERR ] RECURSION FOUND\n", stderr);
                 goto abandon_or_done;
             }
         } else {
+            yycursor_unchanged = 0;
             prev_yycursor = YYCURSOR;
         }
         switch (what) {
