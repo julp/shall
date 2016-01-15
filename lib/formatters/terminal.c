@@ -15,29 +15,6 @@
 #define BLINK     "05"
 #define OVERLINE  "06"
 
-#define BLACK     "30"
-#define DARKGRAY  BLACK ";" BOLD
-#define DARKRED   "31"
-#define RED       DARKRED ";" BOLD
-#define DARKGREEN "32"
-#define GREEN     DARKGREEN ";" BOLD
-#define BROWN     "33"
-#define YELLOW    BROWN ";" BOLD
-#define DARKBLUE  "34"
-#define BLUE      DARKBLUE ";" BOLD
-#define PURPLE    "35"
-#define FUCHSIA   PURPLE ";" BOLD
-#define TEAL      "36"
-#define TURQUOISE TEAL ";" BOLD
-#define LIGHTGRAY "37"
-#define WHITE     LIGHTGRAY ";" BOLD
-
-#define DARKTEAL   TURQUOISE
-#define DARKYELLOW BROWN
-#define FUSCIA     FUCHSIA
-
-#define SEQ(x) "\e[" x "m"
-
 typedef struct {
     const Theme *theme ALIGNED(sizeof(OptionValue));
     struct {
