@@ -11,6 +11,8 @@
 #define dark_blue  { 0x5E, 0x5D, 0x83 }
 #define light_grey { 0x46, 0x54, 0x57 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 const SHALL_API Theme molokai = {
     "molokai",
     {
@@ -72,3 +74,4 @@ const SHALL_API Theme molokai = {
 //         [ TEXT ]                   = { FG(white), BG(black) },
     }
 };
+#pragma GCC diagnostic pop

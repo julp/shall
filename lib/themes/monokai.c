@@ -13,6 +13,8 @@
 #define bright_green { 0xA6, 0xE2, 0x2E }
 #define light_violet { 0xAE, 0x81, 0xFF }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 const SHALL_API Theme monokai = {
     "monokai",
     {
@@ -71,3 +73,4 @@ const SHALL_API Theme monokai = {
         [ NAME_TAG ]               = { FG(bright_pink) },
     }
 };
+#pragma GCC diagnostic pop
