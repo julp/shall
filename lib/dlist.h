@@ -5,7 +5,10 @@
 # include <stddef.h>
 # include <stdbool.h>
 
+# ifndef DTOR_FUNC
+#  define DTOR_FUNC
 typedef void (*DtorFunc)(void *);
+# endif /* !DOTR_FUNC */
 typedef int (*CmpFunc)(const void *, const void *);
 
 typedef struct DListElement

@@ -12,7 +12,10 @@ typedef uintptr_t ht_key_t; // key_t is defined for ftok
 typedef uintptr_t ht_hash_t;
 typedef ht_hash_t (*HashFunc)(ht_key_t);
 
+# ifndef DTOR_FUNC
+#  define DTOR_FUNC
 typedef void (*DtorFunc)(void *);
+# endif /* !DOTR_FUNC */
 typedef void *(*DupFunc)(const void *);
 typedef bool (*EqualFunc)(ht_key_t, ht_key_t);
 // typedef int (*CmpFunc)(const void *, const void *);
