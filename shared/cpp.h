@@ -56,6 +56,12 @@
 #  define WARN_UNUSED_RESULT
 # endif /* WARN_UNUSED_RESULT */
 
+# if GCC_VERSION >= 4003 || __has_attribute(hot)
+#  define HOT __attribute__((hot))
+# else
+#  define HOT
+# endif /* HOT */
+
 # ifndef __has_builtin
 #  define __has_builtin(x) 0
 # endif /* !__has_builtin */

@@ -24,21 +24,21 @@
 
 /* ==================== private helpers for growing up ==================== */
 
-static void _string_maybe_expand_of(String *str, size_t additional_length)
+static HOT void _string_maybe_expand_of(String *str, size_t additional_length)
 {
     assert(NULL != str);
 
-    if (str->len + additional_length >= str->allocated) {
+    if (UNEXPECTED(str->len + additional_length >= str->allocated)) {
         str->allocated = nearest_power(str->len + additional_length, STRING_INITIAL_LENGTH);
         str->ptr = mem_renew(str->ptr, *str->ptr, str->allocated + 1);
     }
 }
 
-static void _string_maybe_expand_to(String *str, size_t total_length)
+static HOT void _string_maybe_expand_to(String *str, size_t total_length)
 {
     assert(NULL != str);
 
-    if (total_length >= str->allocated) {
+    if (UNEXPECTED(total_length >= str->allocated)) {
         str->allocated = nearest_power(total_length, STRING_INITIAL_LENGTH);
         str->ptr = mem_renew(str->ptr, *str->ptr, str->allocated + 1);
     }
