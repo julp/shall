@@ -98,7 +98,7 @@ target_link_libraries(shalldoc shall_lib)
 
 set_target_properties(shall_lib PROPERTIES
     INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES}"
-    PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/bool.h;include/xtring.h"
+    PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/xtring.h"
 )
 set_target_properties(shall_bin shalltest shalldoc PROPERTIES INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")
 
