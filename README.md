@@ -9,11 +9,11 @@ Intended goals:
 
 ## Available lexers:
 
-See README.md in lexers/ subfolder
+See README.md in lib/lexers/
 
 ## Available formatters:
 
-See README.md in formatters/ subfolder
+See README.md in lib/formatters/
 
 # Prerequisites
 
