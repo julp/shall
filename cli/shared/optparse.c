@@ -58,6 +58,11 @@ void options_add(Options *opt, const char *optarg/*, const char **name, const ch
  */
 void options_clear(Options *opt)
 {
+    size_t o;
+
+    for (o = 0; o < opt->options_len; o++) {
+        free((void *) opt->options[o].name); // quiet on const qualifier
+    }
     opt->options_len = 0;
 }
 
