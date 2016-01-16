@@ -3,12 +3,24 @@
 
 #include "optparse.h"
 
+/**
+ * Initialiaze a store of string pairs (key/value)
+ *
+ * @param opt the container
+ */
 void options_init(Options *opt)
 {
     opt->options = NULL;
     opt->options_len = opt->options_size = 0;
 }
 
+/**
+ * Parse a raw value in the form "key=value" or "key" (empty string
+ * will be assigned as value in the later case)
+ *
+ * @param opt the store
+ * @param optarg the string to parse to extract key and value
+ */
 void options_add(Options *opt, const char *optarg/*, const char **name, const char **value*/)
 {
     char *p;
@@ -39,6 +51,21 @@ void options_add(Options *opt, const char *optarg/*, const char **name, const ch
     ++opt->options_len;
 }
 
+/**
+ * Clear a key/pair store for reuse
+ *
+ * @param opt the store to clear
+ */
+void options_clear(Options *opt)
+{
+    opt->options_len = 0;
+}
+
+/**
+ * Free memory used by a store
+ *
+ * @param opt the store to destroy
+ */
 void options_free(Options *opt)
 {
     size_t o;

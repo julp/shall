@@ -382,3 +382,23 @@ void hashtable_destroy(HashTable *this)
     free(this->nodes);
     //free(this); // caller have to do this
 }
+
+
+void *hashtable_first(HashTable *this)
+{
+    if (NULL == this->gHead) {
+        return NULL;
+    } else {
+        return this->gHead->data;
+    }
+}
+
+
+void *hashtable_last(HashTable *this)
+{
+    if (NULL == this->gTail) {
+        return NULL;
+    } else {
+        return this->gTail->data;
+    }
+}

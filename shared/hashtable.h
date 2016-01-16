@@ -79,6 +79,9 @@ size_t hashtable_size(HashTable *);
 bool value_equal(ht_key_t, ht_key_t);
 ht_hash_t value_hash(ht_key_t);
 
+void *hashtable_first(HashTable *);
+void *hashtable_last(HashTable *);
+
 #define hashtable_hash(ht, k) \
     _hashtable_hash(ht, (ht_key_t) k)
 

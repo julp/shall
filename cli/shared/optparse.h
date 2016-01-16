@@ -24,5 +24,6 @@ typedef struct {
 void options_init(Options *);
 void options_add(Options *, const char *);
 void options_free(Options *);
+void options_clear(Options *);
 
 #endif /* !OPTPARSE_H */

@@ -48,12 +48,13 @@ static void usage(void)
     exit(EUSAGE);
 }
 
-static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt, Options *lexer_options)
+static void procfile(const char *filename, Formatter *fmt)
 {
     size_t o;
     char *result;
     Lexer *lexer;
     String *buffer;
+    const LexerImplementation *limp;
 
     buffer = string_new();
     {
@@ -96,20 +97,25 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
             fclose(fp);
         }
     }
-    if (NULL == default_lexer) {
-        const LexerImplementation *limp;
-
-        if (NULL == (limp = lexer_implementation_for_filename(filename))) {
-            if (NULL == (limp = lexer_implementation_guess(buffer->ptr, buffer->len))) {
-                fprintf(stderr, "no suitable lexer found for '%s', skipping\n", filename);
-                return;
+    if (NULL == (limp = lexer_implementation_for_filename(filename))) {
+        if (NULL == (limp = lexer_implementation_guess(buffer->ptr, buffer->len))) {
+            // if at least one -l was used, use first one
+            if (NULL == (lexer = hashtable_first(&lexers))) {
+                // else use text (cat mode)
+                limp = lexer_implementation_by_name("text");
             }
         }
+    }
+    if (NULL == limp) {
+        // set implementation from lexer to avoid segfault
+        // (we are using the first registered one)
+        limp = lexer_implementation(lexer);
+    } else {
         if (!hashtable_direct_get(&lexers, limp, &lexer)) {
             lexer = lexer_create(limp);
-            for (o = 0; o < lexer_options->options_len; o++) {
-                if (0 != lexer_set_option_as_string(lexer, lexer_options->options[o].name, lexer_options->options[o].value, lexer_options->options[o].value_len)) {
-                    fprintf(stderr, "option '%s' rejected by %s lexer\n", lexer_options->options[o].name, lexer_implementation_name(lexer_implementation(lexer)));
+            for (o = 0; o < options[LEXER].options_len; o++) {
+                if (0 != lexer_set_option_as_string(lexer, options[LEXER].options[o].name, options[LEXER].options[o].value, options[LEXER].options[o].value_len)) {
+                    fprintf(stderr, "option '%s' rejected by %s lexer\n", options[LEXER].options[o].name, lexer_implementation_name(lexer_implementation(lexer)));
                 }
             }
             hashtable_direct_put(&lexers, 0, limp, lexer, NULL);
@@ -118,8 +124,6 @@ static void procfile(const char *filename, Lexer *default_lexer, Formatter *fmt,
             debug("[CACHE] Hit for %s", lexer_implementation_name(lexer_implementation(lexer)));
 #endif
         }
-    } else {
-        lexer = default_lexer;
     }
     highlight_string(lexer, fmt, buffer->ptr, buffer->len, &result, NULL);
     // print result
@@ -223,6 +227,7 @@ static void on_exit_cb(void)
     for (o = 0; o < COUNT; o++) {
         options_free(&options[o]);
     }
+    hashtable_destroy(&lexers);
 }
 
 int main(int argc, char **argv)
@@ -230,17 +235,14 @@ int main(int argc, char **argv)
     int o;
     size_t i;
     Formatter *fmt;
-    Lexer *first_lexer, *last_lexer;
-    const LexerImplementation *limp;
     const FormatterImplementation *fimp;
 
     fmt = NULL;
-    limp = NULL;
     fimp = termfmt;
-    first_lexer = last_lexer = NULL;
     for (o = 0; o < COUNT; o++) {
         options_init(&options[o]);
     }
+    hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
     atexit(on_exit_cb);
     while (-1 != (o = getopt_long(argc, argv, optstr, long_options, NULL))) {
         switch (o) {
@@ -279,17 +281,48 @@ int main(int argc, char **argv)
                 }
             }
             case 'l':
+            {
+                const LexerImplementation *limp;
+
                 if (NULL == (limp = lexer_implementation_by_name(optarg))) {
-                    fprintf(stderr, "unknown lexer '%s'\n", optarg);
-                    return EXIT_FAILURE;
+                    fprintf(stderr, "skip unknown lexer '%s'\n", optarg);
+                    // should we reset its options?
+                } else {
+                    Lexer *lexer;
+
+                    if (!hashtable_direct_get(&lexers, limp, &lexer)) {
+                        lexer = lexer_create(limp);
+                        hashtable_direct_put(&lexers, 0, limp, lexer, NULL);
+                    }
+                    // apply options (-o) which appears before this lexer (-l)
+                    for (i = 0; i < options[LEXER].options_len; i++) {
+                        if (0 != lexer_set_option_as_string(lexer, options[LEXER].options[i].name, options[LEXER].options[i].value, options[LEXER].options[i].value_len)) {
+                            fprintf(stderr, "option '%s' rejected by %s lexer\n", options[LEXER].options[i].name, lexer_implementation_name(limp));
+                        }
+                    }
+                    // then clear these options for the next one (if any other lexer)
+                    options_clear(&options[LEXER]);
                 }
                 break;
+            }
             case 'f':
                 if (NULL == (fimp = formatter_implementation_by_name(optarg))) {
                     fprintf(stderr, "unknown formatter '%s'\n", optarg);
                     return EXIT_FAILURE;
                 }
                 break;
+            /**
+             * NOTE:
+             * - lexer options (-o arguments) apply to the lexer (-l) which follows
+             * - lexer options which apply to any lexer (ie at the end of the command line)
+             *   will be applied (if supported) to guessed lexers
+             *
+             * Eg: -o phpopt1 -o phpopt2 -l php -o pgopt1 -l pgsql -o foo -o bar
+             *
+             * - phpopt1 and phpopt2 concerns PHP lexer
+             * - pgopt1, the PostgreSQL lexer
+             * - foo and bar, any other lexer
+             */
             case 'o':
                 options_add(&options[LEXER], optarg);
                 break;
@@ -303,15 +336,6 @@ int main(int argc, char **argv)
     argc -= optind;
     argv += optind;
 
-    hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
-    if (NULL != limp) {
-        first_lexer = lexer_create(limp);
-        for (i = 0; i < options[LEXER].options_len; i++) {
-            if (0 != lexer_set_option_as_string(first_lexer, options[LEXER].options[i].name, options[LEXER].options[i].value, options[LEXER].options[i].value_len)) {
-                fprintf(stderr, "option '%s' rejected by %s lexer\n", options[LEXER].options[i].name, lexer_implementation_name(lexer_implementation(first_lexer)));
-            }
-        }
-    }
     fmt = formatter_create(fimp);
     for (i = 0; i < options[FORMATTER].options_len; i++) {
         if (0 != formatter_set_option_as_string(fmt, options[FORMATTER].options[i].name, options[FORMATTER].options[i].value, options[FORMATTER].options[i].value_len)) {
@@ -319,17 +343,13 @@ int main(int argc, char **argv)
         }
     }
     if (0 == argc) {
-        procfile("-", first_lexer, fmt, &options[LEXER]);
+        procfile("-", fmt);
     } else {
         for ( ; argc--; ++argv) {
-            procfile(*argv, first_lexer, fmt, &options[LEXER]);
+            procfile(*argv, fmt);
         }
     }
-    if (NULL != first_lexer) {
-        lexer_destroy(first_lexer, (on_lexer_destroy_cb_t) lexer_destroy);
-    }
     formatter_destroy(fmt);
-    hashtable_destroy(&lexers);
 
     return EXIT_SUCCESS;
 }
