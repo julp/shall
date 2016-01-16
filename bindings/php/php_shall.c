@@ -403,7 +403,7 @@ PHP_FUNCTION(Shall_Base_Lexer_getOption)
     if (FAILURE == zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Os", &object, Shall_Lexer_ce_ptr, &name, &name_len)) {
         RETURN_FALSE;
     }
-    SHALL_FETCH_LEXER(o, object, TRUE);
+    SHALL_FETCH_LEXER(o, object, true);
     type = lexer_get_option(o->lexer, name, &optvalptr);
     php_get_option(type, optvalptr, return_value);
 }
@@ -419,7 +419,7 @@ PHP_FUNCTION(Shall_Base_Lexer_setOption)
     if (FAILURE == zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Osz", &object, Shall_Lexer_ce_ptr, &name, &name_len, &value)) {
         RETURN_FALSE;
     }
-    SHALL_FETCH_LEXER(o, object, TRUE);
+    SHALL_FETCH_LEXER(o, object, true);
     RETURN_BOOL(php_set_option((void *) o->lexer, name, value, 0, (set_option_t) lexer_set_option TSRMLS_CC));
 }
 
@@ -490,7 +490,7 @@ PHP_FUNCTION(Shall_Lexer__construct)
     if (NULL != options) {
         Shall_Lexer_object *o;
 
-        SHALL_FETCH_LEXER(o, return_value, TRUE);
+        SHALL_FETCH_LEXER(o, return_value, true);
         php_set_options((void *) o->lexer, options, 0, (set_option_t) lexer_set_option TSRMLS_CC);
     }
 }
@@ -878,7 +878,7 @@ PHP_FUNCTION(Shall_forbidden__construct)
         if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &options)) {
             return;
         }
-        SHALL_FETCH_FORMATTER(o, return_value, TRUE);
+        SHALL_FETCH_FORMATTER(o, return_value, true);
         if (&phpfmt == o->formatter->imp) {
             PHPFormatterData *mydata;
 
@@ -934,7 +934,7 @@ PHP_FUNCTION(Shall_Base_Formatter_getOption)
     if (FAILURE == zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Os", &object, Shall_Formatter_ce_ptr, &name, &name_len)) {
         RETURN_FALSE;
     }
-    SHALL_FETCH_FORMATTER(o, object, TRUE);
+    SHALL_FETCH_FORMATTER(o, object, true);
     type = formatter_get_option(o->formatter, name, &optvalptr);
     php_get_option(type , optvalptr, return_value);
 }
@@ -951,7 +951,7 @@ PHP_FUNCTION(Shall_Base_Formatter_setOption)
     if (FAILURE == zend_parse_method_parameters(ZEND_NUM_ARGS() TSRMLS_CC, getThis(), "Osz", &object, Shall_Formatter_ce_ptr, &name, &name_len, &value)) {
         RETURN_FALSE;
     }
-    SHALL_FETCH_FORMATTER(o, object, TRUE);
+    SHALL_FETCH_FORMATTER(o, object, true);
     php_set_option((void *) o->formatter, name, value, 1, formatter_set_option_compat_cb TSRMLS_CC);
 }
 
@@ -964,7 +964,7 @@ PHP_FUNCTION(Shall_Base_Formatter_start_document)
     if (FAILURE == zend_parse_parameters_none()) {
         return;
     }
-    SHALL_FETCH_FORMATTER(o, object, TRUE);
+    SHALL_FETCH_FORMATTER(o, object, true);
     RETURN_STRING(f->imp->start_document(?, &f->data), 1);
 }
 #endif
@@ -1144,8 +1144,8 @@ PHP_FUNCTION(Shall_highlight)
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sOO", &source, &source_len, &lexer, Shall_Lexer_ce_ptr, &formatter, Shall_Formatter_ce_ptr)) {
         RETURN_FALSE;
     }
-    SHALL_FETCH_LEXER(l, lexer, TRUE);
-    SHALL_FETCH_FORMATTER(f, formatter, TRUE);
+    SHALL_FETCH_LEXER(l, lexer, true);
+    SHALL_FETCH_FORMATTER(f, formatter, true);
     highlight_string(l->lexer, f->formatter, source, source_len, &dest, &dest_len);
 
     RETURN_STRINGL_COPY(dest, dest_len);
