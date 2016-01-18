@@ -34,6 +34,7 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
     TerminalFormatterData *mydata;
 
     mydata = (TerminalFormatterData *) data;
+    // TODO: define a default theme in shall itself
     if (NULL == (theme = mydata->theme)) {
         theme = theme_by_name("molokai");
     }

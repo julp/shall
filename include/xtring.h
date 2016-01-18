@@ -23,6 +23,11 @@ typedef struct {
 # include "cpp.h"
 # include <inttypes.h>
 
+#define STRING_APPEND_COLOR(string, prefix, color, suffix) \
+    do { \
+        string_append_formatted(string, prefix "#%02X%02X%02X" suffix, color.r, color.g, color.b); \
+    } while (0);
+
 # define STRING_APPEND_STRING(string, suffix) \
     do { \
         string_append_string_len(string, suffix, STR_LEN(suffix)); \

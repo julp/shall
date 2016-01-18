@@ -8,6 +8,8 @@ Format tokens as HTML 4 <span> tags within a <pre> tag
 
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
+| noclasses | boolean | false | when set to true (not recommanded), output `<span>` tags will not use CSS classes, but inline styles |
+| theme | (null) | null/none | the theme to use |
 | cssclass | string | "" | if valued to `foo`, ` class="foo"` is added to `<pre>` tag |
 | linestart | int | 1 | the line number for the first line |
 

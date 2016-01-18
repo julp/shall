@@ -77,11 +77,6 @@ SHALL_API const Theme *theme_by_name(const char *name)
         } \
     } while (0);
 
-#define STRING_APPEND_COLOR(string, color) \
-    do { \
-        string_append_formatted(string, "#%02X%02X%02X", color.r, color.g, color.b); \
-    } while (0);
-
 #include "hashtable.h"
 
 struct hashed_style {
@@ -153,15 +148,11 @@ SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool 
             STRING_APPEND_STRING(buffer, " {\n"); // TODO: add a description in comment
             if (theme->styles[i].bg_set) {
                 STRING_APPEND_IDENT(buffer);
-                STRING_APPEND_STRING(buffer, "background-color: ");
-                STRING_APPEND_COLOR(buffer, theme->styles[i].bg);
-                STRING_APPEND_STRING(buffer, ";\n");
+                STRING_APPEND_COLOR(buffer, "background-color: ", theme->styles[i].bg, ";\n");
             }
             if (theme->styles[i].fg_set) {
                 STRING_APPEND_IDENT(buffer);
-                STRING_APPEND_STRING(buffer, "color: ");
-                STRING_APPEND_COLOR(buffer, theme->styles[i].fg);
-                STRING_APPEND_STRING(buffer, ";\n");
+                STRING_APPEND_COLOR(buffer, "color: ", theme->styles[i].fg, ";\n");
             }
             if (theme->styles[i].bold) {
                 STRING_APPEND_IDENT(buffer);
