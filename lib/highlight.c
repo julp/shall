@@ -40,7 +40,7 @@ static void lexer_data_reset(LexerData *data)
     data->state = 0; // INITIAL
 }
 
-/*
+#if 0
 static void destroy_nonuser_lexer_data(void *rawdata)
 {
     LexerData *data;
@@ -54,9 +54,7 @@ static void destroy_nonuser_lexer_data(void *rawdata)
         darray_set_size(data->state_stack, 0);
     }
 }
-*/
 
-#if 0
 typedef struct {
     LexerInput *yy;
     String *buffer;
@@ -283,25 +281,41 @@ SHALL_API size_t highlight_string(Lexer *lexer, Formatter *fmt, const char *src,
 typedef struct {
     Lexer *lexer;
     LexerData *data;
+    bool user_lexer;
 } LexerListElement;
+
+static void unregister_lexer(void *data)
+{
+    LexerListElement *lle;
+
+    lle = (LexerListElement *) data;
+    lexer_data_destroy(lle->data);
+    free(lle->data);
+    if (!lle->user_lexer) {
+        lexer_destroy(lle->lexer, NULL);
+    }
+    free(lle);
+}
 
 static void _stack_lexer_real(LexerReturnValue *pdata, Lexer *lexer, bool keep)
 {
     bool known;
-    LexerData *ldata;
-
-debug("[STACK] %s", lexer->imp->name);
-    if (!(known = hashtable_direct_get(&pdata->lexers, lexer->imp, &ldata))) {
-        ldata = malloc(lexer->imp->data_size);
-        lexer_data_init(ldata, lexer->imp->data_size);
-        hashtable_direct_put(&pdata->lexers, 0, lexer->imp, ldata, NULL);
-    }
-#ifndef WITHOUT_DLIST
     LexerListElement *lle;
 
-    lle = malloc(sizeof(*lle));
-    lle->lexer = lexer;
-    lle->data = ldata;
+debug("[STACK] %s", lexer->imp->name);
+    if (!(known = hashtable_direct_get(&pdata->lexers, lexer->imp, &lle))) {
+        lle = malloc(sizeof(*lle));
+        lle->lexer = lexer;
+        lle->user_lexer = keep;
+        lle->data = malloc(lexer->imp->data_size);
+        lexer_data_init(lle->data, lexer->imp->data_size);
+        hashtable_direct_put(&pdata->lexers, 0, lexer->imp, lle, NULL);
+    } else {
+        // reset_lexer(data);?
+        lexer_destroy(lexer, NULL);
+        lexer = lle->lexer;
+    }
+#ifndef WITHOUT_DLIST
     dlist_append(&pdata->lexer_stack, lle);
 # if 0
     debug("<XXX>");
@@ -319,7 +333,7 @@ debug("[STACK] %s", lexer->imp->name);
     // NOTE: the init callback may stack an other lexer
     // so make sure to register the current one BEFORE
     if (!known && NULL != lexer->imp->init) {
-        lexer->imp->init(pdata, ldata, lexer->optvals);
+        lexer->imp->init(pdata, lle->data, lexer->optvals);
     }
 }
 
@@ -333,7 +347,7 @@ void stack_lexer_implementation(LexerReturnValue *pdata, const LexerImplementati
     _stack_lexer_real(pdata, lexer_create(limp), false);
 }
 
-void unstack_lexer(LexerReturnValue *pdata, const LexerImplementation *limp)
+void unstack_lexer(LexerReturnValue *pdata, const LexerImplementation *UNUSED(limp))
 {
     // reset_lexer(data);?
     // TODO: the lexer we unstack may be not the last
@@ -409,7 +423,7 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
 #else
     rv.lexer_stack_offset = rv.current_lexer_offset = 0;
 #endif
-    hashtable_init(&rv.lexers, 0, value_hash, value_equal, NULL, NULL, (DtorFunc) NULL/*lexer_data_destroy*/);
+    hashtable_init(&rv.lexers, 0, value_hash, value_equal, NULL, NULL, unregister_lexer);
 
     // skip UTF-8 BOM
     if (src_len >= STR_LEN(UTF8_BOM) && 0 == memcmp(src, UTF8_BOM, STR_LEN(UTF8_BOM))) {
@@ -451,16 +465,7 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
 #else
     ldata = rv.lexer_stack[rv.current_lexer_offset].data;
 #endif
-#if 0
-    // TODO/temporary
-    if (/*0 == strcmp(current_lexer->imp->name, "PHP") || */0 == strcmp(current_lexer->imp->name, "ERB")) {
-        extern const LexerImplementation html_lexer;
-
-        stack_lexer_implementation(&rv, &html_lexer);
-    }
-#endif
     while (1) {
-// debug("DO");
 // debug("YYLEX %s %p %p", current_lexer->imp->name, current_lexer, ldata);
         what = current_lexer->imp->yylex(yy, ldata, current_lexer->optvals, &rv);
         // trivial safety against infinite loop
