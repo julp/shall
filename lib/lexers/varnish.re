@@ -54,13 +54,13 @@ typedef struct {
     int version ALIGNED(sizeof(OptionValue));
 } VarnishLexerOption;
 
-static void varnishinit(LexerReturnValue *UNUSED(rv), LexerData *data, OptionValue *options)
+static void varnishinit(LexerReturnValue *UNUSED(rv), LexerData *data, const OptionValue *options)
 {
     VarnishLexerData *mydata;
-    VarnishLexerOption *myoptions;
+    const VarnishLexerOption *myoptions;
 
     mydata = (VarnishLexerData *) data;
-    myoptions = (VarnishLexerOption *) options;
+    myoptions = (const VarnishLexerOption *) options;
     mydata->version = myoptions->version;
 }
 

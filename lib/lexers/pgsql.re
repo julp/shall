@@ -521,10 +521,10 @@ PG_KEYWORD("zone", UNRESERVED_KEYWORD)
 
 static int pglex(YYLEX_ARGS) {
     PgLexerData *mydata;
-    PgLexerOption *myoptions;
+    const PgLexerOption *myoptions;
 
     mydata = (PgLexerData *) data;
-    myoptions = (PgLexerOption *) options;
+    myoptions = (const PgLexerOption *) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 

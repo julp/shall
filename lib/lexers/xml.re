@@ -28,7 +28,7 @@ enum {
     STATE(IN_DOUBLE_QUOTES),
 };
 
-static void htmlinit(LexerReturnValue *UNUSED(rv), LexerData *data, OptionValue *UNUSED(options))
+static void htmlinit(LexerReturnValue *UNUSED(rv), LexerData *data, const OptionValue *UNUSED(options))
 {
     XMLLexerData *mydata;
 

@@ -37,6 +37,7 @@ static char *find_ending_var(GlobalState *yy, char *start, char *end)
  * - expressions ? (SetEnvIfExpr, If, ElseIf, RewriteCond expr, Require expr, SSLRequire)
  **/
 static int apachelex(YYLEX_ARGS) {
+    (void) data;
     (void) options;
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;

@@ -73,12 +73,12 @@ enum {
     STATE(ST_LOOKING_FOR_PROPERTY)
 };
 
-static void phpinit(LexerReturnValue *rv, LexerData *data, OptionValue *options)
+static void phpinit(LexerReturnValue *rv, LexerData *data, const OptionValue *options)
 {
     Lexer *secondary;
-    PHPLexerOption *myoptions;
+    const PHPLexerOption *myoptions;
 
-    myoptions = (PHPLexerOption *) options;
+    myoptions = (const PHPLexerOption *) options;
     if (myoptions->start_inline) {
         BEGIN(ST_IN_SCRIPTING);
     }
@@ -267,10 +267,10 @@ static named_element_t classes[] = {
 
 static int phplex(YYLEX_ARGS) {
     PHPLexerData *mydata;
-    PHPLexerOption *myoptions;
+    const PHPLexerOption *myoptions;
 
     mydata = (PHPLexerData *) data;
-    myoptions = (PHPLexerOption *) options;
+    myoptions = (const PHPLexerOption *) options;
     while (YYCURSOR < YYLIMIT) {
 restart:
         YYTEXT = YYCURSOR;

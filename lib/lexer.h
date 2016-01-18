@@ -12,7 +12,7 @@
 #  define UTF8_BOM "\xEF\xBB\xBF"
 # endif /* !DOXYGEN */
 
-# define YYLEX_ARGS LexerInput *yy, LexerData *data, OptionValue *options, LexerReturnValue *rv
+# define YYLEX_ARGS LexerInput *yy, LexerData *data, const OptionValue *options, LexerReturnValue *rv
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
 // # define YYLINENO (yy->lineno)
@@ -276,7 +276,7 @@ struct LexerImplementation {
      * Optionnal (may be NULL) callback for additionnal initialization before
      * beginning tokenization
      */
-    void (*init)(LexerReturnValue *, LexerData *, OptionValue *);
+    void (*init)(LexerReturnValue *, LexerData *, const OptionValue *);
     /**
      * Optionnal (may be NULL) callback to find out a suitable lexer
      * for an input string. Higher is the returned value more accurate

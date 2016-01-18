@@ -57,12 +57,12 @@ typedef struct {
     OptionValue secondary ALIGNED(sizeof(OptionValue));
 } RubyLexerOption;
 
-static void rubyinit(LexerReturnValue *UNUSED(rv), LexerData *data, OptionValue *UNUSED(options))
+static void rubyinit(LexerReturnValue *UNUSED(rv), LexerData *data, const OptionValue *UNUSED(options))
 {
     BEGIN(IN_RUBY);
 }
 
-static void erbinit(LexerReturnValue *rv, LexerData *data, OptionValue *options)
+static void erbinit(LexerReturnValue *rv, LexerData *data, const OptionValue *options)
 {
     Lexer *secondary;
     RubyLexerData *mydata;
