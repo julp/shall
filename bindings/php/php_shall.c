@@ -16,6 +16,7 @@
 #define STRINGIFY(x) #x
 #define STRINGIFY_EXPANDED(x) STRINGIFY(x)
 
+#undef debug
 #if PHP_MAJOR_VERSION >= 7
 # define DEBUG
 #else
@@ -25,7 +26,7 @@
 #ifdef DEBUG
 # include <stdio.h>
 # define debug(format, ...) \
-    fprintf(stderr, format "\n", ## __VA_ARGS__)
+    fprintf(stderr, "[%d:%s] " format "\n", __LINE__, __func__, ## __VA_ARGS__)
 #else
 # define debug(format, ...)
 #endif /* DEBUG */
@@ -190,7 +191,7 @@ static void wrap_Lexer(zend_class_entry *ce, zval *object, const Lexer *lexer TS
         object_init_ex(object, ce);                                                       \
         FETCH_SHALL_LEXER_FROM_ZVAL(o, object);                                           \
         o->lexer = lexer;                                                                 \
-        debug("WRAP [%d:%s] lexer is %p", __LINE__, __func__, lexer); \
+        debug("WRAP lexer is %p", lexer); \
     } while(0);
 #endif
 
@@ -223,9 +224,7 @@ static void php_get_option(int type, OptionValue *optvalptr, zval *return_value)
                 zval *wl;
 
                 wl = (zval *) OPT_LEXPTR(*optvalptr);
-//                 RETVAL_ZVAL(wl, 0, 0);
-//                 zval_addref_p(wl);
-                return_value = wl;
+                RETVAL_ZVAL(wl, 0, 0);
             }
             break;
     }
@@ -246,7 +245,7 @@ static inline Lexer *php_lexer_unwrap(void *object)
     zobj = (zval *) object;
     FETCH_SHALL_LEXER_FROM_ZVAL(o, zobj);
 
-    debug("UNWRAP [%d:%s] lexer is %p/%p", __LINE__, __func__, o->lexer, object);
+    debug("UNWRAP lexer is %p/%p", o->lexer, object);
     debug("UNWRAP imp = %s", lexer_implementation_name(lexer_implementation(o->lexer)));
 
     return o->lexer;
@@ -288,7 +287,7 @@ debug("[addref] %p", value);
                 zval_addref_p(value);
                 OPT_LEXPTR(optval) = value;
                 OPT_LEXUWF(optval) = php_lexer_unwrap;
-debug("[%d:%s] set lexer %p/%p/%s as option", __LINE__, __func__, php_lexer_unwrap(value), value, lexer_implementation_name(lexer_implementation(lexer_unwrap(optval))));
+debug("set lexer %p/%p/%s as option", php_lexer_unwrap(value), value, lexer_implementation_name(lexer_implementation(lexer_unwrap(optval))));
             }
             break;
         default:
@@ -392,10 +391,8 @@ static void Shall_Lexer_objects_free(
 // debug("return;");
 //         return;
 //     }
-// TODO: segfault in PHP 7
-#if PHP_MAJOR_VERSION < 7
+debug("%s %p", lexer_implementation_name(lexer_implementation(o->lexer)), o->lexer);
     lexer_destroy(o->lexer, zval_lexer_dec_ref);
-#endif /* PHP < 7 */
 //     o->lexer = NULL;
 #if PHP_MAJOR_VERSION < 7
     efree(o);
@@ -422,7 +419,7 @@ Shall_Lexer_object_create(zend_class_entry *ce TSRMLS_DC)
 #endif /* PHP >= 7 */
     zend_object_std_init(&intern->zo, ce TSRMLS_CC);
     intern->lexer = lexer_create(lexer_implementation_by_name(CE_NAME(ce) + STR_LEN("Shall\\Lexer\\")));
-debug("[%d:%s] lexer is %p", __LINE__, __func__, intern->lexer);
+debug("lexer is %p", intern->lexer);
 #if PHP_MAJOR_VERSION >= 7
     intern->zo.handlers
 #else
@@ -863,6 +860,7 @@ static void Shall_Formatter_objects_free(
 #else
     o = (Shall_Formatter_object *) object;
 #endif /* PHP >= 7 */
+debug("%s %p", formatter_implementation_name(formatter_implementation(o->formatter)), o->formatter);
 //     zend_hash_destroy(myht); // TODO
     if (&phpfmt == o->formatter->imp) {
         PHPFormatterData *mydata;
@@ -910,7 +908,7 @@ Shall_Formatter_object_create(zend_class_entry *ce TSRMLS_DC)
     retval.handle = zend_objects_store_put(intern, Shall_Formatter_objects_dtor, Shall_Formatter_objects_free, NULL TSRMLS_CC);
     retval.handlers
 #endif /* PHP >= 7 */
-        = &Shall_Lexer_handlers;
+        = &Shall_Formatter_handlers;
 #if 0
     if (&phpfmt == imp) {
         ((PHPFormatterData *) &intern->formatter->data)->this = retval;
@@ -1143,7 +1141,7 @@ static void shall_lexer_create(const LexerImplementation *imp, zval *options, zv
         Lexer *lexer;
 
         lexer = lexer_create(imp);
-debug("[%d:%s] lexer is %p", __LINE__, __func__, lexer);
+debug("lexer is %p/%s", lexer, lexer_implementation_name(lexer_implementation(lexer)));
         wrap_Lexer(ZVALPX(ceptr), out, lexer/* TSRMLS_CC*/);
         if (NULL != options) {
             php_set_options((void *) lexer, options, 0, (set_option_t) lexer_set_option TSRMLS_CC);
@@ -1214,7 +1212,7 @@ PHP_FUNCTION(Shall_highlight)
     }
     SHALL_FETCH_LEXER(l, lexer, true);
     SHALL_FETCH_FORMATTER(f, formatter, true);
-debug("HL WITH IMP = %s", lexer_implementation_name(lexer_implementation(l->lexer)));
+debug("HL WITH IMP = %s/%p/%p/%p", lexer_implementation_name(lexer_implementation(l->lexer)), l->lexer, lexer, Z_OBJ_P(lexer));
     highlight_string(l->lexer, f->formatter, source, source_len, &dest, &dest_len);
 
     RETURN_STRINGL_COPY(dest, dest_len);
@@ -1462,7 +1460,7 @@ static PHP_MSHUTDOWN_FUNCTION(shall)
     for (i = 0; i < ARRAY_SIZE(fmt_callback_names.all); i++) {
 // TODO: segfault in PHP 7
 #if PHP_MAJOR_VERSION < 7
-        zval_dtor(ZVALRX(fmt_callback_names.all[i])); // segfault in PHP 7
+        zval_dtor(ZVALRX(fmt_callback_names.all[i]));
 #endif /* PHP < 7 */
     }
 
