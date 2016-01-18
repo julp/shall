@@ -297,6 +297,7 @@ static void unregister_lexer(void *data)
     free(lle);
 }
 
+// TODO: forbids to stack a same LexerImplementation twice?
 static void _stack_lexer_real(LexerReturnValue *pdata, Lexer *lexer, bool keep)
 {
     bool known;
@@ -342,6 +343,7 @@ void stack_lexer(LexerReturnValue *pdata, Lexer *lexer)
     _stack_lexer_real(pdata, lexer, true);
 }
 
+// TODO: if we don't allow to stack twice a same lexer, only create a lexer (lexer_create) if one already exists
 void stack_lexer_implementation(LexerReturnValue *pdata, const LexerImplementation *limp)
 {
     _stack_lexer_real(pdata, lexer_create(limp), false);
