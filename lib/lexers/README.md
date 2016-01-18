@@ -36,6 +36,16 @@ Filename(s): *.css
 
 MIME type(s): text/css
 
+## Diff
+
+Lexer for unified or context-style diffs or patches
+
+Alias(es): udiff
+
+Filename(s): *.diff, *.patch
+
+MIME type(s): text/x-diff, text/x-patch
+
 ## DTD
 
 A lexer for DTDs (Document Type Definitions)

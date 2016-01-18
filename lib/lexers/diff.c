@@ -31,7 +31,7 @@ static int difflex(YYLEX_ARGS)
             ++YYCURSOR;
         }
         if ('\n' != *YYCURSOR) {
-            DONE;
+            DONE();
         } else {
             ++YYCURSOR; // skip '\n' for next call
             switch (*YYTEXT) {

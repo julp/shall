@@ -47,7 +47,7 @@ set(SOURCES #
 )
 set(THEMES monokai molokai)
 set(FORMATTERS html terminal plain)
-set(C_LEXERS text)
+set(C_LEXERS diff text)
 # set(C_LEXERS annotations diff text)
 set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
 

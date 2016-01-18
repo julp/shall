@@ -8,6 +8,8 @@ module Shall
         class CMake < Base ; end
         # For CSS (Cascading Style Sheets)
         class CSS < Base ; end
+        # Lexer for unified or context-style diffs or patches
+        class Diff < Base ; end
         # A lexer for DTDs (Document Type Definitions)
         class DTD < Base ; end
         # For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.
