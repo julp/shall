@@ -554,13 +554,11 @@ SHALL_API void lexer_each_sublexers(Lexer *lexer, on_lexer_destroy_cb_t cb)
 
         for (lo = lexer->imp->options; NULL != lo->name; lo++) {
             if (OPT_TYPE_LEXER == lo->type) {
-                Lexer *auxiliary;
                 OptionValue optval;
 
                 optval = lexer->optvals[lo->offset / sizeof(OptionValue)];
-                auxiliary = lexer_unwrap(optval);
-                if (NULL != auxiliary) {
-                    cb(auxiliary);
+                if (NULL != OPT_LEXPTR(optval)) {
+                    cb(OPT_LEXPTR(optval));
                 }
             }
         }
@@ -599,11 +597,8 @@ SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
                 case OPT_TYPE_LEXER:
                 {
                     if (NULL != cb) {
-                        Lexer *auxiliary;
-
-                        auxiliary = lexer_unwrap(optval);
-                        if (NULL != auxiliary) {
-                            cb(auxiliary);
+                        if (NULL != OPT_LEXPTR(optval)) {
+                            cb(OPT_LEXPTR(optval));
                         }
                     }
                     break;
@@ -622,7 +617,7 @@ SHALL_API void lexer_destroy(Lexer *lexer, on_lexer_destroy_cb_t cb)
  * Example: php?asp_tags=on&start_inline=on to create a PHP
  * lexer with asp_tags and start_inline options valued to on.
  *
- * @todo preferer an other syntax to set sublexer and their options.
+ * @todo prefer an other syntax to set sublexer and their options.
  * Something like: `lexer1[option=value;secondary=lexer2[option=value;secondary=lexer3]]`
  * (implies to use a stack)
  *
