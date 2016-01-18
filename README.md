@@ -18,7 +18,7 @@ See README.md in lib/formatters/
 # Prerequisites
 
 * cmake (>= 2.8.8)
-* a C compiler
+* a C(99) compiler
 * re2c (>= 0.13.7)
 * doxygen (optionnal) (currently disabled)
 
@@ -43,12 +43,12 @@ shall include a command line tool with the same name to highlight directely docu
 | -o \<name>=\<value> | set lexer option *name* to *value* |
 | -f \<name> | switch to formatter *name* (default is: terminal) |
 | -O \<name>=\<value> | set formatter option *name* to *value* |
-| -t \<name> | dump CSS to use *name* theme for the html formatter |
+| -t \<name> | dump CSS to use *name* theme with the html formatter |
 
 Examples:
 
-* `shall -F`: list lexers (and their options)
-* `shall -f html -l erb -o secondary=vcl ~/cindy/varnish.vcl`: highlight in HTML the file ~/cindy/varnish.vcl as an ERB template + varnish configuration file
+* `shall -L`: list lexers (and their options)
+* `shall -f html -o secondary=vcl -l erb ~/cindy/varnish.vcl`: highlight in HTML the file ~/cindy/varnish.vcl as an ERB template + varnish configuration file
 
 # Credits
 
