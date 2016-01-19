@@ -67,8 +67,6 @@ enum {
     STATE(ST_DOUBLE_QUOTES),
     STATE(ST_NOWDOC),
     STATE(ST_HEREDOC),
-    STATE(ST_END_NOWDOC),
-    STATE(ST_END_HEREDOC),
     STATE(ST_VAR_OFFSET),
     STATE(ST_LOOKING_FOR_VARNAME),
     STATE(ST_LOOKING_FOR_PROPERTY)
@@ -108,8 +106,6 @@ static int default_token_type[] = {
     STRING_DOUBLE, // ST_DOUBLE_QUOTES
     STRING_SINGLE, // ST_NOWDOC
     STRING_DOUBLE, // ST_HEREDOC
-    STRING_SINGLE, // ST_END_NOWDOC
-    STRING_DOUBLE, // ST_END_HEREDOC
     IGNORABLE, // ST_VAR_OFFSET
     IGNORABLE, // ST_LOOKING_FOR_VARNAME
     IGNORABLE  // ST_LOOKING_FOR_PROPERTY
@@ -415,11 +411,9 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     TOKEN(COMMENT_SINGLE);
 }
 
-/*
 <ST_IN_SCRIPTING>"(" TABS_AND_SPACES ('int' | 'integer' | 'bool' | 'boolean' | 'string' | 'binary' | 'real' | 'float' | 'double' | 'array' | 'object' | 'unset') TABS_AND_SPACES ")" {
     TOKEN(OPERATOR);
 }
-*/
 
 <ST_IN_SCRIPTING>"{" {
     PUSH_STATE(ST_IN_SCRIPTING);
@@ -728,22 +722,6 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     }
     mydata->doclabel_len = YYCURSOR - p - quoted - STR_LEN("\n") - ('\r' == YYCURSOR[-2]);
     mydata->doclabel = strndup((char *) p, mydata->doclabel_len);
-    // optimisation for empty string, avoid an useless pass into <ST_HEREDOC,ST_NOWDOC>ANY_CHAR ?
-    if (mydata->doclabel_len < SIZE_T(YYLIMIT - YYCURSOR) && !memcmp(YYCURSOR, p, mydata->doclabel_len)) {
-        YYCTYPE *end = YYCURSOR + mydata->doclabel_len;
-
-        if (*end == ';') {
-            end++;
-        }
-
-        if ('\n' == *end || '\r' == *end) {
-            if (STATE(ST_NOWDOC) == YYSTATE) {
-                BEGIN(ST_END_NOWDOC);
-            } else {
-                BEGIN(ST_END_HEREDOC);
-            }
-        }
-    }
 
     TOKEN(default_token_type[YYSTATE]);
 }
@@ -768,80 +746,39 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     TOKEN(ESCAPED_CHAR);
 }
 
-<ST_HEREDOC,ST_NOWDOC>ANY_CHAR {
-    if (YYCURSOR > YYLIMIT) {
-        DONE();
-    }
-    YYCURSOR--;
-    while (YYCURSOR < YYLIMIT) {
-        switch (*YYCURSOR++) {
-            case '\r':
-                if (*YYCURSOR == '\n') {
-                    YYCURSOR++;
-                }
-                /* fall through */
-            case '\n':
-                /* Check for ending label on the next line */
-                if (IS_LABEL_START(*YYCURSOR) && mydata->doclabel_len < SIZE_T(YYLIMIT - YYCURSOR) && !memcmp(YYCURSOR, mydata->doclabel, mydata->doclabel_len)) {
-                    YYCTYPE *end = YYCURSOR + mydata->doclabel_len;
-
-                    if (*end == ';') {
-                        end++;
-                    }
-
-                    if ('\n' == *end || '\r' == *end) {
-                        if (STATE(ST_NOWDOC) == YYSTATE) {
-                            BEGIN(ST_END_NOWDOC);
-                        } else {
-                            BEGIN(ST_END_HEREDOC);
-                        }
-//                         goto nowdoc_scan_done;
-                        TOKEN(default_token_type[YYSTATE]); // conflict with continue; and main loop
-                        break;
-                    }
-                }
-                if (STATE(ST_HEREDOC) == YYSTATE) {
-                    continue;
-                }
-                /* fall through */
-            case '$':
-                if (STATE(ST_HEREDOC) == YYSTATE && (IS_LABEL_START(*YYCURSOR) || '{' == *YYCURSOR)) {
-                    break;
-                }
-                continue;
-            case '{':
-                if (STATE(ST_HEREDOC) == YYSTATE && *YYCURSOR == '$') {
-                    break;
-                }
-                continue;
-            case '\\':
-                if (STATE(ST_HEREDOC) == YYSTATE && YYCURSOR < YYLIMIT && '\n' != *YYCURSOR && '\r' != *YYCURSOR) {
-                    YYCURSOR++;
-                }
-                /* fall through */
-            default:
-                continue;
-        }
-        if (STATE(ST_HEREDOC) == YYSTATE) {
-            YYCURSOR--;
-            break;
-        }
-    }
-
-// nowdoc_scan_done:
-    TOKEN(default_token_type[YYSTATE]);
-}
-
-<ST_END_HEREDOC,ST_END_NOWDOC>ANY_CHAR {
+<ST_HEREDOC,ST_NOWDOC>NEWLINE LABEL ";" NEWLINE {
     int old_state;
+    // beginning and end of the LABEL
+    // - s is on the first character of the LABEL
+    // - e is on the comma (';'), after the last character of the LABEL
+    YYCTYPE *s, *e;
 
+    s = YYTEXT;
+    e = YYCURSOR;
     old_state = YYSTATE;
-    YYCURSOR += mydata->doclabel_len - 1;
-    free(mydata->doclabel);
-    mydata->doclabel = NULL;
-    mydata->doclabel_len = 0;
+    // skip newline before label
+    if ('\r' == *s) {
+        ++s;
+    }
+    if ('\n' == *s) {
+        ++s;
+    }
+    --e; // YYCURSOR is on the next character after the last NEWLINE, so "decrement" it first
+    // then skip newline after label (\r?\n? in reverse order)
+    if ('\n' == *e) {
+        --e;
+    }
+    if ('\r' == *e) {
+        --e;
+    }
+    if (mydata->doclabel_len == SIZE_T(e - s) && 0 == memcmp(s, mydata->doclabel, mydata->doclabel_len)) {
+        yyless((e - YYTEXT)); // replay last NEWLINE and ';' to recognize as ignorable and PUNCTUATION
+        free(mydata->doclabel);
+        mydata->doclabel = NULL;
+        mydata->doclabel_len = 0;
 
-    BEGIN(ST_IN_SCRIPTING);
+        BEGIN(ST_IN_SCRIPTING);
+    }
     TOKEN(default_token_type[old_state]);
 }
 
