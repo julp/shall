@@ -17,13 +17,13 @@
 
 typedef struct {
     LexerData data;
-    char *dolqstart; // TODO: may leak
+    char *dolqstart;
     size_t dolqstart_len;
 } PgLexerData;
 
 typedef struct {
-    bool uppercase_keywords ALIGNED(sizeof(OptionValue));
-    bool standard_conforming_strings ALIGNED(sizeof(OptionValue));
+    int uppercase_keywords ALIGNED(sizeof(OptionValue));
+    int standard_conforming_strings ALIGNED(sizeof(OptionValue));
 } PgLexerOption;
 
 enum {
@@ -519,7 +519,18 @@ PG_KEYWORD("zone", UNRESERVED_KEYWORD)
 #undef PG_TYPE
 };
 
-static int pglex(YYLEX_ARGS) {
+static void pgfinalize(LexerData *data)
+{
+    PgLexerData *mydata;
+
+    mydata = (PgLexerData *) data;
+    if (NULL != mydata->dolqstart) {
+        free(mydata->dolqstart);
+    }
+}
+
+static int pglex(YYLEX_ARGS)
+{
     PgLexerData *mydata;
     const PgLexerOption *myoptions;
 

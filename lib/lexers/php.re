@@ -34,16 +34,17 @@ extern const LexerImplementation annotations_lexer;
 
 typedef struct {
     LexerData data;
-    int in_namespace;
-    char *doclabel; // (?:now|here)doc label // TODO: may leak
+    bool in_namespace;
+    bool in_doc_comment;
+    char *doclabel; // (?:now|here)doc label
     size_t doclabel_len;
 } PHPLexerData;
 
 typedef struct {
     int version ALIGNED(sizeof(OptionValue));
-    bool start_inline ALIGNED(sizeof(OptionValue));
-    bool asp_tags ALIGNED(sizeof(OptionValue));
-    bool short_open_tag ALIGNED(sizeof(OptionValue));
+    int start_inline ALIGNED(sizeof(OptionValue));
+    int asp_tags ALIGNED(sizeof(OptionValue));
+    int short_open_tag ALIGNED(sizeof(OptionValue));
     OptionValue secondary ALIGNED(sizeof(OptionValue));
 } PHPLexerOption;
 
@@ -85,6 +86,16 @@ static void phpinit(LexerReturnValue *rv, LexerData *data, const OptionValue *op
     secondary = LEXER_UNWRAP(myoptions->secondary);
     if (NULL != secondary) {
         stack_lexer(rv, secondary);
+    }
+}
+
+static void phpfinalize(LexerData *data)
+{
+    PHPLexerData *mydata;
+
+    mydata = (PHPLexerData *) data;
+    if (NULL != mydata->doclabel) {
+        free(mydata->doclabel);
     }
 }
 
@@ -497,10 +508,11 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     TOKEN(IGNORABLE);
 }
 
-<ST_IN_SCRIPTING>"/*" | "/**" WHITESPACE {
+<ST_IN_SCRIPTING>"/**" WHITESPACE {
 #if 1
+    mydata->in_doc_comment = true;
     BEGIN(ST_COMMENT_MULTI);
-    TOKEN(COMMENT_MULTILINE);
+    TOKEN(COMMENT_DOCUMENTATION);
 #else
     // TODO
     YYCTYPE *end;
@@ -517,9 +529,15 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 #endif
 }
 
+<ST_IN_SCRIPTING>"/*" {
+    mydata->in_doc_comment = false;
+    BEGIN(ST_COMMENT_MULTI);
+    TOKEN(COMMENT_MULTILINE);
+}
+
 <ST_COMMENT_MULTI>"*/" {
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(COMMENT_MULTILINE);
+    TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE);
 }
 
 <ST_IN_SCRIPTING> 'new' {
@@ -559,7 +577,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 // TODO: handle '{' ... '}'
 <ST_IN_SCRIPTING> 'namespace' {
     data->next_label = NAMESPACE;
-    mydata->in_namespace = 1;
+    mydata->in_namespace = true;
     TOKEN(KEYWORD_NAMESPACE);
 }
 
@@ -943,6 +961,10 @@ not_php:
     }
 // debug("NON PHP = ---\n%.*s\n---", YYLENG, YYTEXT);
     DELEGATE_UNTIL(IGNORABLE);
+}
+
+<ST_COMMENT_MULTI>ANY_CHAR {
+    TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE);
 }
 
 <*>ANY_CHAR { // should be the last "rule"
