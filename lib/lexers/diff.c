@@ -20,20 +20,29 @@ static int diffanalyse(const char *src, size_t src_len)
     return 0;
 }
 
+#define IS_NL(c) \
+    ('\r' == (c) || '\n' == (c))
+
+#define HANDLE_CR_LF \
+    do { \
+        if ('\r' == *YYCURSOR && YYCURSOR < YYLIMIT && '\n' == YYCURSOR[1]) { \
+            ++YYCURSOR; \
+        } \
+    } while (0);
+
 static int difflex(YYLEX_ARGS)
 {
     (void) data;
     (void) options;
-    while (YYCURSOR < YYLIMIT) {
+    if (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 
-        while (YYCURSOR < YYLIMIT && '\n' != *YYCURSOR) {
+        while (YYCURSOR < YYLIMIT && !IS_NL(*YYCURSOR)) {
             ++YYCURSOR;
         }
-        if ('\n' != *YYCURSOR) {
-            DONE();
-        } else {
-            ++YYCURSOR; // skip '\n' for next call
+        HANDLE_CR_LF;
+        if (IS_NL(*YYCURSOR)) {
+            ++YYCURSOR; // skip newline ([\r\n]) for next call
             switch (*YYTEXT) {
                 case '+':
                     TOKEN(GENERIC_INSERTED);
