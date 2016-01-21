@@ -19,7 +19,9 @@ void options_init(Options *opt)
  * will be assigned as value in the later case)
  *
  * @param opt the store
- * @param optarg the string to parse to extract key and value
+ * @param optarg the string to parse to extract key and value. The
+ * original string is copied so if it was allocated, it can be
+ * safely freed when you don't need it.
  */
 void options_add(Options *opt, const char *optarg/*, const char **name, const char **value*/)
 {
