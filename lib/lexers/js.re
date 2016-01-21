@@ -154,11 +154,12 @@ LexerImplementation js_lexer = {
     (const char * const []) { "JS", NULL },
     (const char * const []) { "*.js", NULL },
     (const char * const []) { "text/javascript", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters
+    NULL, // analyse
+    NULL, // init
     jslex,
+    NULL, // finalyze
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

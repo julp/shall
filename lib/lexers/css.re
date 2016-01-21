@@ -875,11 +875,12 @@ LexerImplementation css_lexer = {
     NULL,
     (const char * const []) { "*.css", NULL },
     (const char * const []) { "text/css", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters
+    NULL, // analyse
+    NULL, // init
     csslex,
+    NULL, // finalyze
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

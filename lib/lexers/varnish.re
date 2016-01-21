@@ -340,16 +340,29 @@ SPACE = [ \f\n\r\t\v]+;
 
 <INITIAL>"C{" {
     BEGIN(IN_C);
-    TOKEN(IGNORABLE);
+#if 0
+    TOKEN(NAME_TAG);
+#else
+    YYCTYPE *end;
+
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
+        rv->child_limit = YYLIMIT;
+    } else {
+        rv->child_limit = end - STR_LEN("}C");
+    }
+    prepend_lexer_implementation(ctxt, &c_lexer);
+    DELEGATE_UNTIL_AFTER_TOKEN(IGNORABLE, NAME_TAG);
+#endif
 }
 
 <IN_C>"}C" {
     BEGIN(INITIAL);
     unprepend_lexer(ctxt, &c_lexer);
-    TOKEN(IGNORABLE);
+    TOKEN(NAME_TAG);
 }
 
 <IN_C>[^] {
+#if 0
     YYCTYPE *end;
 
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
@@ -359,6 +372,10 @@ SPACE = [ \f\n\r\t\v]+;
     }
     prepend_lexer_implementation(ctxt, &c_lexer);
     DELEGATE_UNTIL(IGNORABLE);
+#else
+    // TODO: remove the rule, already handled by <*>[^]
+    TOKEN(IGNORABLE);
+#endif
 }
 
 <INITIAL> [a-zA-Z_.-]+ {
@@ -456,10 +473,11 @@ LexerImplementation varnish_lexer = {
     (const char * const []) { "varnishconf", "VCL", NULL },
     (const char * const []) { "*.vcl", NULL },
     (const char * const []) { "text/x-varnish", NULL },
-    NULL,
-    varnishinit,
+    NULL, // interpreters
     varnishanalyse,
+    varnishinit,
     varnishlex,
+    NULL, // finalize
     sizeof(VarnishLexerData),
     (/*const*/ LexerOption /*const*/ []) {
         { "version", OPT_TYPE_INT, offsetof(VarnishLexerOption, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },

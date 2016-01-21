@@ -54,14 +54,15 @@ end:
 LexerImplementation annotations_lexer = {
     "Annotations", // unused
     "", // unused
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
+    NULL, // aliases
+    NULL, // pattern
+    NULL, // mimetypes
+    NULL, // interpreters (shebang)
+    NULL, // analyze
+    NULL, // init
     annotationslex,
+    NULL, // finalize
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

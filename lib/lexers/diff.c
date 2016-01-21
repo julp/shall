@@ -70,11 +70,12 @@ LexerImplementation diff_lexer = {
     (const char * const []) { "udiff", NULL },
     (const char * const []) { "*.diff", "*.patch", NULL },
     (const char * const []) { "text/x-diff", "text/x-patch", NULL },
-    NULL,
-    NULL,
+    NULL, // interpreters
     diffanalyse,
+    NULL, // init
     difflex,
+    NULL, // finalyze
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

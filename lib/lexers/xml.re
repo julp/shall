@@ -191,8 +191,7 @@ NDataDecl = S "NDATA" S Name; // [76]
 
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
     yyless(0);
-    //PUSH(&dtd_lexer, NULL);
-    prepend_lexer_implementation(ctxt, &dtd_lexer); // TODO: unstack
+    prepend_lexer_implementation(ctxt, &dtd_lexer);
     DELEGATE_FULL(IGNORABLE);
 }
 
@@ -332,12 +331,13 @@ LexerImplementation xml_lexer = {
     NULL,
     (const char * const []) { "*.xml", "*.xsd", NULL },
     (const char * const []) { "text/xml", "application/xml", NULL },
-    NULL,
-    NULL,
+    NULL, // interpreters
     xmlanalyse,
+    NULL, // init
     xmllex,
+    NULL, // finalize
     sizeof(XMLLexerData),
-    NULL,
+    NULL, // options
     (const LexerImplementation * const []) { &dtd_lexer, NULL }
 };
 
@@ -347,11 +347,12 @@ LexerImplementation html_lexer = {
     NULL,
     (const char * const []) { "*.html", NULL },
     (const char * const []) { "text/html", NULL },
-    NULL,
+    NULL, // interpreters
+    NULL, // analyse
     htmlinit,
-    NULL,
     xmllex,
+    NULL, // finalize
     sizeof(XMLLexerData),
-    NULL,
+    NULL, // options
     (const LexerImplementation * const []) { &css_lexer, &js_lexer, NULL }
 };

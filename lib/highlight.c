@@ -511,6 +511,7 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
     ctxt.current_lexer_offset = ctxt.lexer_stack.head;
     while (1) {
 // debug("YYLEX %s %p %p", current_lexer->imp->name, current_lexer, ldata);
+        YYTEXT = YYCURSOR;
         what = current_lexer->imp->yylex(yy, ldata, current_lexer->optvals, &rv, (void *) &ctxt);
         // trivial safety against infinite loop
         if (YYCURSOR == prev_yycursor) {
@@ -523,7 +524,25 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
             yycursor_unchanged = 0;
             prev_yycursor = YYCURSOR;
         }
-        switch (what) {
+        if (HAS_FLAG(what, TOKEN)) {
+            int yyleng;
+
+retry_as_token:
+            token = rv.token_default_type;
+            yyleng = YYCURSOR - YYTEXT;
+// debug("[TOKEN] %s: >%.*s< (%s %s)", current_lexer->imp->name, yyleng, YYTEXT, tokens[token].name, -1 == prev ? "\xe2\x88\x85" /* U+2205 */ : tokens[prev].name);
+            if (prev != token) {
+                if (prev != -1/* && prev != IGNORABLE*/) {
+                    fmt->imp->end_token(prev, buffer, &fmt->optvals);
+                }
+//                         if (token != IGNORABLE) {
+                    fmt->imp->start_token(token, buffer, &fmt->optvals);
+//                         }
+            }
+            fmt->imp->write_token(buffer, (char *) YYTEXT, yyleng, &fmt->optvals);
+            prev = token;
+        }
+        switch ((what & ~TOKEN)) {
             case DONE:
 debug("[DONE] %s", current_lexer->imp->name);
                 if (prev != -1/* && prev != IGNORABLE*/) {
@@ -576,8 +595,10 @@ debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->
                         prev = IGNORABLE;
                     }
                     delegation_push(&ds, yy, current_lexer->imp, what, -1);
-                    if (DELEGATE_UNTIL == what) {
-                        YYCURSOR = YYTEXT; // ok?
+                    if (HAS_FLAG(what, DELEGATE_UNTIL)) {
+                        if (!HAS_FLAG(what, TOKEN)) {
+                            YYCURSOR = YYTEXT; // come back before we read this token if delegation is active right now
+                        }
 debug("PUSH YYLIMIT (%zu => %zu)", SIZE_T(((const char *) YYLIMIT) - src), SIZE_T(((const char *) rv.child_limit) - src));
                         YYLIMIT = rv.child_limit;
                     }
@@ -586,31 +607,17 @@ debug("PUSH YYLIMIT (%zu => %zu)", SIZE_T(((const char *) YYLIMIT) - src), SIZE_
 debug("lexer stack is empty");
                     YYCURSOR = rv.child_limit;
                     /**
-                     * no break here
-                     *
                      * There is no other lexer in the stack to delegate the input as requested
                      * so treat the whole as a token of the default type the caller provided us.
                      **/
+                    what = TOKEN;
+                    rv.token_default_type = rv.delegation_fallback;
+                    goto retry_as_token;
                 }
-            case TOKEN:
-            {
-                int yyleng;
-
-                token = rv.token_default_type;
-                yyleng = YYCURSOR - YYTEXT;
-// debug("[TOKEN] %s: >%.*s< (%s %s)", current_lexer->imp->name, yyleng, YYTEXT, tokens[token].name, -1 == prev ? "\xe2\x88\x85" /* U+2205 */ : tokens[prev].name);
-                if (prev != token) {
-                    if (prev != -1/* && prev != IGNORABLE*/) {
-                        fmt->imp->end_token(prev, buffer, &fmt->optvals);
-                    }
-//                     if (token != IGNORABLE) {
-                        fmt->imp->start_token(token, buffer, &fmt->optvals);
-//                     }
-                }
-                fmt->imp->write_token(buffer, (char *) YYTEXT, yyleng, &fmt->optvals);
-                prev = token;
                 break;
-            }
+            case 0: // TOKEN &= ~TOKEN == 0
+                // alreay handled
+                break;
             default:
                 assert(0);
                 break;

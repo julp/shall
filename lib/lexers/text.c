@@ -24,11 +24,12 @@ LexerImplementation text_lexer = {
     (const char * const []) { "txt", NULL },
     (const char * const []) { "*.txt", NULL },
     (const char * const []) { "text/plain", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters
+    NULL, // analyze
+    NULL, // init
     textlex,
+    NULL, // finalize
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

@@ -927,9 +927,10 @@ LexerImplementation php_lexer = {
     (const char * const []) { "*.php", "*.php[345]", "*.inc", NULL },
     (const char * const []) { "text/x-php", "application/x-httpd-php", NULL },
     (const char * const []) { "php", "php-cli", "php5*", NULL },
-    phpinit,
     phpanalyse,
+    phpinit,
     phplex,
+    phpfinalize,
     sizeof(PHPLexerData),
     (/*const*/ LexerOption /*const*/ []) {
         { "version",        OPT_TYPE_INT,   offsetof(PHPLexerOption, version),        OPT_DEF_INT(7),  "major versions of PHP brings some changes, use this parameter to parse PHP code as a newer or older version" },
@@ -939,5 +940,5 @@ LexerImplementation php_lexer = {
         { "secondary",      OPT_TYPE_LEXER, offsetof(PHPLexerOption, secondary),      OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
     },
-    NULL
+    NULL // dependencies
 };

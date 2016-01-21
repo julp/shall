@@ -58,6 +58,7 @@ IS = [uUlL]*;
 TABS_AND_SPACES = [ \t]*;
 NEWLINE = ("\r"|"\n"|"\r\n");
 
+// TODO: "drop" NEWLINE
 <INITIAL>NEWLINE TABS_AND_SPACES "#" {
 #if 0
     //--YYCURSOR;
@@ -217,14 +218,15 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 LexerImplementation c_lexer = {
     "C",
     "For C source code with preprocessor directives",
-    NULL,
+    NULL, // aliases
     (const char * const []) { "*.[ch]", NULL },
     (const char * const []) { "text/x-chdr", "text/x-csrc", NULL },
-    NULL,
-    NULL,
-    NULL,
-    clex,
+    NULL, // interpreters (shebang)
+    NULL, // analyse
+    NULL, // init
+    clex, // yylex
+    NULL, // finalize
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

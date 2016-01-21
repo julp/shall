@@ -125,11 +125,12 @@ LexerImplementation nginx_lexer = {
     (const char * const []) { "nginxconf", NULL },
     (const char * const []) { "nginx.conf", NULL },
     (const char * const []) { "text/x-nginx-conf", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters
+    NULL, // analyse
+    NULL, // init
     nginxlex,
+    NULL, // finalyze
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

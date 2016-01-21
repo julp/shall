@@ -77,11 +77,12 @@ LexerImplementation json_lexer = {
     NULL,
     (const char * const []) { "*.json", NULL },
     (const char * const []) { "application/json", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters (shebang)
+    NULL, // analyse
+    NULL, // init
     jsonlex,
+    NULL, // finalize
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

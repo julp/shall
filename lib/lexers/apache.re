@@ -36,10 +36,12 @@ static char *find_ending_var(GlobalState *yy, char *start, char *end)
  * - le > des tags à remettre en TAG_NAME
  * - expressions ? (SetEnvIfExpr, If, ElseIf, RewriteCond expr, Require expr, SSLRequire)
  **/
-static int apachelex(YYLEX_ARGS) {
+static int apachelex(YYLEX_ARGS)
+{
     (void) ctxt;
     (void) data;
     (void) options;
+
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -155,11 +157,12 @@ LexerImplementation apache_lexer = {
     (const char * const []) { "apacheconf", NULL },
     (const char * const []) { "httpd.conf", "apache.conf", "apache2.conf", ".htaccess", NULL },
     (const char * const []) { "text/x-apacheconf", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters
+    NULL, // analyse
+    NULL, // init
     apachelex,
+    NULL, // finalize
     sizeof(LexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

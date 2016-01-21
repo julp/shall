@@ -33,9 +33,10 @@ endif("${srcdir}" STREQUAL "${bindir}")
 
 find_package(RE2C 0.13.7 REQUIRED)
 
-# TODO: commented because HashTable conflicts with PHP binding
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_definitions(-DDEBUG -DTEST)
+    add_definitions(-DDEBUG)
+    # TODO: commented because HashTable conflicts with PHP binding
+#     add_definitions(-DDEBUG -DTEST)
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 set(COMMON_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/lib/;${PROJECT_SOURCE_DIR}/shared/;${PROJECT_SOURCE_DIR}/include/;${PROJECT_BINARY_DIR}")
@@ -47,8 +48,7 @@ set(SOURCES #
 )
 set(THEMES monokai molokai)
 set(FORMATTERS html terminal plain)
-set(C_LEXERS diff text)
-# set(C_LEXERS annotations diff text)
+set(C_LEXERS cpp diff text) # annotations
 set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
 
 foreach(lexer ${C_LEXERS})

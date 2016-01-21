@@ -215,8 +215,12 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 }
 
 <INITIAL>"]" S? ">" {
+#if 0
     TOKEN(NAME_TAG);
     DONE(); // TODO
+#else
+    DONE_AFTER_TOKEN(NAME_TAG);
+#endif
 }
 
 <*> [^] {
@@ -230,14 +234,15 @@ AttValue = '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"; // [1
 LexerImplementation dtd_lexer = {
     "DTD",
     "A lexer for DTDs (Document Type Definitions)",
-    NULL,
+    NULL, // aliases
     (const char * const []) { "*.dtd", NULL },
     (const char * const []) { "application/xml-dtd", NULL },
-    NULL,
-    NULL,
-    NULL,
+    NULL, // interpreters
+    NULL, // analyse
+    NULL, // init
     dtdlex,
+    NULL, // finalyze
     sizeof(DTDLexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };

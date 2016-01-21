@@ -54,10 +54,10 @@ enum {
 //     DONE_AFTER_TOKEN = 3,
 //     NEWLINE = 4,
     _DELEGATE = 8,
-//     DELEGATE_FULL_AFTER_TOKEN = 9
     DELEGATE_FULL = 10,
-//     DELEGATE_UNTIL_AFTER_TOKEN = 11,
+//     DELEGATE_FULL_AFTER_TOKEN = 11
     DELEGATE_UNTIL = 12
+//     DELEGATE_UNTIL_AFTER_TOKEN = 13,
 };
 
 # ifdef DEBUG
@@ -115,39 +115,43 @@ enum {
         return TOKEN; \
     } while (0);
 
-#define DELEGATE_UNTIL(type) \
+#define DELEGATE_UNTIL(fallback) \
     do { \
         TRACK_ORIGIN; \
         rv->token_value = 0; \
         rv->child_limit = YYCURSOR; \
-        rv->token_default_type = type; \
+        rv->token_default_type = 0; \
+        rv->delegation_fallback = fallback; \
         return DELEGATE_UNTIL; \
     } while (0);
 
-#define DELEGATE_UNTIL_AFTER_TOKEN(type) \
+#define DELEGATE_UNTIL_AFTER_TOKEN(/*limit, */fallback, type) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = 0; \
+        /* rv->child_limit = limit; */ \
+        rv->token_default_type = type; \
+        rv->delegation_fallback = fallback; \
+        return DELEGATE_UNTIL | TOKEN; \
+    } while (0);
+
+#define DELEGATE_FULL(fallback) \
     do { \
         TRACK_ORIGIN; \
         rv->token_value = 0; \
         rv->child_limit = YYCURSOR; \
-        rv->token_default_type = type; \
-        return DELEGATE_UNTIL | TOKEN; \
-    } while (0);
-
-#define DELEGATE_FULL(type) \
-    do { \
-        TRACK_ORIGIN; \
-        rv->token_value = 0; \
-        rv->child_limit = NULL; \
-        rv->token_default_type = type; \
+        rv->token_default_type = 0; \
+        rv->delegation_fallback = fallback; \
         return DELEGATE_FULL; \
     } while (0);
 
-#define DELEGATE_FULL_AFTER_TOKEN(type) \
+#define DELEGATE_FULL_AFTER_TOKEN(/*limit, */fallback, type) \
     do { \
         TRACK_ORIGIN; \
         rv->token_value = 0; \
-        rv->child_limit = NULL; \
+        /* rv->child_limit = limit; */ \
         rv->token_default_type = type; \
+        rv->delegation_fallback = fallback; \
         return DELEGATE_FULL | TOKEN; \
     } while (0);
 
@@ -297,23 +301,28 @@ struct LexerImplementation {
      */
     const char * const *interpreters;
     /**
-     * Optionnal (may be NULL) callback for additionnal initialization before
-     * beginning tokenization
-     */
-    void (*init)(const OptionValue *, LexerData *, void *);
-    /**
      * Optionnal (may be NULL) callback to find out a suitable lexer
      * for an input string. Higher is the returned value more accurate
      * is the lexer
      */
     int (*analyse)(const char *, size_t);
     /**
+     * Optionnal (may be NULL) callback for additionnal initialization before
+     * beginning tokenization
+     */
+    void (*init)(const OptionValue *, LexerData *, void *);
+    /**
      * Callback for lexing an input string into tokens
      */
     int (*yylex)(YYLEX_ARGS);
     /**
-     * Size to allocate to create a Lexer
-     * default is `TODO`
+     * Optionnal (may be NULL) callback for additionnal deinitialization when
+     * tokenisation is finised
+     */
+    void (*finalize)(LexerData *);
+    /**
+     * Size to allocate to create internal state for a lexer
+     * Default is `sizeof(LexerData)`
      */
     size_t data_size;
     /**

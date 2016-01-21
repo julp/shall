@@ -389,12 +389,13 @@ LexerImplementation ruby_lexer = {
     (const char * const []) { "*.rb", NULL },
     (const char * const []) { "text/x-ruby", "application/x-ruby", NULL },
     (const char * const []) { "ruby", "ruby[12]*", NULL },
+    NULL, // analyze
     rubyinit,
-    NULL,
     rubylex,
+    NULL, // finalize
     sizeof(RubyLexerData),
-    NULL,
-    NULL
+    NULL, // options
+    NULL // dependencies
 };
 
 LexerImplementation erb_lexer = {
@@ -403,14 +404,15 @@ LexerImplementation erb_lexer = {
     NULL,
     (const char * const []) { "*.erb", NULL },
     (const char * const []) { "application/x-ruby-templating", NULL },
-    NULL,
+    NULL, // interpreters
+    NULL, // analyze
     erbinit,
-    NULL,
     rubylex,
+    NULL, // finalize
     sizeof(RubyLexerData),
     (/*const*/ LexerOption /*const*/ []) {
         { "secondary", OPT_TYPE_LEXER, offsetof(RubyLexerOption, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of ERB tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
     },
-    NULL
+    NULL // dependencies
 };
