@@ -22,9 +22,10 @@ extern char __progname[];
 extern char *__progname;
 #endif /* _MSC_VER */
 
+static bool vFlag;
 static HashTable lexers;
 static Options options[COUNT];
-static char optstr[] = "f:l:o:t:LO:";
+static char optstr[] = "f:l:o:t:vLO:";
 
 static struct option long_options[] = {
     { "list",             required_argument, NULL, 'L' },
@@ -34,6 +35,7 @@ static struct option long_options[] = {
     { "formatter-option", required_argument, NULL, 'O' },
     { "theme",            required_argument, NULL, 't' },
     { "scope",            required_argument, NULL, 's' }, // TODO: optional CSS scope to generate CSS rules for theme
+    { "verbose",          no_argument,       NULL, 'v' },
     { NULL,               no_argument,       NULL, 0   }
 };
 
@@ -101,7 +103,7 @@ static void procfile(const char *filename, Formatter *fmt)
         if (NULL == (limp = lexer_implementation_guess(buffer->ptr, buffer->len))) {
             // if at least one -l was used, use first one
             if (NULL == (lexer = hashtable_first(&lexers))) {
-                // else use text (cat mode)
+                // else use text (acts as cat)
                 limp = lexer_implementation_by_name("text");
             }
         }
@@ -124,6 +126,9 @@ static void procfile(const char *filename, Formatter *fmt)
             debug("[CACHE] Hit for %s", lexer_implementation_name(lexer_implementation(lexer)));
 #endif
         }
+    }
+    if (vFlag) {
+        fprintf(stdout, "%s:\n", filename);
     }
     highlight_string(lexer, fmt, buffer->ptr, buffer->len, &result, NULL);
     // print result
@@ -238,6 +243,7 @@ int main(int argc, char **argv)
     const FormatterImplementation *fimp;
 
     fmt = NULL;
+    vFlag = false;
     fimp = termfmt;
     for (o = 0; o < COUNT; o++) {
         options_init(&options[o]);
@@ -328,6 +334,9 @@ int main(int argc, char **argv)
                 break;
             case 'O':
                 options_add(&options[FORMATTER], optarg);
+                break;
+            case 'v':
+                vFlag = true;
                 break;
             default:
                 usage();

@@ -44,6 +44,7 @@ shall include a command line tool with the same name to highlight directely docu
 | -f \<name> | switch to formatter *name* (default is: terminal) |
 | -O \<name>=\<value> | set formatter option *name* to *value* |
 | -t \<name> | dump CSS to use *name* theme with the html formatter |
+| -v | prints processed filename before highlighting it (usefull when you highlight few files at once - glob) |
 
 Examples:
 
