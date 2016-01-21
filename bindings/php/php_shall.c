@@ -245,7 +245,7 @@ static inline Lexer *php_lexer_unwrap(void *object)
     zobj = (zval *) object;
     FETCH_SHALL_LEXER_FROM_ZVAL(o, zobj);
 
-    debug("UNWRAP lexer is %p/%p", o->lexer, object);
+    debug("UNWRAP lexer is %p/%p/%p", o->lexer, zobj, Z_OBJ_P(zobj));
     debug("UNWRAP imp = %s", lexer_implementation_name(lexer_implementation(o->lexer)));
 
     return o->lexer;
@@ -287,7 +287,7 @@ debug("[addref] %p", value);
                 zval_addref_p(value);
                 OPT_LEXPTR(optval) = value;
                 OPT_LEXUWF(optval) = php_lexer_unwrap;
-debug("set lexer %p/%p/%s as option", php_lexer_unwrap(value), value, lexer_implementation_name(lexer_implementation(lexer_unwrap(optval))));
+debug("set lexer %p/%p/%p/%s as option", php_lexer_unwrap(value), value, Z_OBJ_P(value), lexer_implementation_name(lexer_implementation(lexer_unwrap(optval))));
             }
             break;
         default:
@@ -419,7 +419,7 @@ Shall_Lexer_object_create(zend_class_entry *ce TSRMLS_DC)
 #endif /* PHP >= 7 */
     zend_object_std_init(&intern->zo, ce TSRMLS_CC);
     intern->lexer = lexer_create(lexer_implementation_by_name(CE_NAME(ce) + STR_LEN("Shall\\Lexer\\")));
-debug("lexer is %p", intern->lexer);
+debug("lexer is %s/X/%p", lexer_implementation_name(lexer_implementation(intern->lexer)), intern->lexer);
 #if PHP_MAJOR_VERSION >= 7
     intern->zo.handlers
 #else
