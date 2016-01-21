@@ -12,7 +12,7 @@
 #  define UTF8_BOM "\xEF\xBB\xBF"
 # endif /* !DOXYGEN */
 
-# define YYLEX_ARGS LexerInput *yy, LexerData *data, const OptionValue *options, LexerReturnValue *rv
+# define YYLEX_ARGS LexerInput *yy, LexerData *data, const OptionValue *options, LexerReturnValue *rv, void *ctxt
 # define YYCTYPE  unsigned char
 # define YYTEXT   (yy->yytext)
 // # define YYLINENO (yy->lineno)
@@ -49,12 +49,15 @@
 # define SIZE_T(v) ((size_t) (v))
 
 enum {
-    DONE,
-    TOKEN,
-//     NEWLINE,
+    TOKEN = 1,
+    DONE = 2,
+//     DONE_AFTER_TOKEN = 3,
+//     NEWLINE = 4,
     _DELEGATE = 8,
-    DELEGATE_FULL,
-    DELEGATE_UNTIL,
+//     DELEGATE_FULL_AFTER_TOKEN = 9
+    DELEGATE_FULL = 10,
+//     DELEGATE_UNTIL_AFTER_TOKEN = 11,
+    DELEGATE_UNTIL = 12
 };
 
 # ifdef DEBUG
@@ -74,24 +77,6 @@ enum {
         return DONE; \
     } while (0);
 
-#define TOKEN(type) \
-    do { \
-        TRACK_ORIGIN; \
-        rv->token_value = 0; \
-        rv->child_limit = NULL; \
-        rv->token_default_type = type; \
-        return TOKEN; \
-    } while (0);
-
-#define VALUED_TOKEN(type, value) \
-    do { \
-        TRACK_ORIGIN; \
-        rv->token_value = value; \
-        rv->child_limit = NULL; \
-        rv->token_default_type = type; \
-        return TOKEN; \
-    } while (0);
-
 /*
 #define NEWLINE(type) \
     do { \
@@ -103,6 +88,33 @@ enum {
     } while (0);
 */
 
+#define TOKEN(type) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = 0; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return TOKEN; \
+    } while (0);
+
+#define DONE_AFTER_TOKEN(type) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = 0; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return DONE | TOKEN; \
+    } while (0);
+
+#define VALUED_TOKEN(type, value) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = value; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return TOKEN; \
+    } while (0);
+
 #define DELEGATE_UNTIL(type) \
     do { \
         TRACK_ORIGIN; \
@@ -112,6 +124,15 @@ enum {
         return DELEGATE_UNTIL; \
     } while (0);
 
+#define DELEGATE_UNTIL_AFTER_TOKEN(type) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = 0; \
+        rv->child_limit = YYCURSOR; \
+        rv->token_default_type = type; \
+        return DELEGATE_UNTIL | TOKEN; \
+    } while (0);
+
 #define DELEGATE_FULL(type) \
     do { \
         TRACK_ORIGIN; \
@@ -119,6 +140,15 @@ enum {
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
         return DELEGATE_FULL; \
+    } while (0);
+
+#define DELEGATE_FULL_AFTER_TOKEN(type) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->token_value = 0; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return DELEGATE_FULL | TOKEN; \
     } while (0);
 
 #define PUSH_STATE(new_state) \
@@ -157,12 +187,6 @@ enum {
  * May be overriden by each lexer
  */
 typedef struct {
-#if 0
-    /**
-     * Flags
-     */
-    uint16_t flags;
-#endif
     /**
      * Lexer's state/condition
      */
@@ -276,7 +300,7 @@ struct LexerImplementation {
      * Optionnal (may be NULL) callback for additionnal initialization before
      * beginning tokenization
      */
-    void (*init)(LexerReturnValue *, LexerData *, const OptionValue *);
+    void (*init)(const OptionValue *, LexerData *, void *);
     /**
      * Optionnal (may be NULL) callback to find out a suitable lexer
      * for an input string. Higher is the returned value more accurate
@@ -317,20 +341,10 @@ struct Lexer {
 };
 
 struct LexerReturnValue {
-    int token_value;
-    HashTable lexers;
-    YYCTYPE *child_limit;
-    int token_default_type;
-#ifndef WITHOUT_DLIST
-    DList lexer_stack;
-    DListElement *current_lexer_offset;
-#else
-    struct {
-        Lexer *lexer;
-        LexerData *data;
-    } lexer_stack[100];
-    int lexer_stack_offset, current_lexer_offset;
-#endif
+    int token_value; // TOKEN
+    int token_default_type; // TOKEN
+    YYCTYPE *child_limit; // DELEGATE_*
+    int delegation_fallback; // DELEGATE_*
 # ifdef DEBUG
     int return_line;
     const char *return_file;
@@ -347,6 +361,16 @@ struct LexerReturnValue {
 # define NE(s) \
     { s, STR_LEN(s) }
 
+#define IS_NL(c) \
+    ('\r' == (c) || '\n' == (c))
+
+#define HANDLE_CR_LF \
+    do { \
+        if ('\r' == *YYCURSOR && YYCURSOR < YYLIMIT && '\n' == YYCURSOR[1]) { \
+            ++YYCURSOR; \
+        } \
+    } while (0);
+
 typedef struct {
     const char *name;
     size_t name_len;
@@ -360,8 +384,11 @@ typedef struct {
 int named_elements_cmp(const void *a, const void *b);
 int named_elements_casecmp(const void *a, const void *b);
 
-void stack_lexer(LexerReturnValue *, Lexer *);
-void stack_lexer_implementation(LexerReturnValue *, const LexerImplementation *);
-void unstack_lexer(LexerReturnValue *, const LexerImplementation *);
+void append_lexer(void *, Lexer *);
+void prepend_lexer(void *, Lexer *);
+void append_lexer_implementation(void *, const LexerImplementation *);
+void prepend_lexer_implementation(void *, const LexerImplementation *);
+void unappend_lexer(void *, const LexerImplementation *);
+void unprepend_lexer(void *, const LexerImplementation *);
 
 #endif /* !LEXER_H */

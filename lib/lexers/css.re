@@ -704,6 +704,7 @@ static named_element_t builtins[] = {
 };
 
 static int csslex(YYLEX_ARGS) {
+    (void) ctxt;
     (void) data;
     (void) options;
     while (YYCURSOR < YYLIMIT) {

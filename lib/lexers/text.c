@@ -4,9 +4,12 @@
 #include "tokens.h"
 #include "lexer.h"
 
-static int textlex(YYLEX_ARGS) {
+static int textlex(YYLEX_ARGS)
+{
+    (void) ctxt;
     (void) data;
     (void) options;
+
     YYTEXT = YYCURSOR;
     if (YYCURSOR < YYLIMIT) {
         YYCURSOR = YYLIMIT;

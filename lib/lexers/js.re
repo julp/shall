@@ -21,6 +21,7 @@ static int default_token_type[] = {
 };
 
 static int jslex(YYLEX_ARGS) {
+    (void) ctxt;
     (void) data;
     (void) options;
     while (YYCURSOR < YYLIMIT) {

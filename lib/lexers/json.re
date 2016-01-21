@@ -16,6 +16,7 @@ enum {
  * (for re2c, by default, without --case-inverted or --case-insensitive)
  **/
 static int jsonlex(YYLEX_ARGS) {
+    (void) ctxt;
     (void) data;
     (void) options;
     while (YYCURSOR < YYLIMIT) {

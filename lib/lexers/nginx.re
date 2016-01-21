@@ -17,7 +17,9 @@ enum {
  * - une variable ne sera pas interpolée dans une expression régulière
  * - pour l'interpolation, lever toute ambiguité notamment, le nom d'une variable peut être entourée d'accolades
  **/
-static int nginxlex(YYLEX_ARGS) {
+static int nginxlex(YYLEX_ARGS)
+{
+    (void) ctxt;
     (void) data;
     (void) options;
     while (YYCURSOR < YYLIMIT) {

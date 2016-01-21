@@ -57,12 +57,12 @@ typedef struct {
     OptionValue secondary ALIGNED(sizeof(OptionValue));
 } RubyLexerOption;
 
-static void rubyinit(LexerReturnValue *UNUSED(rv), LexerData *data, const OptionValue *UNUSED(options))
+static void rubyinit(const OptionValue *UNUSED(options), LexerData *data, void *UNUSED(ctxt))
 {
     BEGIN(IN_RUBY);
 }
 
-static void erbinit(LexerReturnValue *rv, LexerData *data, const OptionValue *options)
+static void erbinit(const OptionValue *options, LexerData *data, void *ctxt)
 {
     Lexer *secondary;
     RubyLexerData *mydata;
@@ -74,7 +74,7 @@ static void erbinit(LexerReturnValue *rv, LexerData *data, const OptionValue *op
     mydata->erb = true;
     secondary = LEXER_UNWRAP(myoptions->secondary);
     if (NULL != secondary) {
-        stack_lexer(rv, secondary);
+        append_lexer(ctxt, secondary);
     }
 }
 
@@ -107,9 +107,11 @@ static void erbinit(LexerReturnValue *rv, LexerData *data, const OptionValue *op
 https://raw.githubusercontent.com/ruby/ruby/trunk/parse.y
 */
 #endif
-static int rubylex(YYLEX_ARGS) {
+static int rubylex(YYLEX_ARGS)
+{
     RubyLexerData *mydata;
 
+    (void) ctxt;
     (void) options;
     mydata = (RubyLexerData *) data;
     while (YYCURSOR < YYLIMIT) {

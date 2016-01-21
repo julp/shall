@@ -54,7 +54,7 @@ typedef struct {
     int version ALIGNED(sizeof(OptionValue));
 } VarnishLexerOption;
 
-static void varnishinit(LexerReturnValue *UNUSED(rv), LexerData *data, const OptionValue *options)
+static void varnishinit(const OptionValue *options, LexerData *data, void *UNUSED(ctxt))
 {
     VarnishLexerData *mydata;
     const VarnishLexerOption *myoptions;
@@ -245,7 +245,8 @@ static int varnish_named_elements_cmp(const void *a, const void *b)
     }
 }
 
-static int varnishlex(YYLEX_ARGS) {
+static int varnishlex(YYLEX_ARGS)
+{
     VarnishLexerData *mydata;
 
     (void) options;
@@ -344,7 +345,7 @@ SPACE = [ \f\n\r\t\v]+;
 
 <IN_C>"}C" {
     BEGIN(INITIAL);
-    unstack_lexer(rv, &c_lexer);
+    unprepend_lexer(ctxt, &c_lexer);
     TOKEN(IGNORABLE);
 }
 
@@ -356,7 +357,7 @@ SPACE = [ \f\n\r\t\v]+;
     } else {
         YYCURSOR = end;
     }
-    stack_lexer_implementation(rv, &c_lexer);
+    prepend_lexer_implementation(ctxt, &c_lexer);
     DELEGATE_UNTIL(IGNORABLE);
 }
 

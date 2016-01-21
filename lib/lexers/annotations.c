@@ -33,6 +33,8 @@ static int annotationslex(YYLEX_ARGS)
             }
             TOKEN(KEYWORD);
             YYTEXT = YYCURSOR;
+        } else {
+            // handle XXX, NOTE, TODO, BUG?
         }
         while (YYCURSOR < YYLIMIT && /*(*/'\n' != *YYCURSOR /* || '\r' != *YYCURSOR) */) {
             if ('*' == *YYCURSOR && YYCURSOR < YYLIMIT && '/' == YYCURSOR[1]) {

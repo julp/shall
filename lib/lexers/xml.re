@@ -28,7 +28,7 @@ enum {
     STATE(IN_DOUBLE_QUOTES),
 };
 
-static void htmlinit(LexerReturnValue *UNUSED(rv), LexerData *data, const OptionValue *UNUSED(options))
+static void htmlinit(const OptionValue *UNUSED(options), LexerData *data, void *UNUSED(ctxt))
 {
     XMLLexerData *mydata;
 
@@ -192,7 +192,7 @@ NDataDecl = S "NDATA" S Name; // [76]
 <INITIAL>"<!DOCTYPE" S Name (S ExternalID)? S? "[" {
     yyless(0);
     //PUSH(&dtd_lexer, NULL);
-    stack_lexer_implementation(rv, &dtd_lexer); // TODO: unstack
+    prepend_lexer_implementation(ctxt, &dtd_lexer); // TODO: unstack
     DELEGATE_FULL(IGNORABLE);
 }
 
@@ -218,10 +218,10 @@ debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
     if (mydata->html) {
         if (0 == YYSTRNCASECMP("<style")) {
             mydata->css = true;
-            stack_lexer_implementation(rv, &css_lexer);
+            prepend_lexer_implementation(ctxt, &css_lexer);
         } else if (0 == YYSTRNCASECMP("<script")) {
             mydata->js = true;
-            stack_lexer_implementation(rv, &js_lexer);
+            prepend_lexer_implementation(ctxt, &js_lexer);
         }
     }
     PUSH_STATE(IN_TAG);
@@ -231,10 +231,10 @@ debug("%d >%.*s<", __LINE__, (int) YYLENG, YYTEXT);
 <INITIAL> ETag {
     if (mydata->css && 0 == YYSTRNCASECMP("</style>")) {
         mydata->css = false;
-        unstack_lexer(rv, &css_lexer);
+        unprepend_lexer(ctxt, &css_lexer);
     } else if (mydata->js && 0 == YYSTRNCASECMP("</script>")) {
         mydata->js = false;
-        unstack_lexer(rv, &js_lexer);
+        unprepend_lexer(ctxt, &js_lexer);
     }
     TOKEN(NAME_TAG);
 }

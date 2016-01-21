@@ -534,6 +534,7 @@ static int pglex(YYLEX_ARGS)
     PgLexerData *mydata;
     const PgLexerOption *myoptions;
 
+    (void) ctxt;
     mydata = (PgLexerData *) data;
     myoptions = (const PgLexerOption *) options;
     while (YYCURSOR < YYLIMIT) {

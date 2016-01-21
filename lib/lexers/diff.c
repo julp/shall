@@ -20,20 +20,12 @@ static int diffanalyse(const char *src, size_t src_len)
     return 0;
 }
 
-#define IS_NL(c) \
-    ('\r' == (c) || '\n' == (c))
-
-#define HANDLE_CR_LF \
-    do { \
-        if ('\r' == *YYCURSOR && YYCURSOR < YYLIMIT && '\n' == YYCURSOR[1]) { \
-            ++YYCURSOR; \
-        } \
-    } while (0);
-
 static int difflex(YYLEX_ARGS)
 {
+    (void) ctxt;
     (void) data;
     (void) options;
+
     if (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 

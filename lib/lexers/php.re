@@ -72,7 +72,7 @@ enum {
     STATE(ST_LOOKING_FOR_PROPERTY)
 };
 
-static void phpinit(LexerReturnValue *rv, LexerData *data, const OptionValue *options)
+static void phpinit(const OptionValue *options, LexerData *data, void *ctxt)
 {
     Lexer *secondary;
     const PHPLexerOption *myoptions;
@@ -83,7 +83,8 @@ static void phpinit(LexerReturnValue *rv, LexerData *data, const OptionValue *op
     }
     secondary = LEXER_UNWRAP(myoptions->secondary);
     if (NULL != secondary) {
-        stack_lexer(rv, secondary);
+printf("[SHALL] IMP = %s %p/%p\n", secondary->imp->name, secondary, OPT_LEXPTR(myoptions->secondary));
+        append_lexer(ctxt, secondary);
     }
 }
 
@@ -272,10 +273,12 @@ static named_element_t classes[] = {
 #define IS_LABEL_START(c) \
     (((c) >= 'a' && (c) <= 'z') || ((c) >= 'A' && (c) <= 'Z') || (c) == '_' || (c) >= 0x7F)
 
-static int phplex(YYLEX_ARGS) {
+static int phplex(YYLEX_ARGS)
+{
     PHPLexerData *mydata;
     const PHPLexerOption *myoptions;
 
+    (void) ctxt;
     mydata = (PHPLexerData *) data;
     myoptions = (const PHPLexerOption *) options;
     while (YYCURSOR < YYLIMIT) {
@@ -902,6 +905,11 @@ not_php:
 
 <ST_COMMENT_MULTI>ANY_CHAR {
     TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE);
+}
+
+<*>NEWLINE {
+    // TODO
+    TOKEN(default_token_type[YYSTATE]);
 }
 
 <*>ANY_CHAR { // should be the last "rule"

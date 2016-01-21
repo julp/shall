@@ -142,6 +142,7 @@ static const named_element_t builtin_commands[] = {
 static int cmakelex(YYLEX_ARGS) {
     CMakeLexerData *mydata;
 
+    (void) ctxt;
     (void) options;
     mydata = (CMakeLexerData *) data;
     while (YYCURSOR < YYLIMIT) {

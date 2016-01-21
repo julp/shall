@@ -59,9 +59,11 @@ typedef struct {
     int depth;
 } DTDLexerData;
 
-static int dtdlex(YYLEX_ARGS) {
+static int dtdlex(YYLEX_ARGS)
+{
     DTDLexerData *mydata;
 
+    (void) ctxt;
     (void) options;
     mydata = (DTDLexerData *) data;
     while (YYCURSOR < YYLIMIT) {

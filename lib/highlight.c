@@ -284,6 +284,12 @@ typedef struct {
     bool user_lexer;
 } LexerListElement;
 
+typedef struct {
+    HashTable lexers;
+    DList lexer_stack;
+    DListElement *current_lexer_offset;
+} ProcessingContext;
+
 static void unregister_lexer(void *data)
 {
     LexerListElement *lle;
@@ -298,73 +304,95 @@ static void unregister_lexer(void *data)
 }
 
 // TODO: forbids to stack a same LexerImplementation twice?
-static void _stack_lexer_real(LexerReturnValue *pdata, Lexer *lexer, bool keep)
+static void _add_lexer_real(ProcessingContext *ctxt, Lexer *lexer, bool prepend, bool keep)
 {
     bool known;
     LexerListElement *lle;
 
 debug("[STACK] %s", lexer->imp->name);
-    if (!(known = hashtable_direct_get(&pdata->lexers, lexer->imp, &lle))) {
+    if (!(known = hashtable_direct_get(&ctxt->lexers, lexer->imp, &lle))) {
         lle = malloc(sizeof(*lle));
         lle->lexer = lexer;
         lle->user_lexer = keep;
         lle->data = malloc(lexer->imp->data_size);
         lexer_data_init(lle->data, lexer->imp->data_size);
-        hashtable_direct_put(&pdata->lexers, 0, lexer->imp, lle, NULL);
+        hashtable_direct_put(&ctxt->lexers, 0, lexer->imp, lle, NULL);
     } else {
         // reset_lexer(data);?
         lexer_destroy(lexer, NULL);
         lexer = lle->lexer;
     }
-#ifndef WITHOUT_DLIST
-    dlist_append(&pdata->lexer_stack, lle);
+//     if (prepend) {
+        // TODO: dlist_insert_after(rv->current_lexer_offset)
+//     } else {
+        dlist_append(&ctxt->lexer_stack, lle);
+//     }
 # if 0
     debug("<XXX>");
-    for (DListElement *e = pdata->lexer_stack.head; NULL != e; e = e->next) {
+    for (DListElement *e = ctxt->lexer_stack.head; NULL != e; e = e->next) {
         lle = (LexerListElement *) e->data;
         debug("XXX %s", lle->lexer->imp->name);
     }
     debug("</XXX>");
 # endif
-#else
-    pdata->lexer_stack[pdata->lexer_stack_offset].lexer = lexer;
-    pdata->lexer_stack[pdata->lexer_stack_offset].data = ldata;
-    pdata->lexer_stack_offset++;
-#endif
     // NOTE: the init callback may stack an other lexer
     // so make sure to register the current one BEFORE
     if (!known && NULL != lexer->imp->init) {
-        lexer->imp->init(pdata, lle->data, lexer->optvals);
+        lexer->imp->init(lexer->optvals, lle->data, ctxt);
     }
 }
 
-void stack_lexer(LexerReturnValue *pdata, Lexer *lexer)
+void prepend_lexer(void *ctxt, Lexer *lexer)
 {
-    _stack_lexer_real(pdata, lexer, true);
+    _add_lexer_real((ProcessingContext *) ctxt, lexer, true, true);
+}
+
+void prepend_lexer_implementation(void *ctxt, const LexerImplementation *limp)
+{
+    _add_lexer_real((ProcessingContext *) ctxt, lexer_create(limp), true, false);
+}
+
+void unprepend_lexer(void *ctxt, const LexerImplementation *UNUSED(limp))
+{
+    ProcessingContext *pctxt;
+
+    pctxt = (ProcessingContext *) ctxt;
+    // TODO: dlist_remove_first
+}
+
+void append_lexer(void *ctxt, Lexer *lexer)
+{
+    _add_lexer_real((ProcessingContext *) ctxt, lexer, false, true);
 }
 
 // TODO: if we don't allow to stack twice a same lexer, only create a lexer (lexer_create) if one already exists
-void stack_lexer_implementation(LexerReturnValue *pdata, const LexerImplementation *limp)
+void append_lexer_implementation(void *ctxt, const LexerImplementation *limp)
 {
-    _stack_lexer_real(pdata, lexer_create(limp), false);
+    _add_lexer_real((ProcessingContext *) ctxt, lexer_create(limp), false, false);
 }
 
-void unstack_lexer(LexerReturnValue *pdata, const LexerImplementation *UNUSED(limp))
+void unappend_lexer(void *ctxt, const LexerImplementation *UNUSED(limp))
 {
+    ProcessingContext *pctxt;
+
+    pctxt = (ProcessingContext *) ctxt;
     // reset_lexer(data);?
     // TODO: the lexer we unstack may be not the last
-#ifndef WITHOUT_DLIST
-    if (pdata->lexer_stack.head != pdata->lexer_stack.tail) {
-        dlist_remove_tail(&pdata->lexer_stack);
+    // TODO: dlist_remove_last
+    if (pctxt->lexer_stack.head != pctxt->lexer_stack.tail) {
+        dlist_remove_tail(&pctxt->lexer_stack);
     }
-#else
-debug("[UNSTACK] %s", pdata->lexer_stack[pdata->lexer_stack_offset].lexer->imp->name);
-    pdata->lexer_stack_offset--;
-#endif
 }
 
 typedef struct {
-    YYCTYPE *limits[100];
+    int type; // DELEGATE_FULL or DELEGATE_UNTIL
+    int state; // if != -1 state to set when DONE for the lexer who calls for a delegation
+    YYCTYPE *limits;
+    const LexerImplementation *imp;
+} delegation_stack_element;
+
+typedef struct {
+    delegation_stack_element elements[100];
     int delegation_stack_offset;
 } delegation_stack;
 
@@ -373,20 +401,43 @@ static void delegation_init(delegation_stack *stack)
     stack->delegation_stack_offset = 0;
 }
 
-static void delegation_push(delegation_stack *stack, const LexerInput *yy)
+static void delegation_push(delegation_stack *stack, const LexerInput *yy, const LexerImplementation *imp, int type, int state)
 {
-    stack->limits[stack->delegation_stack_offset++] = YYLIMIT;
+    stack->elements[stack->delegation_stack_offset].imp = imp;
+    stack->elements[stack->delegation_stack_offset].type = type;
+    stack->elements[stack->delegation_stack_offset].state = state;
+    stack->elements[stack->delegation_stack_offset].limits = YYLIMIT;
+    stack->delegation_stack_offset++;
 }
 
-static void delegation_pop(delegation_stack *stack, LexerInput *yy)
+static void delegation_pop(delegation_stack *stack, LexerInput *yy, ProcessingContext *ctxt, LexerData *ldata)
 {
     YYTEXT = YYCURSOR;
-    YYLIMIT = stack->limits[--stack->delegation_stack_offset];
+    --stack->delegation_stack_offset;
+    YYLIMIT = stack->elements[stack->delegation_stack_offset].limits;
+    if (DELEGATE_FULL == stack->elements[stack->delegation_stack_offset].type) {
+        unappend_lexer(ctxt, stack->elements[stack->delegation_stack_offset].imp);
+    }
+    if (-1 != stack->elements[stack->delegation_stack_offset].state) {
+        ldata->state = stack->elements[stack->delegation_stack_offset].state;
+    }
 }
 
 #define FL_REWRITE_EOL_AS_CR (1<<0)
 #define FL_REWRITE_EOL_AS_LF (1<<1)
 // #define FL_REWRITE_EOL_AS_CRLF
+
+enum {
+    CR,
+    LF,
+    CR_LF,
+};
+
+static const named_element_t eol[] = {
+    [ CR ] = { S("\r") },
+    [ LF ] = { S("\n") },
+    [ CR_LF ] = { S("\r\n") },
+};
 
 /**
  * Highlight string according to given lexer and formatter
@@ -400,14 +451,15 @@ static void delegation_pop(delegation_stack *stack, LexerInput *yy)
  *
  * @return zero if successfull
  */
-// better to have: int highlight_string(const char *src, size_t src_len, char **dst, size_t *dst_len, Formatter *fmt, Lexer *lexer, .../* a list of additionnal and already initialized lexer? */)
+// better to have: int highlight_string(size_t lexerc, Lexer *lexerv, /* a list - as array - of additionnal and already initialized lexer? */ Formatter *fmt, const char *src, size_t src_len, char **dst, size_t *dst_len)
 SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, size_t src_len, char **dst, size_t *dst_len/*, uint32_t flags*/)
 {
     String *buffer;
     LexerData *ldata;
     LexerInput xx, *yy;
     delegation_stack ds;
-    LexerReturnValue rv; // => ProcessingData?
+    LexerReturnValue rv;
+    ProcessingContext ctxt;
     Lexer *current_lexer;
     int what, prev, token;
     YYCTYPE *prev_yycursor;
@@ -420,12 +472,8 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
     current_lexer = lexer;
     yycursor_unchanged = 0;
 //     rv = (LexerReturnValue){0};
-#ifndef WITHOUT_DLIST
-    dlist_init(&rv.lexer_stack, NULL);
-#else
-    rv.lexer_stack_offset = rv.current_lexer_offset = 0;
-#endif
-    hashtable_init(&rv.lexers, 0, value_hash, value_equal, NULL, NULL, unregister_lexer);
+    dlist_init(&ctxt.lexer_stack, NULL);
+    hashtable_init(&ctxt.lexers, 0, value_hash, value_equal, NULL, NULL, unregister_lexer);
 
     // skip UTF-8 BOM
     if (src_len >= STR_LEN(UTF8_BOM) && 0 == memcmp(src, UTF8_BOM, STR_LEN(UTF8_BOM))) {
@@ -455,21 +503,15 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
     }
     YYLIMIT = (YYCTYPE *) src + src_len;
     prev_yycursor = YYCURSOR = (YYCTYPE *) src;
-    // TODO: prendre le token avant de rencontrer la fin
-    // YYFILL ne doit pas permettre de prendre en compte le type du token au début sur un token de plusieurs caractères
     if (NULL != fmt->imp->start_lexing) {
         fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
     }
-    stack_lexer(&rv, current_lexer);
-#ifndef WITHOUT_DLIST
-    ldata = ((LexerListElement *) rv.lexer_stack.head->data)->data;
-    rv.current_lexer_offset = rv.lexer_stack.head;
-#else
-    ldata = rv.lexer_stack[rv.current_lexer_offset].data;
-#endif
+    append_lexer(&ctxt, current_lexer);
+    ldata = ((LexerListElement *) ctxt.lexer_stack.head->data)->data;
+    ctxt.current_lexer_offset = ctxt.lexer_stack.head;
     while (1) {
 // debug("YYLEX %s %p %p", current_lexer->imp->name, current_lexer, ldata);
-        what = current_lexer->imp->yylex(yy, ldata, current_lexer->optvals, &rv);
+        what = current_lexer->imp->yylex(yy, ldata, current_lexer->optvals, &rv, (void *) &ctxt);
         // trivial safety against infinite loop
         if (YYCURSOR == prev_yycursor) {
             if (++yycursor_unchanged >= RECURSION_LIMIT) {
@@ -493,33 +535,23 @@ debug("[DONE] %s", current_lexer->imp->name);
                     prev = IGNORABLE;
                 }
 //                 if (YYCURSOR < YYLIMIT) {
-// debug("rv.current_lexer_offset = %d, rv.lexer_stack_offset = %d", rv.current_lexer_offset, rv.lexer_stack_offset);
-#ifndef WITHOUT_DLIST
-//                     if (rv.lexer_stack.head != rv.lexer_stack.tail) {
-                    if (NULL != rv.current_lexer_offset->prev) {
-#else
-                    if (rv.current_lexer_offset > 0 && rv.current_lexer_offset <= rv.lexer_stack_offset) {
-#endif
-                        const LexerImplementation *imp_before_pop = current_lexer->imp;
-#ifndef WITHOUT_DLIST
+// debug("ctxt.current_lexer_offset = %d, ctxt.lexer_stack_offset = %d", ctxt.current_lexer_offset, ctxt.lexer_stack_offset);
+//                     if (ctxt.lexer_stack.head != ctxt.lexer_stack.tail) {
+                    if (NULL != ctxt.current_lexer_offset->prev) {
                         LexerListElement *lle;
+                        const LexerImplementation *imp_before_pop = current_lexer->imp;
 
-                        rv.current_lexer_offset = rv.current_lexer_offset->prev;
-                        lle = (LexerListElement *) rv.current_lexer_offset->data;
+                        ctxt.current_lexer_offset = ctxt.current_lexer_offset->prev;
+                        lle = (LexerListElement *) ctxt.current_lexer_offset->data;
                         current_lexer = lle->lexer;
                         ldata = lle->data;
-#else
-                        --rv.current_lexer_offset;
-                        current_lexer = rv.lexer_stack[rv.current_lexer_offset].lexer;
-                        ldata = rv.lexer_stack[rv.current_lexer_offset].data;
-#endif
 debug("POP LEXER (%s => %s)", imp_before_pop->name, current_lexer->imp->name);
                         if (NULL != fmt->imp->start_lexing) {
                             fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
                             prev = IGNORABLE;
                         }
                         YYCTYPE *yylimit_before_pop = YYLIMIT;
-                        delegation_pop(&ds, yy);
+                        delegation_pop(&ds, yy, &ctxt, ldata);
 debug("POP YYLIMIT (%zu => %zu)", SIZE_T(((const char *) yylimit_before_pop) - src), SIZE_T(((const char *) YYLIMIT) - src));
                         what = 1;
                         continue;
@@ -527,34 +559,23 @@ debug("POP YYLIMIT (%zu => %zu)", SIZE_T(((const char *) yylimit_before_pop) - s
                         goto abandon_or_done;
                     }
 //                 }
-                break;
+//                 break; // never reached
             case DELEGATE_FULL:  // child/sub lexer "decides" on its own where to stop
             case DELEGATE_UNTIL: // parent lexer defined where child/sub lexer have to stop
-#ifndef WITHOUT_DLIST
-                if (NULL != rv.current_lexer_offset->next) {
-#else
-debug("rv.current_lexer_offset = %d, rv.lexer_stack_offset = %d", rv.current_lexer_offset, rv.lexer_stack_offset);
-                if (rv.current_lexer_offset >= 0 && rv.current_lexer_offset < rv.lexer_stack_offset) {
-#endif
-                    const LexerImplementation *imp_before_push = current_lexer->imp;
-#ifndef WITHOUT_DLIST
+                if (NULL != ctxt.current_lexer_offset->next) {
                     LexerListElement *lle;
+                    const LexerImplementation *imp_before_push = current_lexer->imp;
 
-                    rv.current_lexer_offset = rv.current_lexer_offset->next;
-                    lle = (LexerListElement *) rv.current_lexer_offset->data;
+                    ctxt.current_lexer_offset = ctxt.current_lexer_offset->next;
+                    lle = (LexerListElement *) ctxt.current_lexer_offset->data;
                     current_lexer = lle->lexer;
                     ldata = lle->data;
-#else
-                    ++rv.current_lexer_offset;
-                    current_lexer = rv.lexer_stack[rv.current_lexer_offset].lexer;
-                    ldata = rv.lexer_stack[rv.current_lexer_offset].data;
-#endif
 debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->imp->name, rv.return_file, rv.return_func, rv.return_line);
                     if (NULL != fmt->imp->start_lexing) {
                         fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
                         prev = IGNORABLE;
                     }
-                    delegation_push(&ds, yy);
+                    delegation_push(&ds, yy, current_lexer->imp, what, -1);
                     if (DELEGATE_UNTIL == what) {
                         YYCURSOR = YYTEXT; // ok?
 debug("PUSH YYLIMIT (%zu => %zu)", SIZE_T(((const char *) YYLIMIT) - src), SIZE_T(((const char *) rv.child_limit) - src));
@@ -564,7 +585,12 @@ debug("PUSH YYLIMIT (%zu => %zu)", SIZE_T(((const char *) YYLIMIT) - src), SIZE_
                 } else {
 debug("lexer stack is empty");
                     YYCURSOR = rv.child_limit;
-                    /* no break here */
+                    /**
+                     * no break here
+                     *
+                     * There is no other lexer in the stack to delegate the input as requested
+                     * so treat the whole as a token of the default type the caller provided us.
+                     **/
                 }
             case TOKEN:
             {
@@ -591,14 +617,12 @@ debug("lexer stack is empty");
         }
     }
 abandon_or_done:
-    // TODO: while (rv.current_lexer_offset-- > 0): end_lexing?
+    // TODO: while (ctxt.current_lexer_offset-- > 0): end_lexing?
     if (NULL != fmt->imp->end_document) {
         fmt->imp->end_document(buffer, &fmt->optvals);
     }
-#ifndef WITHOUT_DLIST
-    dlist_destroy(&rv.lexer_stack);
-#endif
-    hashtable_destroy(&rv.lexers);
+    dlist_destroy(&ctxt.lexer_stack);
+    hashtable_destroy(&ctxt.lexers);
 
     // set result string
     buffer_len = buffer->len;

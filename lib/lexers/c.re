@@ -5,7 +5,7 @@
 #include "lexer.h"
 #include "utils.h"
 
-extern const LexerImplementation annotations_lexer;
+extern const LexerImplementation annotations_lexer, cpp_lexer;
 
 enum {
     STATE(INITIAL),
@@ -36,9 +36,12 @@ static int canalyse(const char *src, size_t src_len)
  * - escaped sequences in strings
  * - C99 types? (conditionnal? - on option)
  **/
-static int clex(YYLEX_ARGS) {
+static int clex(YYLEX_ARGS)
+{
+    (void) ctxt;
     (void) data;
     (void) options;
+
     while (YYCURSOR < YYLIMIT) {
         YYTEXT = YYCURSOR;
 /*!re2c
@@ -51,6 +54,34 @@ H = [a-fA-F0-9];
 E = [Ee][+-]?D+;
 FS = [fFlL];
 IS = [uUlL]*;
+
+TABS_AND_SPACES = [ \t]*;
+NEWLINE = ("\r"|"\n"|"\r\n");
+
+<INITIAL>NEWLINE TABS_AND_SPACES "#" {
+#if 0
+    //--YYCURSOR;
+    prepend_lexer_implementation(ctxt, &cpp_lexer);
+    DELEGATE_FULL(IGNORABLE);
+#else
+    bool escaped_eol;
+
+    escaped_eol = true;
+    while (escaped_eol && YYCURSOR < YYLIMIT) {
+        while (YYCURSOR < YYLIMIT && !IS_NL(*YYCURSOR)) {
+            ++YYCURSOR;
+        }
+        if (IS_NL(*YYCURSOR)) {
+            escaped_eol = '\\' == YYCURSOR[-1];
+            HANDLE_CR_LF;
+            ++YYCURSOR; // skip newline ([\r\n]) for next call
+        } else {
+            escaped_eol = false;
+        }
+    }
+    TOKEN(COMMENT_SINGLE);
+#endif
+}
 
 <INITIAL> "break" | "case" | "continue" | "default" | "do" | "else" | "extern" | "if" | "for" | "goto" | "return" | "sizeof" | "static" | "switch" | "typedef" | "while" {
     TOKEN(KEYWORD);
