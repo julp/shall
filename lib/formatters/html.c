@@ -8,8 +8,11 @@
 #include "formatter.h"
 
 typedef struct {
+    OptionValue title;
     OptionValue linestart;
     OptionValue cssclass;
+    int full ALIGNED(sizeof(OptionValue));
+    int nowrap ALIGNED(sizeof(OptionValue));
     int noclasses ALIGNED(sizeof(OptionValue));
     const Theme *theme ALIGNED(sizeof(OptionValue));
     struct {
@@ -18,29 +21,65 @@ typedef struct {
     } open_span_tag[_TOKEN_COUNT];
 } HTMLFormatterData;
 
+#define NL "\n"
+#define INDENT "  "
+
 static int html_start_document(String *out, FormatterData *data)
 {
     HTMLFormatterData *mydata;
+    const Theme *theme;
 
     mydata = (HTMLFormatterData *) data;
-    if (NULL == OPT_STRVAL(mydata->cssclass) || 0 == OPT_STRLEN(mydata->cssclass)) {
-        STRING_APPEND_STRING(out, "<pre>");
-    } else {
-        STRING_APPEND_STRING(out, "<pre class=\"");
-        string_append_string(out, OPT_STRVAL(mydata->cssclass));
+    // TODO: define a default theme in shall itself
+    if (NULL == (theme = mydata->theme)) {
+        theme = theme_by_name("molokai");
+    }
+    if (0 != mydata->full) {
+        if (5 == mydata->full) {
+            STRING_APPEND_STRING(out, "<!DOCTYPE html>")
+        } else {
+            STRING_APPEND_STRING(out, "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">")
+        }
+        STRING_APPEND_STRING(out, NL "<html>"
+            NL INDENT "<head>"
+            NL INDENT INDENT "<title>");
+        if (NULL != OPT_STRVAL(mydata->title) && OPT_STRLEN(mydata->title) > 0) {
+            string_append_xml_len(out, OPT_STRVAL(mydata->title), OPT_STRLEN(mydata->title));
+        }
+        STRING_APPEND_STRING(out, "</title>"
+            NL INDENT INDENT);
+        if (5 == mydata->full) {
+            STRING_APPEND_STRING(out, "<meta charset=\"utf-8\">");
+        } else {
+            STRING_APPEND_STRING(out, "<meta http-equiv=\"content-type\" content=\"text/html; charset=utf-8\">");
+        }
+        STRING_APPEND_STRING(out, NL INDENT INDENT "<style type=\"text/css\">");
+        if (!mydata->noclasses) {
+            char *css;
 
-        STRING_APPEND_STRING(out, "\">");
+            css = theme_export_as_css(theme, NULL, true);
+            string_append_string(out, css);
+            free(css);
+        }
+        STRING_APPEND_STRING(out, NL INDENT INDENT "</style>"
+            NL INDENT "</head>"
+            NL INDENT "<body>"
+            NL INDENT INDENT);
+    }
+    if (!mydata->nowrap) {
+        if (NULL == OPT_STRVAL(mydata->cssclass) || 0 == OPT_STRLEN(mydata->cssclass)) {
+            STRING_APPEND_STRING(out, "<pre>");
+        } else {
+            STRING_APPEND_STRING(out, "<pre class=\"");
+            string_append_string(out, OPT_STRVAL(mydata->cssclass)); // TODO: escaping ('"' + '&')
+            STRING_APPEND_STRING(out, "\">");
+        }
     }
     if (mydata->noclasses) {
         size_t i;
         String *buffer;
-        const Theme *theme;
 
         buffer = string_new();
-        // TODO: define a default theme in shall itself
-        if (NULL == (theme = mydata->theme)) {
-            theme = theme_by_name("molokai");
-        }
         for (i = 0; i < _TOKEN_COUNT; i++) {
             mydata->open_span_tag[i].len = 0;
             mydata->open_span_tag[i].val = NULL;
@@ -76,7 +115,12 @@ static int html_end_document(String *out, FormatterData *data)
     HTMLFormatterData *mydata;
 
     mydata = (HTMLFormatterData *) data;
-    STRING_APPEND_STRING(out, "</pre>");
+    if (!mydata->nowrap) {
+        STRING_APPEND_STRING(out, "</pre>");
+    }
+    if (0 != mydata->full) {
+        STRING_APPEND_STRING(out, NL INDENT "</body>" NL "</html>");
+    }
     if (mydata->noclasses) {
         size_t i;
 
@@ -154,7 +198,7 @@ static int html_end_lexing(const char *UNUSED(lexname), String *out, FormatterDa
 
 const FormatterImplementation _htmlfmt = {
     "HTML",
-    "Format tokens as HTML 4 <span> tags within a <pre> tag",
+    "Format tokens as HTML <span> tags within a <pre> tag",
     formatter_implementation_default_get_option_ptr,
     html_start_document,
     html_end_document,
@@ -165,6 +209,9 @@ const FormatterImplementation _htmlfmt = {
     html_end_lexing,
     sizeof(HTMLFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
+        { S("full"),      OPT_TYPE_INT,    offsetof(HTMLFormatterData, full),      OPT_DEF_INT(0),     "if not 0, embeds generated output in a whole HTML 4 page (use 5 for a HTML 5 document)" },
+        { S("title"),     OPT_TYPE_STRING, offsetof(HTMLFormatterData, title),     OPT_DEF_STRING(""), "when *full* is not 0, this is the content to use as `<title>` for the full HTML output document (its content is escaped)" },
+        { S("nowrap"),    OPT_TYPE_BOOL,   offsetof(HTMLFormatterData, nowrap),    OPT_DEF_BOOL(0),    "when set to true, don't wrap output within a `<pre>` tag" },
         { S("noclasses"), OPT_TYPE_BOOL,   offsetof(HTMLFormatterData, noclasses), OPT_DEF_BOOL(0),    "when set to true (not recommanded), output `<span>` tags will not use CSS classes, but inline styles" },
         { S("theme"),     OPT_TYPE_THEME,  offsetof(HTMLFormatterData, theme),     OPT_DEF_THEME,      "the theme to use" },
         { S("cssclass"),  OPT_TYPE_STRING, offsetof(HTMLFormatterData, cssclass),  OPT_DEF_STRING(""), "if valued to `foo`, ` class=\"foo\"` is added to `<pre>` tag" },
