@@ -103,6 +103,7 @@ static ht_hash_t hash_style(const Style *style)
  * @param scope
  * 
  * @return a string describing the theme in CSS format
+ * @todo boolean option to skip background colors
  */
 SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool pretty_print)
 {
