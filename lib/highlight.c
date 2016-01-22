@@ -600,7 +600,7 @@ debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->
                         prev = IGNORABLE;
                     }
                     delegation_push(&ds, yy, current_lexer->imp, what & ~TOKEN, -1);
-                    if (HAS_FLAG(what, DELEGATE_UNTIL)) {
+                    if (DELEGATE_UNTIL == (what & ~TOKEN)) {
                         if (!HAS_FLAG(what, TOKEN)) {
                             YYCURSOR = YYTEXT; // come back before we read this token if delegation is active right now
                         }
