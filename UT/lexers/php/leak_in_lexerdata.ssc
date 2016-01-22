@@ -1,0 +1,11 @@
+--TEST--
+PHP : assume there is no leak in LexerData (implies to be run with valgrind)
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+echo<<<FOO
+
+--EXPECT--
+NAME_BUILTIN: echo
+STRING_DOUBLE: <<<FOO\n

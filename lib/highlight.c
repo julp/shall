@@ -295,6 +295,9 @@ static void unregister_lexer(void *data)
     LexerListElement *lle;
 
     lle = (LexerListElement *) data;
+    if (NULL != lle->lexer->imp->finalize) {
+        lle->lexer->imp->finalize(lle->data);
+    }
     lexer_data_destroy(lle->data);
     free(lle->data);
     if (!lle->user_lexer) {
@@ -594,7 +597,7 @@ debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->
                         fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
                         prev = IGNORABLE;
                     }
-                    delegation_push(&ds, yy, current_lexer->imp, what, -1);
+                    delegation_push(&ds, yy, current_lexer->imp, what & ~TOKEN, -1);
                     if (HAS_FLAG(what, DELEGATE_UNTIL)) {
                         if (!HAS_FLAG(what, TOKEN)) {
                             YYCURSOR = YYTEXT; // come back before we read this token if delegation is active right now
@@ -602,7 +605,6 @@ debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->
 debug("PUSH YYLIMIT (%zu => %zu)", SIZE_T(((const char *) YYLIMIT) - src), SIZE_T(((const char *) rv.child_limit) - src));
                         YYLIMIT = rv.child_limit;
                     }
-                    break;
                 } else {
 debug("lexer stack is empty");
                     YYCURSOR = rv.child_limit;
