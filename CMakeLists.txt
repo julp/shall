@@ -47,7 +47,7 @@ set(SOURCES #
     shared/xtring.c shared/hashtable.c
 )
 set(THEMES monokai molokai)
-set(FORMATTERS html terminal plain)
+set(FORMATTERS bbcode html plain terminal)
 set(C_LEXERS cpp diff text) # annotations
 set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
 

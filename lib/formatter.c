@@ -9,17 +9,19 @@
 #include "options.h"
 
 #ifndef DOXYGEN
-// extern const FormatterImplementation _xmlfmt;
+extern const FormatterImplementation _bbcodefmt;
 extern const FormatterImplementation _htmlfmt;
-extern const FormatterImplementation _termfmt;
 extern const FormatterImplementation _plainfmt;
+extern const FormatterImplementation _termfmt;
+// extern const FormatterImplementation _xmlfmt;
 #endif /* !DOXYGEN */
 
 static const FormatterImplementation *available_formatters[] = {
-//     &_xmlfmt,
+    &_bbcodefmt,
     &_htmlfmt,
+    &_plainfmt,
     &_termfmt,
-    &_plainfmt
+//     &_xmlfmt,
 };
 
 /**
