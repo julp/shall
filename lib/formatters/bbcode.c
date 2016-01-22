@@ -9,6 +9,8 @@
 #include "formatter.h"
 
 typedef struct {
+    int codetag ALIGNED(sizeof(OptionValue));
+    int monofont ALIGNED(sizeof(OptionValue));
     const Theme *theme ALIGNED(sizeof(OptionValue));
     struct {
         size_t prefix_len;
@@ -44,7 +46,7 @@ typedef struct {
         out##_len = (sb).w - (sb).buffer; \
     } while(0);
 
-static int bbcode_start_document(String *UNUSED(out), FormatterData *data)
+static int bbcode_start_document(String *out, FormatterData *data)
 {
     size_t i;
     const Theme *theme;
@@ -86,16 +88,28 @@ static int bbcode_start_document(String *UNUSED(out), FormatterData *data)
             STRING_BUILDER_DUP_INTO(sb[CLOSING_TAG], mydata->sequences[i].suffix);
         }
     }
+    if (mydata->codetag) {
+        STRING_APPEND_STRING(out, "[code]");
+    }
+    if (mydata->monofont) {
+        STRING_APPEND_STRING(out, "[font=monospace]");
+    }
 
     return 0;
 }
 
-static int bbcode_end_document(String *UNUSED(out), FormatterData *data)
+static int bbcode_end_document(String *out, FormatterData *data)
 {
     size_t i;
     BBCodeFormatterData *mydata;
 
     mydata = (BBCodeFormatterData *) data;
+    if (mydata->monofont) {
+        STRING_APPEND_STRING(out, "[/font]");
+    }
+    if (mydata->codetag) {
+        STRING_APPEND_STRING(out, "[/code]");
+    }
     for (i = 0; i < _TOKEN_COUNT; i++) {
         if (mydata->sequences[i].prefix_len > 0) {
             free((void *) mydata->sequences[i].prefix);
@@ -152,7 +166,9 @@ const FormatterImplementation _bbcodefmt = {
     NULL,
     sizeof(BBCodeFormatterData),
         (/*const*/ FormatterOption /*const*/ []) {
-        { S("theme"), OPT_TYPE_THEME, offsetof(BBCodeFormatterData, theme), OPT_DEF_THEME, "the theme to use" },
+        { S("theme"),    OPT_TYPE_THEME, offsetof(BBCodeFormatterData, theme),    OPT_DEF_THEME,   "the theme to use" },
+        { S("codetag"),  OPT_TYPE_BOOL,  offsetof(BBCodeFormatterData, codetag),  OPT_DEF_BOOL(0), "if set to true, wrap output within a [code] tag" },
+        { S("monofont"), OPT_TYPE_BOOL,  offsetof(BBCodeFormatterData, monofont), OPT_DEF_BOOL(0), "if set to true, add a tag to show the code with a monospace font" },
         END_OF_FORMATTER_OPTIONS
     }
 };

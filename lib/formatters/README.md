@@ -9,6 +9,8 @@ Format tokens for forums using bbcode syntax to format post
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
 | theme | (null) | null/none | the theme to use |
+| codetag | boolean | false | if set to true, wrap output within a [code] tag |
+| monofont | boolean | false | if set to true, add a tag to show the code with a monospace font |
 
 ## HTML
 
