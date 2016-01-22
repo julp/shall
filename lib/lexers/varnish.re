@@ -346,12 +346,12 @@ SPACE = [ \f\n\r\t\v]+;
     YYCTYPE *end;
 
     if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
-        rv->child_limit = YYLIMIT;
+        end = YYLIMIT;
     } else {
-        rv->child_limit = end - STR_LEN("}C");
+        end -= STR_LEN("}C");
     }
     prepend_lexer_implementation(ctxt, &c_lexer);
-    DELEGATE_UNTIL_AFTER_TOKEN(IGNORABLE, NAME_TAG);
+    DELEGATE_UNTIL_AFTER_TOKEN(end, IGNORABLE, NAME_TAG);
 #endif
 }
 

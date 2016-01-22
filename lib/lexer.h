@@ -4,8 +4,6 @@
 
 # include "types.h"
 # include "darray.h"
-# include "dlist.h"
-# include "hashtable.h"
 
 # ifndef DOXYGEN
 #  define SHELLMAGIC "#!"
@@ -125,11 +123,11 @@ enum {
         return DELEGATE_UNTIL; \
     } while (0);
 
-#define DELEGATE_UNTIL_AFTER_TOKEN(/*limit, */fallback, type) \
+#define DELEGATE_UNTIL_AFTER_TOKEN(limit, fallback, type) \
     do { \
         TRACK_ORIGIN; \
         rv->token_value = 0; \
-        /* rv->child_limit = limit; */ \
+        rv->child_limit = limit; \
         rv->token_default_type = type; \
         rv->delegation_fallback = fallback; \
         return DELEGATE_UNTIL | TOKEN; \
@@ -145,11 +143,11 @@ enum {
         return DELEGATE_FULL; \
     } while (0);
 
-#define DELEGATE_FULL_AFTER_TOKEN(/*limit, */fallback, type) \
+#define DELEGATE_FULL_AFTER_TOKEN(limit, fallback, type) \
     do { \
         TRACK_ORIGIN; \
         rv->token_value = 0; \
-        /* rv->child_limit = limit; */ \
+        rv->child_limit = limit; \
         rv->token_default_type = type; \
         rv->delegation_fallback = fallback; \
         return DELEGATE_FULL | TOKEN; \

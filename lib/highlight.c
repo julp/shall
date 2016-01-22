@@ -9,6 +9,8 @@
 #include "shall.h"
 #undef TOKEN // TODO: conflict with "# define TOKEN(type)" of lexer.h
 #include "tokens.h"
+#include "dlist.h"
+#include "hashtable.h"
 
 #define RECURSION_LIMIT 8
 
