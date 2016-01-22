@@ -40,8 +40,6 @@ module Shall
         class BBCode < Base ; end
         # Format tokens as HTML <span> tags within a <pre> tag
         class HTML < Base ; end
-        # Format tokens in plain text, mostly instended for tests. Each token is written on a new line with the form: <token name>: <token value>
-        class Plain < Base ; end
         # Format tokens with ANSI color sequences, for output in a text console
         class Terminal < Base ; end
     end

@@ -8,20 +8,16 @@
 #include "shall.h"
 #include "options.h"
 
-#ifndef DOXYGEN
+// #ifndef DOXYGEN
 extern const FormatterImplementation _bbcodefmt;
 extern const FormatterImplementation _htmlfmt;
-extern const FormatterImplementation _plainfmt;
 extern const FormatterImplementation _termfmt;
-// extern const FormatterImplementation _xmlfmt;
-#endif /* !DOXYGEN */
+// #endif /* !DOXYGEN */
 
 static const FormatterImplementation *available_formatters[] = {
     &_bbcodefmt,
     &_htmlfmt,
-    &_plainfmt,
     &_termfmt,
-//     &_xmlfmt,
 };
 
 /**

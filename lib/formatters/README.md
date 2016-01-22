@@ -24,10 +24,6 @@ Format tokens as HTML <span> tags within a <pre> tag
 | cssclass | string | "" | if valued to `foo`, ` class="foo"` is added to `<pre>` tag |
 | linestart | int | 1 | the line number for the first line |
 
-## Plain
-
-Format tokens in plain text, mostly instended for tests. Each token is written on a new line with the form: <token name>: <token value>
-
 ## Terminal
 
 Format tokens with ANSI color sequences, for output in a text console

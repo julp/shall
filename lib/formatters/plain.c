@@ -42,7 +42,7 @@ static int write_token(String *out, const char *token, size_t token_len, Formatt
     return 0;
 }
 
-const FormatterImplementation _plainfmt = {
+static const FormatterImplementation _plainfmt = {
     "Plain",
     "Format tokens in plain text, mostly instended for tests. Each token is written on a new line with the form: <token name>: <token value>",
 #ifndef WITHOUT_FORMATTER_OPTIONS
@@ -59,4 +59,4 @@ const FormatterImplementation _plainfmt = {
     NULL
 };
 
-/*SHALL_API*/ const FormatterImplementation *plainfmt = &_plainfmt;
+/*SHALL_API */const FormatterImplementation *plainfmt = &_plainfmt;
