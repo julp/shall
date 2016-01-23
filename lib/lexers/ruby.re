@@ -123,6 +123,8 @@ re2c:yyfill:enable = 0;
 // awkward, an identifier in MRI can be composed of any codepoint > 127
 // is_identchar is defined as rb_enc_isalnum((unsigned char)(*(p)),(enc)) || (*(p)) == '_' || !ISASCII(*(p));
 IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
+// as defined by ISSPACE/rb_isspace
+SPACE = [\t\n\v\f\r ];
 
 <IN_RUBY> '#' .* {
     TOKEN(COMMENT_SINGLE);
@@ -295,16 +297,24 @@ IDENTIFIER = [a-zA-Z0-9_\u0080-\U0010FFFF]+;
     TOKEN(PUNCTUATION);
 }
 
-// TODO: BOL
-<IN_RUBY> "=begin" {
-    BEGIN(IN_COMMENT);
-    TOKEN(COMMENT_MULTILINE);
+<IN_RUBY> "=begin" SPACE {
+    if (!IS_BOL) {
+        yyless(0);
+    } else {
+//         yyless(YYLENG - 1);
+        BEGIN(IN_COMMENT);
+        TOKEN(COMMENT_MULTILINE);
+    }
 }
 
-// TODO: BOL
-<IN_COMMENT> "=end" {
-    BEGIN(IN_RUBY);
-    TOKEN(COMMENT_MULTILINE);
+<IN_COMMENT> "=end" SPACE {
+    if (!IS_BOL) {
+        yyless(0);
+    } else {
+//         yyless(YYLENG - 1);
+        BEGIN(IN_RUBY);
+        TOKEN(COMMENT_MULTILINE);
+    }
 }
 
 <IN_COMMENT> [^] {

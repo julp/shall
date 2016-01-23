@@ -506,6 +506,7 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
             src = lf;
         }
     }
+    YYSRC = src;
     YYLIMIT = (YYCTYPE *) src + src_len;
     prev_yycursor = YYCURSOR = (YYCTYPE *) src;
     if (NULL != fmt->imp->start_lexing) {

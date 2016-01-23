@@ -12,6 +12,7 @@
 
 # define YYLEX_ARGS LexerInput *yy, LexerData *data, const OptionValue *options, LexerReturnValue *rv, void *ctxt
 # define YYCTYPE  unsigned char
+# define YYSRC    (yy->src)
 # define YYTEXT   (yy->yytext)
 // # define YYLINENO (yy->lineno)
 # define YYLIMIT  (yy->limit)  /*re2c:define:YYLIMIT  = yy->limit;*/
@@ -43,6 +44,9 @@
 # endif
 
 # define yymore() goto yymore_restart
+
+# define IS_BOL \
+    (YYSRC == YYTEXT || IS_NL(YYTEXT[-1]))
 
 # define SIZE_T(v) ((size_t) (v))
 
@@ -207,6 +211,10 @@ typedef struct {
  * Different positionning stuffs for tokenization
  */
 struct LexerInput {
+    /**
+     * Beginning of the string
+     */
+    YYCTYPE *src;
     /**
      * Current position
      */

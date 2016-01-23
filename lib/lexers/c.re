@@ -58,30 +58,33 @@ IS = [uUlL]*;
 TABS_AND_SPACES = [ \t]*;
 NEWLINE = ("\r"|"\n"|"\r\n");
 
-// TODO: "drop" NEWLINE
-<INITIAL>NEWLINE TABS_AND_SPACES "#" {
+<INITIAL>TABS_AND_SPACES "#" {
+    if (!IS_BOL) {
+        yyless(0);
+    } else {
 #if 0
-    //--YYCURSOR;
-    prepend_lexer_implementation(ctxt, &cpp_lexer);
-    DELEGATE_FULL(IGNORABLE);
+        //--YYCURSOR;
+        prepend_lexer_implementation(ctxt, &cpp_lexer);
+        DELEGATE_FULL(IGNORABLE);
 #else
-    bool escaped_eol;
+        bool escaped_eol;
 
-    escaped_eol = true;
-    while (escaped_eol && YYCURSOR < YYLIMIT) {
-        while (YYCURSOR < YYLIMIT && !IS_NL(*YYCURSOR)) {
-            ++YYCURSOR;
+        escaped_eol = true;
+        while (escaped_eol && YYCURSOR < YYLIMIT) {
+            while (YYCURSOR < YYLIMIT && !IS_NL(*YYCURSOR)) {
+                ++YYCURSOR;
+            }
+            if (IS_NL(*YYCURSOR)) {
+                escaped_eol = '\\' == YYCURSOR[-1];
+                HANDLE_CR_LF;
+                ++YYCURSOR; // skip newline ([\r\n]) for next call
+            } else {
+                escaped_eol = false;
+            }
         }
-        if (IS_NL(*YYCURSOR)) {
-            escaped_eol = '\\' == YYCURSOR[-1];
-            HANDLE_CR_LF;
-            ++YYCURSOR; // skip newline ([\r\n]) for next call
-        } else {
-            escaped_eol = false;
-        }
-    }
-    TOKEN(COMMENT_SINGLE);
+        TOKEN(COMMENT_SINGLE);
 #endif
+    }
 }
 
 <INITIAL> "break" | "case" | "continue" | "default" | "do" | "else" | "extern" | "if" | "for" | "goto" | "return" | "sizeof" | "static" | "switch" | "typedef" | "while" {
