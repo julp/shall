@@ -7,6 +7,7 @@
 #include "tokens.h"
 #include "themes.h"
 #include "formatter.h"
+#include "string_builder.h"
 
 #define BOLD      "01"
 #define FAINT     "02"
@@ -327,6 +328,8 @@ static uint8_t closest_color_for_256_mode(const Color *original)
     return match;
 }
 
+STRING_BUILDER_DECL(STR_SIZE(LONGEST_ANSI_ESCAPE_SEQUENCE));
+
 static int terminal_start_document(String *UNUSED(out), FormatterData *data)
 {
     size_t i;
@@ -342,33 +345,32 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
         mydata->sequences[i].value_len = 0;
         mydata->sequences[i].value = NULL;
         if (theme->styles[i].flags) {
-            char *w, buffer[STR_SIZE(LONGEST_ANSI_ESCAPE_SEQUENCE)];
+            string_builder_t sb;
 
-            *buffer = '\0';
-            w = stpcpy(buffer, "\e[");
+            STRING_BUILDER_INIT(sb);
+            STRING_BUILDER_APPEND(sb, "\e[");
             if (theme->styles[i].bold) {
-                w = stpcpy(w, "1;");
+                STRING_BUILDER_APPEND(sb, "1;");
             }
             if (theme->styles[i].italic) {
-                w = stpcpy(w, "3;");
+                STRING_BUILDER_APPEND(sb, "3;");
             }
             if (theme->styles[i].fg_set) {
                 if (mydata->mode256) {
-                    w += sprintf(w, "38;5;%" PRIu8 ";", closest_color_for_256_mode(&theme->styles[i].fg));
+                    STRING_BUILDER_APPEND_FORMATTED(sb, "38;5;%" PRIu8 ";", closest_color_for_256_mode(&theme->styles[i].fg));
                 } else {
-                    w += sprintf(w, "38;2;%" PRIu8 ";%" PRIu8 ";%" PRIu8 ";", theme->styles[i].fg.r, theme->styles[i].fg.g, theme->styles[i].fg.b);
+                    STRING_BUILDER_APPEND_FORMATTED(sb, "38;2;%" PRIu8 ";%" PRIu8 ";%" PRIu8 ";", theme->styles[i].fg.r, theme->styles[i].fg.g, theme->styles[i].fg.b);
                 }
             }
             if (theme->styles[i].bg_set) {
                 if (mydata->mode256) {
-                    w += sprintf(w, "48;5;%" PRIu8 ";", closest_color_for_256_mode(&theme->styles[i].bg));
+                    STRING_BUILDER_APPEND_FORMATTED(sb, "48;5;%" PRIu8 ";", closest_color_for_256_mode(&theme->styles[i].bg));
                 } else {
-                    w += sprintf(w, "48;2;%" PRIu8 ";%" PRIu8 ";%" PRIu8 ";", theme->styles[i].bg.r, theme->styles[i].bg.g, theme->styles[i].bg.b);
+                    STRING_BUILDER_APPEND_FORMATTED(sb, "48;2;%" PRIu8 ";%" PRIu8 ";%" PRIu8 ";", theme->styles[i].bg.r, theme->styles[i].bg.g, theme->styles[i].bg.b);
                 }
             }
-            w[-1] = 'm'; // overwrite last ';'
-            mydata->sequences[i].value = strdup(buffer);
-            mydata->sequences[i].value_len = w - buffer;
+            sb.w[-1] = 'm'; // overwrite last ';'
+            STRING_BUILDER_DUP_INTO(sb, mydata->sequences[i].value);
         }
     }
 

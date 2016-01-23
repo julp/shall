@@ -7,6 +7,7 @@
 #include "tokens.h"
 #include "themes.h"
 #include "formatter.h"
+#include "string_builder.h"
 
 typedef struct {
     int codetag ALIGNED(sizeof(OptionValue));
@@ -23,28 +24,7 @@ typedef struct {
 #define LONGEST_OPENING_TAG \
     "[color=#XXXXXX][b][u][i]"
 
-typedef struct {
-    char *w; // offset to write
-    char buffer[STR_SIZE(LONGEST_OPENING_TAG)];
-} string_builder_t;
-
-#define INIT_STRING_BUILDER(sb) \
-    do { \
-        *(sb).buffer = '\0'; \
-        (sb).w = (sb).buffer; \
-    } while (0);
-
-#define STRING_BUILDER_APPEND(sb, string) \
-    (sb).w = stpcpy((sb).w, string)
-
-#define STRING_BUILDER_APPEND_FORMATTED(sb, fmt, ...) \
-    (sb).w += sprintf((sb).w, fmt, ## __VA_ARGS__)
-
-#define STRING_BUILDER_DUP_INTO(sb, out) \
-    do { \
-        out = strdup((sb).buffer); \
-        out##_len = (sb).w - (sb).buffer; \
-    } while(0);
+STRING_BUILDER_DECL(STR_SIZE(LONGEST_OPENING_TAG));
 
 static int bbcode_start_document(String *out, FormatterData *data)
 {
@@ -64,8 +44,8 @@ static int bbcode_start_document(String *out, FormatterData *data)
             enum { OPENING_TAG, CLOSING_TAG, _TAG_COUNT };
             string_builder_t sb[_TAG_COUNT];
 
-            INIT_STRING_BUILDER(sb[OPENING_TAG]);
-            INIT_STRING_BUILDER(sb[CLOSING_TAG]);
+            STRING_BUILDER_INIT(sb[OPENING_TAG]);
+            STRING_BUILDER_INIT(sb[CLOSING_TAG]);
             if (theme->styles[i].bold) {
                 STRING_BUILDER_APPEND(sb[OPENING_TAG], "[b]");
             }
