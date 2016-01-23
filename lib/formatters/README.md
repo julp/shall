@@ -33,4 +33,5 @@ Format tokens with ANSI color sequences, for output in a text console
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
 | theme | (null) | null/none | the theme to use |
+| mode256 | boolean | false | if true, restrict color scheme to 256 colors |
 
