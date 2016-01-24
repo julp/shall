@@ -13,12 +13,40 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99 -Wwrite-strings -Ws
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
 include(CheckIncludeFiles)
+include(CheckFunctionExists)
+include(CheckLibraryExists)
+include(CheckCSourceCompiles)
+
 check_include_files("inttypes.h" HAVE_INTTYPES_H)
 check_include_files("stdint.h" HAVE_STDINT_H)
 check_include_files("stdbool.h" HAVE_STDBOOL_H)
-include(CheckFunctionExists)
+
 check_function_exists("fnmatch" HAVE_FNMATCH)
 check_function_exists("stpcpy" HAVE_STPCPY)
+
+if(0)
+find_path(ICONV_INCLUDE_DIR iconv.h)
+find_library(ICONV_LIBRARIES NAMES iconv libiconv c)
+set(CMAKE_REQUIRED_FLAGS "-Werror")
+check_c_source_compiles("
+#include <iconv.h>
+int main(void) {
+    iconv_t conv = 0;
+    const char *in = 0;
+    size_t ilen = 0;
+    char *out = 0;
+    size_t olen = 0;
+    iconv(conv, &in, &ilen, &out, &olen);
+    return 0;
+}
+" ICONV_SECOND_ARGUMENT_IS_CONST)
+if(ICONV_SECOND_ARGUMENT_IS_CONST)
+    set(ICONV_CONST "const")
+else(ICONV_SECOND_ARGUMENT_IS_CONST)
+    set(ICONV_CONST "")
+endif(ICONV_SECOND_ARGUMENT_IS_CONST)
+check_library_exists("iconv" "iconvctl" ${ICONV_LIBRARIES} HAVE_ICONVCTL)
+endif(0)
 
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
@@ -83,6 +111,10 @@ add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/shared/optparse.c)
 set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC")
 
 add_library(shall_lib SHARED ${SOURCES} $<TARGET_OBJECTS:common>)
+# if(ICONV_LIBRARIES OR ICU_LIBRARIES)
+#     target_link_libraries(shall_lib ${ICONV_LIBRARIES} ${ICU_LIBRARIES})
+# TODO: ${ICONV_INCLUDE_DIR} + ${ICU_INCLUDE_DIRS} as include_directories
+# endif(ICONV_LIBRARIES OR ICU_LIBRARIES)
 
 # add_library(shall_lib SHARED $<TARGET_OBJECTS:common>)
 # add_executable(shall_bin $<TARGET_OBJECTS:common> cli/bin/shall.c)

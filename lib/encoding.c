@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <locale.h>
+
 #include "cpp.h"
 #include "shall.h"
 
@@ -227,4 +230,109 @@ SHALL_API bool encoding_utf8_check(const char *string, size_t string_len, const 
     }
 #endif
     return S(OK) == state;
+}
+
+/**
+ * Extract encoding from locale or, for BSD systems,
+ * from login classes.
+ *
+ * @return NULL if no suitable charset was found else
+ * its name
+ */
+static const char *encoding_extract_from_locale(void)
+{
+    const char *encoding;
+
+    encoding = NULL;
+#ifdef BSD
+    {
+# include <sys/types.h>
+# include <pwd.h>
+# include <login_cap.h>
+
+        login_cap_t *lc;
+        const char *tmp;
+        struct passwd *pwd;
+
+        if (NULL != (pwd = getpwuid(getuid()))) {
+            if (NULL != (lc = login_getuserclass(pwd))) {
+                if (NULL != (tmp = login_getcapstr(lc, "charset", NULL, NULL))) {
+                    encoding = tmp;
+# ifdef WITH_ICU
+                    /**
+                     * ICU doesn't (didn't?) consider login classes on BSD systems
+                     * So do it for ICU and overwrite default converter if needed
+                     */
+                    ucnv_setDefaultName(tmp);
+# endif /* WITH_ICU */
+                }
+                login_close(lc);
+            } else {
+                if (NULL != (lc = login_getpwclass(pwd))) {
+                    if (NULL != (tmp = login_getcapstr(lc, "charset", NULL, NULL))) {
+                        encoding = tmp;
+# ifdef WITH_ICU
+                        // same here
+                        ucnv_setDefaultName(tmp);
+# endif /* WITH_ICU */
+                    }
+                    login_close(lc);
+                }
+            }
+        }
+        if (NULL != (tmp = getenv("MM_CHARSET"))) {
+            encoding = tmp;
+        }
+    }
+#endif /* BSD */
+    if (NULL == encoding) {
+#include <langinfo.h>
+
+        setlocale(LC_ALL, "");
+        // TODO: linux specific?
+        encoding = nl_langinfo(CODESET);
+    }
+
+    return encoding;
+}
+
+/**
+ * Get current encoding for stdin
+ *
+ * @return NULL if no real charset can be safely associated to stdin
+ * (have in mind a shell redirection or pipe) else the name of
+ * charset's name of current locale.
+ */
+SHALL_API const char *encoding_stdin_get(void)
+{
+    const char *input_encoding;
+
+    input_encoding = NULL;
+    if (isatty(STDIN_FILENO)) {
+        input_encoding = encoding_extract_from_locale();
+    }
+
+    return input_encoding;
+}
+
+/**
+ * Get current encoding for stdout
+ *
+ * @return "UTF-8" if stdout is piped/redirected else charset's name
+ * of current locale.
+ */
+SHALL_API const char *encoding_stdout_get(void)
+{
+    const char *output_encoding;
+
+    output_encoding = "UTF-8";
+    if (isatty(STDOUT_FILENO)) {
+        const char *tmp;
+
+        if (NULL != (tmp = encoding_extract_from_locale())) {
+            output_encoding = tmp;
+        }
+    }
+
+    return output_encoding;
 }

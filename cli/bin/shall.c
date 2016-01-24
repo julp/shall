@@ -50,6 +50,8 @@ static void usage(void)
     exit(EUSAGE);
 }
 
+#define TEST
+
 static void procfile(const char *filename, Formatter *fmt)
 {
     size_t o;
@@ -89,7 +91,7 @@ static void procfile(const char *filename, Formatter *fmt)
                     debug("Invalid byte found: 0x%02" PRIx8 " at offset %ld", (uint8_t) *errp, errp - buffer->ptr);
                 }
             }
-#endif
+#endif /* TEST */
             while (ARRAY_SIZE(bufraw) == read) {
                 read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
                 string_append_string_len(buffer, bufraw, read);
@@ -124,7 +126,7 @@ static void procfile(const char *filename, Formatter *fmt)
 #ifdef DEBUG
         } else {
             debug("[CACHE] Hit for %s", lexer_implementation_name(lexer_implementation(lexer)));
-#endif
+#endif /* DEBUG */
         }
     }
     if (vFlag) {
@@ -351,6 +353,9 @@ int main(int argc, char **argv)
             fprintf(stderr, "option '%s' rejected by %s formatter\n", options[FORMATTER].options[i].name, formatter_implementation_name(formatter_implementation(fmt)));
         }
     }
+#ifdef TEST
+    debug("stdin is: %s // stdout is: %s", NULL == encoding_stdin_get() ? "uknown" /* have to guess? */ : encoding_stdin_get(), encoding_stdout_get());
+#endif /* TEST */
     if (0 == argc) {
         procfile("-", fmt);
     } else {
