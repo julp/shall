@@ -145,7 +145,7 @@ const FormatterImplementation _bbcodefmt = {
     NULL,
     NULL,
     sizeof(BBCodeFormatterData),
-        (/*const*/ FormatterOption /*const*/ []) {
+    (/*const*/ FormatterOption /*const*/ []) {
         { S("theme"),    OPT_TYPE_THEME, offsetof(BBCodeFormatterData, theme),    OPT_DEF_THEME,   "the theme to use" },
         { S("codetag"),  OPT_TYPE_BOOL,  offsetof(BBCodeFormatterData, codetag),  OPT_DEF_BOOL(0), "if set to true, wrap output within a [code] tag" },
         { S("monofont"), OPT_TYPE_BOOL,  offsetof(BBCodeFormatterData, monofont), OPT_DEF_BOOL(0), "if set to true, add a tag to show the code with a monospace font" },

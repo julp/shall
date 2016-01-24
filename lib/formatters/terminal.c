@@ -437,7 +437,7 @@ const FormatterImplementation _termfmt = {
     NULL,
     NULL,
     sizeof(TerminalFormatterData),
-        (/*const*/ FormatterOption /*const*/ []) {
+    (/*const*/ FormatterOption /*const*/ []) {
         { S("theme"),   OPT_TYPE_THEME, offsetof(TerminalFormatterData, theme),   OPT_DEF_THEME,   "the theme to use" },
         { S("mode256"), OPT_TYPE_BOOL,  offsetof(TerminalFormatterData, mode256), OPT_DEF_BOOL(0), "if true, restrict color scheme to 256 colors" },
         END_OF_FORMATTER_OPTIONS
