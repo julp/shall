@@ -3,7 +3,7 @@ PHP : assume there is no conflict on <?xml and sublexer get <?
 --LEXER--
 php
 secondary=xml
-short_tags=off
+short_open_tag=off
 --SOURCE--
 <?xml version="1.0"?>
 --EXPECT--
