@@ -4,6 +4,10 @@
 #include "tokens.h"
 #include "formatter.h"
 
+typedef struct {
+    int nolexing ALIGNED(sizeof(OptionValue));
+} PlainFormatterData;
+
 #if 0
 static int start_document(String *out, FormatterData *data)
 {
@@ -42,6 +46,34 @@ static int write_token(String *out, const char *token, size_t token_len, Formatt
     return 0;
 }
 
+static int start_lexing(const char *lexer, String *out, FormatterData *data)
+{
+    PlainFormatterData *mydata;
+
+    mydata = (PlainFormatterData *) data;
+    if (!mydata->nolexing) {
+        STRING_APPEND_STRING(out, "===== ");
+        string_append_string(out, lexer);
+        STRING_APPEND_STRING(out, " =====\n");
+    }
+
+    return 0;
+}
+
+static int end_lexing(const char *lexer, String *out, FormatterData *data)
+{
+    PlainFormatterData *mydata;
+
+    mydata = (PlainFormatterData *) data;
+    if (!mydata->nolexing) {
+        STRING_APPEND_STRING(out, "===== /");
+        string_append_string(out, lexer);
+        STRING_APPEND_STRING(out, " =====\n");
+    }
+
+    return 0;
+}
+
 static const FormatterImplementation _plainfmt = {
     "Plain",
     "Format tokens in plain text, mostly instended for tests. Each token is written on a new line with the form: <token name>: <token value>",
@@ -53,10 +85,13 @@ static const FormatterImplementation _plainfmt = {
     start_token,
     end_token,
     write_token,
-    NULL,
-    NULL,
-    sizeof(FormatterData),
-    NULL
+    start_lexing,
+    end_lexing,
+    sizeof(PlainFormatterData),
+    (/*const*/ FormatterOption /*const*/ []) {
+        { S("nolexing"), OPT_TYPE_BOOL,  offsetof(PlainFormatterData, nolexing), OPT_DEF_BOOL(1), "if set to false, mention, in output, lexer switches" },
+        END_OF_FORMATTER_OPTIONS
+    }
 };
 
 /*SHALL_API */const FormatterImplementation *plainfmt = &_plainfmt;
