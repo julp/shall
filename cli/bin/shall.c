@@ -354,7 +354,7 @@ int main(int argc, char **argv)
         }
     }
 #ifdef TEST
-    debug("stdin is: %s // stdout is: %s", NULL == encoding_stdin_get() ? "uknown" /* have to guess? */ : encoding_stdin_get(), encoding_stdout_get());
+    debug("stdin is: %s // stdout is: %s", NULL == encoding_stdin_get() ? "unknown" /* have to guess? */ : encoding_stdin_get(), encoding_stdout_get());
 #endif /* TEST */
     if (0 == argc) {
         procfile("-", fmt);
