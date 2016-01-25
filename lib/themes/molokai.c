@@ -14,7 +14,7 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 const SHALL_API Theme molokai = {
-    "molokai",
+    "Molokai",
     {
 #define COMMON_STYLE FG(dark_blue), .italic = true
         [ COMMENT_SINGLE ]         = { COMMON_STYLE },
