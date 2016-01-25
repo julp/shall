@@ -1,0 +1,6 @@
+#pragma once
+
+#cmakedefine WITH_ICU
+#cmakedefine WITH_ICONV
+
+#define ICONV_CONST @ICONV_CONST@

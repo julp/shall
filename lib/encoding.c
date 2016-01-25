@@ -1,10 +1,12 @@
 #include <unistd.h>
 #include <locale.h>
+#include <stdlib.h>
 
+#include "config.h"
 #include "cpp.h"
 #include "shall.h"
 
-#if defined(WITH_ICU)
+#ifdef WITH_ICU
 
 # include <unicode/ucnv.h>
 # include <unicode/ucsdet.h>
@@ -26,12 +28,17 @@
  */
 SHALL_API const char *encoding_guess(const char *string, size_t string_len, size_t *signature_len)
 {
+    int32_t length;
     UErrorCode status;
     const char *encoding;
 
+    length = 0;
     status = U_ZERO_ERROR;
-    encoding = ucnv_detectUnicodeSignature(string, string_len, signature_len, &status);
+    encoding = ucnv_detectUnicodeSignature(string, string_len, &length, &status);
     if (U_SUCCESS(status)) {
+        if (NULL != signature_len) {
+            *signature_len = (size_t) length;
+        }
         if (NULL == encoding) {
             int32_t confidence;
             UCharsetDetector *csd;
@@ -67,7 +74,201 @@ end:
     return encoding;
 }
 
+/**
+ * Convert a string from one charset to another
+ * @param from the input encoding's name (src's charset)
+ * @param to the output encoding's name (dst's charset)
+ * @param in the string to convert
+ * @param in_len its length
+ * @param out the result string
+ * @param out_len_arg_p its length (use NULL if you don't want this information)
+ *
+ * @return false on failure else true
+ */
+static bool encoding_convert(const char *from, const char *to, const char *in, size_t in_len, char **out, size_t *out_len_arg_p)
+{
+    UErrorCode status;
+    int32_t out_size, out_len;
+
+    *out = NULL;
+    out_len = 0;
+    status = U_ZERO_ERROR;
+    out_size = ucnv_convert(to, from, NULL, 0, in, in_len, &status);
+    if (U_BUFFER_OVERFLOW_ERROR == status) {
+        status = U_ZERO_ERROR;
+        *out = mem_new_n(**out, out_size + 1);
+        out_len = ucnv_convert(to, from, *out, out_size + 1, in, in_len, &status);
+        if (U_ZERO_ERROR != status) {
+            out_len = 0;
+            free(*out);
+            *out = NULL;
+        }
+    }
+    if (NULL != out_len_arg_p) {
+        *out_len_arg_p = (size_t) out_len;
+    }
+
+    return NULL != *out;
+}
+
 #else
+
+# ifdef WITH_ICONV
+
+#  include <errno.h>
+#  include <iconv.h>
+#  include <string.h>
+
+#  define INVALID_SIZE_T ((size_t) -1)
+#  define INVALID_ICONV_T ((iconv_t) -1)
+
+#  define ICONV_SET_ERROR(msg, ...) \
+    fprintf(stderr, msg, ## __VA_ARGS__)
+
+#  define ICONV_ERR_CONVERTER(error) \
+    ICONV_SET_ERROR("Cannot open converter")
+#  define ICONV_ERR_WRONG_CHARSET(error, to, from) \
+    ICONV_SET_ERROR("Wrong charset, conversion from '%s' to '%s' is not allowed", to, from)
+#  define ICONV_ERR_ILLEGAL_CHAR(error) \
+    ICONV_SET_ERROR("Incomplete multibyte character detected in input string")
+#  define ICONV_ERR_ILLEGAL_SEQ(error) \
+    ICONV_SET_ERROR("Illegal character detected in input string")
+#  define ICONV_ERR_TOO_BIG(error) \
+    ICONV_SET_ERROR("Buffer length exceeded")
+#  define ICONV_ERR_UNKNOWN(error, errno) \
+    ICONV_SET_ERROR("Unknown error (%d)", errno)
+
+/**
+ * Convert a string from one charset to another
+ * @param from the input encoding's name (src's charset)
+ * @param to the output encoding's name (dst's charset)
+ * @param in the string to convert
+ * @param in_len its length
+ * @param out the result string
+ * @param out_len_arg_p its length (use NULL if you don't want this information)
+ *
+ * @return false on failure else true
+ */
+static bool encoding_convert(const char *from, const char *to, const char *in, size_t in_len, char **out, size_t *out_len_arg_p)
+{
+    iconv_t cd;
+    bool retval;
+    char *in_p, *out_p;
+    size_t in_left, out_left, out_size, result, out_len, *out_len_p;
+
+    *out = NULL;
+    if (NULL == out_len_arg_p) {
+        out_len_p = &out_len;
+    } else {
+        out_len_p = out_len_arg_p;
+    }
+    *out_len_p = 0;
+    retval = true;
+    result = INVALID_SIZE_T;
+#  if 0
+    if ('\0' == *in) {
+        *out_len_p = 0;
+        *out = mem_new_n(**out, *out_len_p + 1);
+        **out = '\0';
+        return retval;
+    }
+#  else
+    if (0 == strcmp(from, to) || '\0' == *in) {
+        *out = (char *) in;
+        *out_len_p = in_len;
+        return retval;
+    }
+#  endif
+
+    errno = 0;
+    if (INVALID_ICONV_T == (cd = iconv_open(to, from))) {
+        if (EINVAL == errno) {
+            ICONV_ERR_WRONG_CHARSET(error, to, from);
+            return false;
+        } else {
+            ICONV_ERR_CONVERTER(error);
+            return false;
+        }
+    }
+# ifdef HAVE_ICONVCTL
+    {
+        int one;
+
+        one = 1;
+        iconvctl(cd, ICONV_SET_ILSEQ_INVALID, &one);
+    }
+# endif /* HAVE_ICONVCTL */
+    out_size = 1; /* out_size: capacity allocated to *out */
+    *out = mem_new_n(**out, out_size + 1); /* + 1 for \0 */
+    in_p = (char *) in;
+    out_p = *out;
+    in_left = in_len;
+    out_left = out_size; /* out_left: free space left in *out */
+    while (in_left > 0) {
+// printf("iconv(%d, %d)\n", out_size, out_left);
+        result = iconv(cd, (ICONV_CONST char **) &in_p, &in_left, &out_p, &out_left);
+        *out_len_p = out_p - *out;
+        out_left = out_size - *out_len_p;
+        if (INVALID_SIZE_T == result) {
+            if (E2BIG == errno && in_left > 0) {
+                char *tmp;
+
+                tmp = mem_renew(*out, **out, ++out_size + 1); /* *out is no longer valid */
+                *out = tmp;
+                out_p = *out + *out_len_p;
+                out_left = out_size - *out_len_p;
+                continue;
+            }
+        }
+        break;
+    }
+    if (INVALID_SIZE_T != result) {
+        while (1) {
+            result = iconv(cd, NULL, NULL, &out_p, &out_left);
+            *out_len_p = out_p - *out;
+            out_left = out_size - *out_len_p;
+            if (INVALID_SIZE_T != result) {
+                break;
+            }
+            if (E2BIG == errno) {
+                char *tmp;
+
+                tmp = mem_renew(*out, **out, ++out_size + 1); /* *out is no longer valid */
+                *out = tmp;
+                out_p = *out + *out_len_p;
+                out_left = out_size - *out_len_p;
+            } else {
+                break;
+            }
+        }
+    }
+    iconv_close(cd);
+    if (INVALID_SIZE_T == result) {
+        retval = false;
+        free(*out);
+        *out = NULL;
+        switch (errno) {
+            case EINVAL:
+                ICONV_ERR_ILLEGAL_CHAR(error);
+                break;
+            case EILSEQ:
+                ICONV_ERR_ILLEGAL_SEQ(error);
+                break;
+            case E2BIG:
+                ICONV_ERR_TOO_BIG(error);
+                break;
+            default:
+                ICONV_ERR_UNKNOWN(error, errno);
+        }
+    } else {
+        *out_p = '\0';
+        *out_len_p = out_p - *out;
+    }
+
+    return retval;
+}
+
+# endif /* WITH_ICONV */
 
 # define S(s) s, STR_LEN(s)
 
@@ -196,6 +397,16 @@ static const uint8_t state_transition_table[_STATE_COUNT][256] = {
     [ S(43) ]   = { [ 0x80 ... 0xBF ] = S(FB) }, // 3rd byte
 };
 
+/**
+ * Check if a string is a valid UTF-8 string
+ *
+ * @param string the string to check
+ * @param string_len its length
+ * @param errp, optionnal (NULL to ignore), to have a pointer on the first
+ * invalid byte found in the string (*errp is set to NULL if none)
+ *
+ * @return true if the string is a valid
+ */
 SHALL_API bool encoding_utf8_check(const char *string, size_t string_len, const char **errp)
 {
     int state;
@@ -335,4 +546,44 @@ SHALL_API const char *encoding_stdout_get(void)
     }
 
     return output_encoding;
+}
+
+/**
+ * Convert a string from UTF-8 to an other encoding
+ *
+ * @param input_encoding the name of src's charset
+ * @param src the string to convert to UTF-8
+ * @param src_len its length
+ * @param dst a pointer to the malloc'ed output string
+ * @param dst_len (optionnal: may be NULL) its length
+ *
+ * @return true if successfull
+ */
+SHALL_API bool encoding_convert_to_utf8(const char *input_encoding, const char *src, size_t src_len, char **dst, size_t *dst_len)
+{
+#if defined(WITH_ICU) || defined(WITH_ICONV)
+    return encoding_convert(input_encoding, "UTF-8", src, src_len, dst, dst_len);
+#else
+    return false;
+#endif /* WITH_ICU || WITH_ICONV */
+}
+
+/**
+ * Convert an UTF-8 encoded string to an other encoding
+ *
+ * @param output_encoding the name of dst's charset
+ * @param src the string to convert from UTF-8
+ * @param src_len its length
+ * @param dst a pointer to the malloc'ed output string
+ * @param dst_len (optionnal: may be NULL) its length
+ *
+ * @return true if successfull
+ */
+SHALL_API bool encoding_convert_from_utf8(const char *output_encoding, const char *src, size_t src_len, char **dst, size_t *dst_len)
+{
+#if defined(WITH_ICU) || defined(WITH_ICONV)
+    return encoding_convert("UTF-8", output_encoding, src, src_len, dst, dst_len);
+#else
+    return false;
+#endif /* WITH_ICU || WITH_ICONV */
 }

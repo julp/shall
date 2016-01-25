@@ -24,6 +24,7 @@ extern char *__progname;
 
 static bool vFlag;
 static HashTable lexers;
+static const char *outputenc;
 static Options options[COUNT];
 static char optstr[] = "f:l:o:t:vLO:";
 
@@ -58,9 +59,10 @@ static void procfile(const char *filename, Formatter *fmt)
     char *result;
     Lexer *lexer;
     String *buffer;
+    size_t result_len;
+    const char *inputenc;
     const LexerImplementation *limp;
 
-    buffer = string_new();
     {
         FILE *fp;
         size_t read;
@@ -68,30 +70,23 @@ static void procfile(const char *filename, Formatter *fmt)
 
         if (0 == strcmp(filename, "-")) {
             fp = stdin;
+            inputenc = encoding_stdin_get();
         } else {
             if (NULL == (fp = fopen(filename, "r"))) {
-                fprintf(stderr, "unable to open '%s', skipping\n", filename);
+                fprintf(stderr, "unable to open '%s', skip\n", filename);
                 return;
             }
         }
+        buffer = string_new();
         read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
         if (read > 0) {
             string_append_string_len(buffer, bufraw, read);
-#ifdef TEST
-            debug("encoding = %s", encoding_guess(buffer->ptr, buffer->len, NULL));
-//             if (NULL == encoding) {
-                if (NULL != memchr(buffer->ptr, '\0', buffer->len)) {
-                    debug("binary file detected");
-                }
-//             }
-            {
-                const char *errp;
-
-                if (!encoding_utf8_check(buffer->ptr, buffer->len, &errp)) {
-                    debug("Invalid byte found: 0x%02" PRIx8 " at offset %ld", (uint8_t) *errp, errp - buffer->ptr);
-                }
+            if (NULL != memchr(buffer->ptr, '\0', buffer->len)) {
+                fprintf(stderr, "binary file detected, skip\n");
+                return;
+            } else {
+                inputenc = encoding_guess(buffer->ptr, buffer->len, NULL);
             }
-#endif /* TEST */
             while (ARRAY_SIZE(bufraw) == read) {
                 read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
                 string_append_string_len(buffer, bufraw, read);
@@ -99,6 +94,20 @@ static void procfile(const char *filename, Formatter *fmt)
         }
         if (stdin != fp) {
             fclose(fp);
+        }
+    }
+    if (NULL != inputenc && 0 != strcmp("UTF-8", inputenc)) {
+        bool ok;
+        char *utf8;
+        size_t utf8_len;
+
+        ok = encoding_convert_to_utf8(inputenc, buffer->ptr, buffer->len, &utf8, &utf8_len);
+        string_destroy(buffer);
+        if (ok) {
+            buffer = string_adopt_string_len(utf8, utf8_len);
+        } else {
+            fprintf(stderr, "failed to convert '%s' (from %s) to UTF-8\n", inputenc, filename);
+            return;
         }
     }
     if (NULL == (limp = lexer_implementation_for_filename(filename))) {
@@ -132,7 +141,21 @@ static void procfile(const char *filename, Formatter *fmt)
     if (vFlag) {
         fprintf(stdout, "%s:\n", filename);
     }
-    highlight_string(lexer, fmt, buffer->ptr, buffer->len, &result, NULL);
+    highlight_string(lexer, fmt, buffer->ptr, buffer->len, &result, &result_len);
+    if (0 != strcmp("UTF-8", outputenc)) {
+        bool ok;
+        char *nonutf8;
+        size_t nonutf8_len;
+
+        ok = encoding_convert_from_utf8(outputenc, result, result_len, &nonutf8, &nonutf8_len);
+        free(result);
+        if (ok) {
+            result = nonutf8;
+        } else {
+            fprintf(stderr, "failed to convert result from UTF-8 to %s\n", outputenc);
+            return;
+        }
+    }
     // print result
     puts(result);
     // free
@@ -250,6 +273,7 @@ int main(int argc, char **argv)
     for (o = 0; o < COUNT; o++) {
         options_init(&options[o]);
     }
+    outputenc = encoding_stdout_get();
     hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
     atexit(on_exit_cb);
     while (-1 != (o = getopt_long(argc, argv, optstr, long_options, NULL))) {

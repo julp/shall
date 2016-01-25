@@ -21,6 +21,7 @@ See README.md in lib/formatters/
 * a C(99) compiler
 * re2c (>= 0.13.7)
 * doxygen (optionnal) (currently disabled)
+* ICU or iconv (optionnal, for conversions in CLI)
 
 # Installation
 
@@ -53,9 +54,9 @@ Examples:
 
 # Credits
 
-* Largely inspired on: pygments and rouge
-* PHP lexer : PHP developpers
-* PostgreSQL lexer : PostgreSQL developpers
+* Largely inspired on pygments
+* PHP lexer: PHP developpers
+* PostgreSQL lexer: PostgreSQL developpers
 
 # Current limitations
 

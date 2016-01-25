@@ -24,29 +24,38 @@ check_include_files("stdbool.h" HAVE_STDBOOL_H)
 check_function_exists("fnmatch" HAVE_FNMATCH)
 check_function_exists("stpcpy" HAVE_STPCPY)
 
-if(0)
-find_path(ICONV_INCLUDE_DIR iconv.h)
-find_library(ICONV_LIBRARIES NAMES iconv libiconv c)
-set(CMAKE_REQUIRED_FLAGS "-Werror")
-check_c_source_compiles("
-#include <iconv.h>
-int main(void) {
-    iconv_t conv = 0;
-    const char *in = 0;
-    size_t ilen = 0;
-    char *out = 0;
-    size_t olen = 0;
-    iconv(conv, &in, &ilen, &out, &olen);
-    return 0;
-}
-" ICONV_SECOND_ARGUMENT_IS_CONST)
-if(ICONV_SECOND_ARGUMENT_IS_CONST)
-    set(ICONV_CONST "const")
-else(ICONV_SECOND_ARGUMENT_IS_CONST)
-    set(ICONV_CONST "")
-endif(ICONV_SECOND_ARGUMENT_IS_CONST)
-check_library_exists("iconv" "iconvctl" ${ICONV_LIBRARIES} HAVE_ICONVCTL)
-endif(0)
+set(WITH_ICU false)
+set(WITH_ICONV false)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
+find_package(ICU COMPONENTS uc i18n QUIET)
+if(NOT ICU_FOUND)
+    find_path(ICONV_INCLUDE_DIR iconv.h)
+    find_library(ICONV_LIBRARIES NAMES iconv libiconv c)
+    if(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
+        set(WITH_ICONV true)
+        set(CMAKE_REQUIRED_FLAGS "-Werror")
+        check_c_source_compiles("
+        #include <iconv.h>
+        int main(void) {
+            iconv_t conv = 0;
+            const char *in = 0;
+            size_t ilen = 0;
+            char *out = 0;
+            size_t olen = 0;
+            iconv(conv, &in, &ilen, &out, &olen);
+            return 0;
+        }
+        " ICONV_SECOND_ARGUMENT_IS_CONST)
+        if(ICONV_SECOND_ARGUMENT_IS_CONST)
+            set(ICONV_CONST "const")
+        else(ICONV_SECOND_ARGUMENT_IS_CONST)
+            set(ICONV_CONST "")
+        endif(ICONV_SECOND_ARGUMENT_IS_CONST)
+        check_library_exists("iconv" "iconvctl" ${ICONV_LIBRARIES} HAVE_ICONVCTL)
+    endif(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
+else(NOT ICU_FOUND)
+    set(WITH_ICU true)
+endif(NOT ICU_FOUND)
 
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
 get_filename_component(bindir "${CMAKE_BINARY_DIR}" REALPATH)
@@ -104,6 +113,12 @@ configure_file(
     @ONLY
 )
 
+configure_file(
+    "${PROJECT_SOURCE_DIR}/config.h.in"
+    "${PROJECT_BINARY_DIR}/config.h"
+    @ONLY
+)
+
 add_library(common OBJECT EXCLUDE_FROM_ALL shared/utils.c)
 set_target_properties(common PROPERTIES COMPILE_FLAGS "-fPIC")
 
@@ -111,10 +126,9 @@ add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/shared/optparse.c)
 set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC")
 
 add_library(shall_lib SHARED ${SOURCES} $<TARGET_OBJECTS:common>)
-# if(ICONV_LIBRARIES OR ICU_LIBRARIES)
-#     target_link_libraries(shall_lib ${ICONV_LIBRARIES} ${ICU_LIBRARIES})
-# TODO: ${ICONV_INCLUDE_DIR} + ${ICU_INCLUDE_DIRS} as include_directories
-# endif(ICONV_LIBRARIES OR ICU_LIBRARIES)
+if(WITH_ICU OR WITH_ICONV)
+    target_link_libraries(shall_lib ${ICONV_LIBRARIES} ${ICU_LIBRARIES})
+endif(WITH_ICU OR WITH_ICONV)
 
 # add_library(shall_lib SHARED $<TARGET_OBJECTS:common>)
 # add_executable(shall_bin $<TARGET_OBJECTS:common> cli/bin/shall.c)
@@ -129,7 +143,8 @@ add_executable(shalldoc cli/bin/shalldoc.c $<TARGET_OBJECTS:common>)
 target_link_libraries(shalldoc shall_lib)
 
 set_target_properties(shall_lib PROPERTIES
-    INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES}"
+#     COMPILE_DEFINITIONS "-DHAVE_ICONVCTL=${HAVE_ICONVCTL} -DICONV_CONST=${ICONV_CONST} -DWITH_ICU=${} -DWITH_ICONV=${}"
+    INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES};${ICONV_INCLUDE_DIR};${ICU_INCLUDE_DIRS}"
     PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/xtring.h"
 )
 set_target_properties(shall_bin shalltest shalldoc PROPERTIES INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")
