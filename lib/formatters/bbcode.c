@@ -52,11 +52,17 @@ static int bbcode_start_document(String *out, FormatterData *data)
             if (theme->styles[i].italic) {
                 STRING_BUILDER_APPEND(sb[OPENING_TAG], "[i]");
             }
+            if (theme->styles[i].underline) {
+                STRING_BUILDER_APPEND(sb[OPENING_TAG], "[u]");
+            }
             if (theme->styles[i].fg_set) {
                 STRING_BUILDER_APPEND_FORMATTED(sb[OPENING_TAG], "[color=#%" PRIx8 "%" PRIx8 "%" PRIx8 "]", theme->styles[i].fg.r, theme->styles[i].fg.g, theme->styles[i].fg.b);
             }
             if (theme->styles[i].fg_set) {
                 STRING_BUILDER_APPEND(sb[CLOSING_TAG], "[/color]");
+            }
+            if (theme->styles[i].underline) {
+                STRING_BUILDER_APPEND(sb[CLOSING_TAG], "[/u]");
             }
             if (theme->styles[i].italic) {
                 STRING_BUILDER_APPEND(sb[CLOSING_TAG], "[/i]");

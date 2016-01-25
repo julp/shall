@@ -355,6 +355,9 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
             if (theme->styles[i].italic) {
                 STRING_BUILDER_APPEND(sb, "3;");
             }
+            if (theme->styles[i].underline) {
+                STRING_BUILDER_APPEND(sb, "4;");
+            }
             if (theme->styles[i].fg_set) {
                 if (mydata->mode256) {
                     STRING_BUILDER_APPEND_FORMATTED(sb, "38;5;%" PRIu8 ";", closest_color_for_256_mode(&theme->styles[i].fg));

@@ -20,6 +20,7 @@ typedef struct {
             uint8_t bg_set:2;
             uint8_t italic:3;
             uint8_t bold:4;
+            uint8_t underline:5;
         };
         uint8_t flags;
     };

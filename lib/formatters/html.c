@@ -92,6 +92,9 @@ static int html_start_document(String *out, FormatterData *data)
                 if (theme->styles[i].italic) {
                     STRING_APPEND_STRING(buffer, "font-style: italic;");
                 }
+                if (theme->styles[i].underline) {
+                    STRING_APPEND_STRING(buffer, "text-decoration: underline;");
+                }
                 if (theme->styles[i].fg_set) {
                     STRING_APPEND_COLOR(buffer, "color: ", theme->styles[i].fg, ";");
                 }

@@ -163,6 +163,10 @@ SHALL_API char *theme_export_as_css(const Theme *theme, const char *scope, bool 
                 STRING_APPEND_IDENT(buffer);
                 STRING_APPEND_STRING(buffer, "font-style: italic;\n");
             }
+            if (theme->styles[i].underline) {
+                STRING_APPEND_IDENT(buffer);
+                STRING_APPEND_STRING(buffer, "text-decoration: underline;\n");
+            }
             STRING_APPEND_STRING(buffer, "}\n");
         }
     }
