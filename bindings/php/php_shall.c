@@ -221,10 +221,17 @@ static void php_get_option(int type, OptionValue *optvalptr, zval *return_value)
             break;
         case OPT_TYPE_LEXER:
             if (NULL != OPT_LEXPTR(*optvalptr)) {
+#if PHP_MAJOR_VERSION >= 7
+                zend_object *obj;
+
+                obj = (zend_object *) OPT_LEXPTR(*optvalptr);
+                RETVAL_OBJ(obj);
+#else
                 zval *wl;
 
                 wl = (zval *) OPT_LEXPTR(*optvalptr);
                 RETVAL_ZVAL(wl, 0, 0);
+#endif /* PHP >= 7 */
             }
             break;
     }
@@ -235,18 +242,30 @@ static int formatter_set_option_compat_cb(void *object, const char *name, Option
     return formatter_set_option((Formatter *) object, name, type, optval);
 }
 
-// fetch a Lexer * from a zval * (not a zend_object *)
+// PHP 5: fetch a Lexer * from a zval * (not a zend_object *)
+// PHP 7: fetch a Lexer * from a zend_object * (not a zval *)
 static inline Lexer *php_lexer_unwrap(void *object)
 {
-    zval *zobj;
     Shall_Lexer_object *o;
 
     TSRMLS_FETCH();
-    zobj = (zval *) object;
-    FETCH_SHALL_LEXER_FROM_ZVAL(o, zobj);
+    {
+#if PHP_MAJOR_VERSION >= 7
+        zend_object *obj;
 
-    debug("UNWRAP lexer is %p/%p/%p", o->lexer, zobj, Z_OBJ_P(zobj));
-    debug("UNWRAP imp = %s", lexer_implementation_name(lexer_implementation(o->lexer)));
+        obj = (zend_object *) object;
+        SHALL_LEXER_FETCH_OBJ_P(o, obj);
+debug("UNWRAP lexer is %p/X/%p", o->lexer, obj);
+debug("UNWRAP imp = %s", lexer_implementation_name(lexer_implementation(o->lexer)));
+#else
+        zval *zobj;
+
+        zobj = (zval *) object;
+        FETCH_SHALL_LEXER_FROM_ZVAL(o, zobj);
+debug("UNWRAP lexer is %p/%p/%p", o->lexer, zobj, Z_OBJ_P(zobj));
+debug("UNWRAP imp = %s", lexer_implementation_name(lexer_implementation(o->lexer)));
+#endif /* PHP >= 7 */
+    }
 
     return o->lexer;
 }
@@ -283,11 +302,16 @@ static int php_set_option(void *object, const char *name, zval *value, int rejec
             // TODO: NULL to "remove" sublexers
             if (instanceof_function(Z_OBJCE_P(value), Shall_Lexer_ce_ptr TSRMLS_CC)) {
                 type = OPT_TYPE_LEXER;
-debug("[addref] %p", value);
+debug("[addref] %p/%p", value, Z_OBJ_P(value));
                 zval_addref_p(value);
-                OPT_LEXPTR(optval) = value;
                 OPT_LEXUWF(optval) = php_lexer_unwrap;
+#if PHP_MAJOR_VERSION >= 7
+                OPT_LEXPTR(optval) = Z_OBJ_P(value);
+debug("set lexer %p/%p/%p/%s as option", php_lexer_unwrap(Z_OBJ_P(value)), value, Z_OBJ_P(value), lexer_implementation_name(lexer_implementation(lexer_unwrap(optval))));
+#else
+                OPT_LEXPTR(optval) = value;
 debug("set lexer %p/%p/%p/%s as option", php_lexer_unwrap(value), value, Z_OBJ_P(value), lexer_implementation_name(lexer_implementation(lexer_unwrap(optval))));
+#endif /* PHP >= 7 */
             }
             break;
         default:
@@ -350,7 +374,12 @@ static void zval_lexer_dec_ref(void *value)
     TSRMLS_FETCH();
 debug("[delref] %p", value);
 #if PHP_MAJOR_VERSION >= 7
-    zval_ptr_dtor((zval *) value);
+    zval tmp;
+    zend_object *obj;
+
+    obj = (zend_object *) value;
+    ZVAL_OBJ(&tmp, obj);
+    zval_ptr_dtor(&tmp);
 #else
     zval_ptr_dtor((zval **) &value);
 // debug("Z_REFCOUNT_P = %d", Z_REFCOUNT_P((zval *) value));
@@ -419,7 +448,7 @@ Shall_Lexer_object_create(zend_class_entry *ce TSRMLS_DC)
 #endif /* PHP >= 7 */
     zend_object_std_init(&intern->zo, ce TSRMLS_CC);
     intern->lexer = lexer_create(lexer_implementation_by_name(CE_NAME(ce) + STR_LEN("Shall\\Lexer\\")));
-debug("lexer is %s/X/%p", lexer_implementation_name(lexer_implementation(intern->lexer)), intern->lexer);
+debug("lexer is %s/%p/%p", lexer_implementation_name(lexer_implementation(intern->lexer)), intern->lexer, &intern->zo);
 #if PHP_MAJOR_VERSION >= 7
     intern->zo.handlers
 #else
