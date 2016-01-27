@@ -6,7 +6,6 @@
 
 #include "php.h"
 #include "php_ini.h"
-#include "ext/standard/php_smart_str.h"
 #include <shall/cpp.h>
 #include <shall/formatter.h>
 #include <shall/shall.h>

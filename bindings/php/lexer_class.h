@@ -47,7 +47,7 @@ typedef struct {
         }                                                                                                                 \
     } while (0);
 
-zend_class_entry *Shall_Lexer_ce_ptr;
+extern zend_class_entry *Shall_Lexer_ce_ptr;
 
 void shall_lexer_create(const LexerImplementation *, zval *, zval * TSRMLS_DC);
 

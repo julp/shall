@@ -28,7 +28,8 @@ static void wrap_Lexer(zend_class_entry *ce, zval *object, const Lexer *lexer TS
 // TEST
 static HashTable lexer_classes;
 
-zend_object_handlers Shall_Lexer_handlers;
+zend_class_entry *Shall_Lexer_ce_ptr;
+static zend_object_handlers Shall_Lexer_handlers;
 
 static void zval_lexer_dec_ref(void *value)
 {
