@@ -2,7 +2,7 @@ PHP_ARG_WITH(shall, for Shall support,
 [  --with-shall=DIR       Include Shall support], no)
 
 if test "$PHP_SHALL" != "no"; then
-  PHP_NEW_EXTENSION(shall, php_shall.c, $ext_shared)
+  PHP_NEW_EXTENSION(shall, php_shall.c helpers.c options.c lexer_class.c lexer_methods.c, $ext_shared)
   PHP_SUBST(SHALL_SHARED_LIBADD)
   if test "$PHP_SHALL" != "yes" -a "$PHP_SHALL" != "no"; then
     if test -f $PHP_SHALL/include/shall/shall.h; then
