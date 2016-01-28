@@ -12,6 +12,24 @@
 #include "hashtable.h"
 #include "themes.h"
 
+#if defined(__FreeBSD__) && __FreeBSD__ >= 9
+# include <unistd.h>
+# include <sys/capsicum.h>
+
+# define CAP_RIGHTS_LIMIT(fd, ...) \
+    do { \
+        cap_rights_t rights; \
+ \
+        cap_rights_init(&rights, ## __VA_ARGS__); \
+        if (0 != cap_rights_limit(fd, &rights) && ENOSYS != errno) { \
+            perror("cap_rights_limit"); \
+        } \
+    } while (0);
+#else
+# define CAP_RIGHTS_LIMIT(fd, ...) \
+    /* NOP */
+#endif /* FreeBSD >= 9.0 */
+
 #ifndef EUSAGE
 # define EUSAGE -2
 #endif /* !EUSAGE */
@@ -51,9 +69,7 @@ static void usage(void)
     exit(EUSAGE);
 }
 
-#define TEST
-
-static void procfile(const char *filename, Formatter *fmt)
+static void procfile(const char *filename, FILE *fp, Formatter *fmt)
 {
     size_t o;
     char *result;
@@ -63,27 +79,22 @@ static void procfile(const char *filename, Formatter *fmt)
     const char *inputenc;
     const LexerImplementation *limp;
 
+    result = NULL;
+    inputenc = NULL;
     {
-        FILE *fp;
         size_t read;
         char bufraw[1024];
 
         if (0 == strcmp(filename, "-")) {
-            fp = stdin;
             inputenc = encoding_stdin_get();
-        } else {
-            if (NULL == (fp = fopen(filename, "r"))) {
-                fprintf(stderr, "unable to open '%s', skip\n", filename);
-                return;
-            }
         }
         buffer = string_new();
         read = fread(bufraw, sizeof(bufraw[0]), ARRAY_SIZE(bufraw), fp);
         if (read > 0) {
             string_append_string_len(buffer, bufraw, read);
             if (NULL != memchr(buffer->ptr, '\0', buffer->len)) {
-                fprintf(stderr, "binary file detected, skip\n");
-                return;
+                fprintf(stderr, "%s: binary file found, skip\n", filename);
+                goto failure;
             } else {
                 inputenc = encoding_guess(buffer->ptr, buffer->len, NULL);
             }
@@ -92,8 +103,9 @@ static void procfile(const char *filename, Formatter *fmt)
                 string_append_string_len(buffer, bufraw, read);
             }
         }
-        if (stdin != fp) {
-            fclose(fp);
+        if (ferror(fp)) {
+            fprintf(stderr, "failed to read %s\n", filename);
+            goto failure;
         }
     }
     if (NULL != inputenc && 0 != strcmp("UTF-8", inputenc)) {
@@ -107,7 +119,7 @@ static void procfile(const char *filename, Formatter *fmt)
             buffer = string_adopt_string_len(utf8, utf8_len);
         } else {
             fprintf(stderr, "failed to convert '%s' (from %s) to UTF-8\n", inputenc, filename);
-            return;
+            goto failure;
         }
     }
     if (NULL == (limp = lexer_implementation_for_filename(filename))) {
@@ -153,14 +165,20 @@ static void procfile(const char *filename, Formatter *fmt)
             result = nonutf8;
         } else {
             fprintf(stderr, "failed to convert result from UTF-8 to %s\n", outputenc);
-            return;
+            goto failure;
         }
     }
     // print result
     puts(result);
+failure:
     // free
     string_destroy(buffer);
-    free(result);
+    if (NULL != result) {
+        free(result);
+    }
+    if (stdin != fp) {
+        fclose(fp);
+    }
 }
 
 static const char *type2string[] = {
@@ -377,14 +395,51 @@ int main(int argc, char **argv)
             fprintf(stderr, "option '%s' rejected by %s formatter\n", options[FORMATTER].options[i].name, formatter_implementation_name(formatter_implementation(fmt)));
         }
     }
-#ifdef TEST
-    debug("stdin is: %s // stdout is: %s", NULL == encoding_stdin_get() ? "unknown" /* have to guess? */ : encoding_stdin_get(), encoding_stdout_get());
-#endif /* TEST */
-    if (0 == argc) {
-        procfile("-", fmt);
-    } else {
-        for ( ; argc--; ++argv) {
-            procfile(*argv, fmt);
+    {
+        FILE *fp[argc + 1];
+
+#if defined(__OpenBSD__) && OpenBSD >= 201605
+        if (-1 == pledge("stdio rpath", NULL)) {
+            perror("pledge");
+        }
+#endif /* OpenBSD >= 5.9 */
+        {
+            CAP_RIGHTS_LIMIT(STDOUT_FILENO, CAP_WRITE);
+            CAP_RIGHTS_LIMIT(STDERR_FILENO, CAP_WRITE);
+            if (0 == argc) {
+                fp[0] = stdin;
+                CAP_RIGHTS_LIMIT(STDIN_FILENO, CAP_READ);
+            } else {
+                int i;
+                char **p;
+
+                for (i = argc, p = argv; 0 != i--; ++p) {
+                    if (0 == strcmp(*p, "-")) {
+                        fp[p - argv] = stdin;
+                        CAP_RIGHTS_LIMIT(STDIN_FILENO, CAP_READ);
+                    } else {
+                        if (NULL == (fp[p - argv] = fopen(*p, "r"))) {
+                            fprintf(stderr, "unable to open '%s', skip\n", *p);
+                        } else {
+                            CAP_RIGHTS_LIMIT(fileno(fp[p - argv]), CAP_READ);
+                        }
+                    }
+                }
+            }
+#if defined(__FreeBSD__) && __FreeBSD__ >= 9
+            if (0 != cap_enter() && ENOSYS != errno) {
+                perror("cap_enter");
+            }
+#endif /* FreeBSD >= 9.0 */
+        }
+        if (0 == argc) {
+            procfile("-", fp[0], fmt);
+        } else {
+            char **p;
+
+            for (p = argv; 0 != argc--; ++p) {
+                procfile(*p, fp[p - argv], fmt);
+            }
         }
     }
     formatter_destroy(fmt);
