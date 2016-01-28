@@ -4,6 +4,7 @@
 
 #include "cpp.h"
 #include "utils.h"
+#include "iterator.h"
 #include "formatter.h"
 #include "shall.h"
 #include "options.h"
@@ -18,14 +19,15 @@ static const FormatterImplementation *available_formatters[] = {
     &_bbcodefmt,
     &_htmlfmt,
     &_termfmt,
+    NULL
 };
 
 /**
  * Exposes the number of available builtin formatters
  *
- * @note for external use only, keep using ARRAY_SIZE internally
+ * @note for external use only
  */
-SHALL_API const size_t SHALL_FORMATTER_COUNT = ARRAY_SIZE(available_formatters);
+SHALL_API const size_t SHALL_FORMATTER_COUNT = ARRAY_SIZE(available_formatters) - 1;
 
 /* ========== FormatterImplementation functions ========== */
 
@@ -62,11 +64,11 @@ SHALL_API const char *formatter_implementation_description(const FormatterImplem
  */
 SHALL_API const FormatterImplementation *formatter_implementation_by_name(const char *name)
 {
-    size_t i;
+    const FormatterImplementation **imp;
 
-    for (i = 0; i < ARRAY_SIZE(available_formatters); i++) {
-        if (0 == ascii_strcasecmp(name, available_formatters[i]->name)) {
-            return available_formatters[i];
+    for (imp = available_formatters; NULL != *imp; imp++) {
+        if (0 == ascii_strcasecmp(name, (*imp)->name)) {
+            return *imp;
         }
     }
 
@@ -81,10 +83,10 @@ SHALL_API const FormatterImplementation *formatter_implementation_by_name(const 
  */
 SHALL_API void formatter_implementation_each(void (*cb)(const FormatterImplementation *, void *), void *data)
 {
-    size_t i;
+    const FormatterImplementation **imp;
 
-    for (i = 0; i < ARRAY_SIZE(available_formatters); i++) {
-        cb(available_formatters[i], data);
+    for (imp = available_formatters; NULL != *imp; imp++) {
+        cb(*imp, data);
     }
 }
 
@@ -104,6 +106,16 @@ SHALL_API void formatter_implementation_each_option(const FormatterImplementatio
             cb(fo->type, fo->name, fo->defval, fo->docstr, data);
         }
     }
+}
+
+/**
+ * Initialize an iterator to iterate on available formatters
+ *
+ * @param it the iterator to set properly
+ */
+SHALL_API void formatter_implementation_to_iterator(Iterator *it)
+{
+    null_terminated_ptr_array_to_iterator(it, available_formatters);
 }
 
 /**

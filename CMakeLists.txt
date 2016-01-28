@@ -32,6 +32,8 @@ set(COMMON_INCLUDE_DIRECTORIES #
 )
 set(SHALL_LIB_INCLUDE_DIRS ${COMMON_INCLUDE_DIRECTORIES})
 
+find_package(BISON REQUIRED)
+
 set(WITH_ICU false)
 set(WITH_ICONV false)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
@@ -87,7 +89,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 set(SOURCES #
-    lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/tokens.c lib/lexers/helpers.c lib/version.c lib/encoding.c
+    lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/tokens.c lib/lexers/helpers.c lib/version.c lib/encoding.c lib/iterator.c
     lib/darray.c lib/dlist.c
     shared/xtring.c shared/hashtable.c
 )
@@ -95,6 +97,7 @@ set(THEMES monokai molokai)
 set(FORMATTERS bbcode html plain terminal)
 set(C_LEXERS cpp diff text) # annotations
 set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
+set(BISON_GRAMMARS )
 
 foreach(lexer ${C_LEXERS})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.c")
@@ -111,16 +114,25 @@ foreach(lexer ${RE2C_LEXERS})
     RE2C_TARGET(NAME "${lexer}" INPUT "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "${PROJECT_SOURCE_DIR}/lib/lexer.h")
 endforeach(lexer)
 
+set(BISON_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/gengrammars/")
+file(MAKE_DIRECTORY "${BISON_OUTPUT_DIRECTORY}")
+foreach(grammar ${BISON_GRAMMARS})
+    list(APPEND SOURCES "${BISON_OUTPUT_DIRECTORY}/${grammar}.c")
+    BISON_TARGET("${grammar}" "${PROJECT_SOURCE_DIR}/lib/lexers/${grammar}.y" "${BISON_OUTPUT_DIRECTORY}/${grammar}.c" COMPILE_FLAGS "-dp ${grammar}")
+endforeach(grammar)
+
 foreach(fmt ${FORMATTERS})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/formatters/${fmt}.c")
 endforeach(fmt)
 
+# public
 configure_file(
-    "${PROJECT_SOURCE_DIR}/shall.h.in"
-    "${PROJECT_BINARY_DIR}/shall.h"
+    "${PROJECT_SOURCE_DIR}/vernum.h.in"
+    "${PROJECT_BINARY_DIR}/vernum.h"
     @ONLY
 )
 
+# private
 configure_file(
     "${PROJECT_SOURCE_DIR}/config.h.in"
     "${PROJECT_BINARY_DIR}/config.h"
@@ -150,10 +162,22 @@ target_link_libraries(shalltest shall_lib)
 add_executable(shalldoc cli/bin/shalldoc.c $<TARGET_OBJECTS:common>)
 target_link_libraries(shalldoc shall_lib)
 
+set(SHALL_PUBLIC_HEADERS
+    ${PROJECT_BINARY_DIR}/vernum.h
+    ${PROJECT_SOURCE_DIR}/include/shall.h
+    ${PROJECT_SOURCE_DIR}/include/themes.h
+    ${PROJECT_SOURCE_DIR}/shared/cpp.h
+    ${PROJECT_SOURCE_DIR}/include/tokens.h
+    ${PROJECT_SOURCE_DIR}/include/keywords.h
+    ${PROJECT_SOURCE_DIR}/include/formatter.h
+    ${PROJECT_SOURCE_DIR}/include/xtring.h
+    ${PROJECT_SOURCE_DIR}/include/types.h
+    ${PROJECT_SOURCE_DIR}/include/iterator.h
+)
+
 set_target_properties(shall_lib PROPERTIES
-#     COMPILE_DEFINITIONS "-DHAVE_ICONVCTL=${HAVE_ICONVCTL} -DICONV_CONST=${ICONV_CONST} -DWITH_ICU=${} -DWITH_ICONV=${}"
     INCLUDE_DIRECTORIES "${SHALL_LIB_INCLUDE_DIRS}"
-    PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/xtring.h"
+    PUBLIC_HEADER "${SHALL_PUBLIC_HEADERS}"
 )
 set_target_properties(shall_bin shalltest shalldoc PROPERTIES INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")
 

@@ -1,8 +1,6 @@
-#ifndef TOKENS_H
+#pragma once
 
-# define TOKENS_H
-
-# include <stddef.h> /* size_t */
+#include <stddef.h> /* size_t */
 
 enum {
 #define TOKEN(constant, description, cssclass) \
@@ -21,5 +19,3 @@ typedef struct {
 } Token;
 
 /*SHALL_API */const Token tokens[_TOKEN_COUNT];
-
-#endif /* !TOKENS_H */

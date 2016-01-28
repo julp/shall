@@ -1,31 +1,9 @@
-#ifndef SHALL_H
+#pragma once
 
-# define SHALL_H
+#define SHALL_API
 
-# define SHALL_VERSION_MAJOR @SHALL_VERSION_MAJOR@
-# define SHALL_VERSION_MINOR @SHALL_VERSION_MINOR@
-# define SHALL_VERSION_PATCH @SHALL_VERSION_PATCH@
-# define SHALL_VERSION_NUMBER @SHALL_VERSION_NUMBER@
-
-# define SHALL_API
-
-# include <stddef.h> /* size_t */
-# include <stdbool.h>
-# include "types.h"
-
-typedef uint8_t Version[3];
-
-# define SHALL_VERSION { SHALL_VERSION_MAJOR, SHALL_VERSION_MINOR, SHALL_VERSION_PATCH }
-
-SHALL_API void shall_version_get(Version);
-SHALL_API bool shall_version_check(const Version);
-
-SHALL_API const char *encoding_guess(const char *, size_t, size_t *);
-SHALL_API bool encoding_utf8_check(const char *, size_t, const char **);
-SHALL_API const char *encoding_stdin_get(void);
-SHALL_API const char *encoding_stdout_get(void);
-SHALL_API bool encoding_convert_to_utf8(const char *, const char *, size_t, char **, size_t *);
-SHALL_API bool encoding_convert_from_utf8(const char *, const char *, size_t, char **, size_t *);
+#include "types.h"
+#include "iterator.h"
 
 typedef void (*on_lexer_destroy_cb_t)(void *);
 
@@ -75,6 +53,7 @@ SHALL_API const FormatterImplementation *formatter_implementation(Formatter *);
 SHALL_API const FormatterImplementation *formatter_implementation_by_name(const char *);
 SHALL_API const char *formatter_implementation_name(const FormatterImplementation *);
 SHALL_API const char *formatter_implementation_description(const FormatterImplementation *);
+SHALL_API void formatter_implementation_to_iterator(Iterator *);
 SHALL_API void formatter_implementation_each(void (*)(const FormatterImplementation *, void *), void *);
 SHALL_API void formatter_implementation_each_option(const FormatterImplementation *, void (*)(int, const char *, OptionValue, const char *, void *), void *);
 
@@ -86,5 +65,3 @@ SHALL_API int formatter_set_option(Formatter *, const char *, OptionType, Option
 SHALL_API int formatter_set_option_as_string(Formatter *, const char *, const char *, size_t);
 
 SHALL_API int highlight_string(Lexer *, Formatter *, const char *, size_t, char **, size_t *);
-
-#endif /* !SHALL_H  */

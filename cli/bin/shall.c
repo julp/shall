@@ -11,6 +11,9 @@
 #include "xtring.h"
 #include "hashtable.h"
 #include "themes.h"
+#include "vernum.h"
+#include "version.h"
+#include "encoding.h"
 
 #if defined(__FreeBSD__) && __FreeBSD__ >= 9
 # include <unistd.h>
@@ -189,7 +192,7 @@ static const char *type2string[] = {
     [ OPT_TYPE_LEXER ]  = "lexer",
 };
 
-static void print_lexer_option_cb(int type, const char *name, OptionValue defval, const char *docstr, void *UNUSED(data))
+static void print_option_cb(int type, const char *name, OptionValue defval, const char *docstr, void *UNUSED(data))
 {
     printf("  + %s (%s, default: ", name, type2string[type]);
     switch (type) {
@@ -240,7 +243,7 @@ static void print_lexer_cb(const LexerImplementation *imp, void *UNUSED(data))
 
     imp_name = lexer_implementation_name(imp);
     printf("- %s\n", imp_name);
-    lexer_implementation_each_option(imp, print_lexer_option_cb, NULL);
+    lexer_implementation_each_option(imp, print_option_cb, NULL);
 }
 
 static void print_formatter_cb(const FormatterImplementation *imp, void *UNUSED(data))
@@ -249,7 +252,7 @@ static void print_formatter_cb(const FormatterImplementation *imp, void *UNUSED(
 
     imp_name = formatter_implementation_name(imp);
     printf("- %s\n", imp_name);
-    formatter_implementation_each_option(imp, print_lexer_option_cb, NULL);
+    formatter_implementation_each_option(imp, print_option_cb, NULL);
 }
 
 static void print_theme_cb(const Theme *theme, void *UNUSED(data))
@@ -285,6 +288,14 @@ int main(int argc, char **argv)
     Formatter *fmt;
     const FormatterImplementation *fimp;
 
+    {
+        Version v = { SHALL_VERSION_MAJOR, SHALL_VERSION_MINOR, SHALL_VERSION_PATCH };
+
+        if (!version_check(v)) {
+            fprintf(stderr, "version mismatch\n");
+            return EXIT_FAILURE;
+        }
+    }
     fmt = NULL;
     vFlag = false;
     fimp = termfmt;
@@ -304,6 +315,18 @@ int main(int argc, char **argv)
                     puts("Available lexers are:");
                     lexer_implementation_each(print_lexer_cb, NULL);
                     puts("\nAvailable formatters are:");
+#if 0
+                    Iterator it;
+
+                    formatter_iterator(&it);
+                    for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
+                        const FormatterImplementation *imp;
+
+                        imp = (const FormatterImplementation *) iterator_current(&it);
+                        printf("- %s\n", formatter_implementation_name(imp));
+                    }
+                    iterator_close(&it);
+#endif
                     formatter_implementation_each(print_formatter_cb, NULL);
                     puts("\nAvailable themes are:");
                     theme_each(print_theme_cb, NULL);
@@ -403,35 +426,33 @@ int main(int argc, char **argv)
             perror("pledge");
         }
 #endif /* OpenBSD >= 5.9 */
-        {
-            CAP_RIGHTS_LIMIT(STDOUT_FILENO, CAP_WRITE);
-            CAP_RIGHTS_LIMIT(STDERR_FILENO, CAP_WRITE);
-            if (0 == argc) {
-                fp[0] = stdin;
-                CAP_RIGHTS_LIMIT(STDIN_FILENO, CAP_READ);
-            } else {
-                int i;
-                char **p;
+        CAP_RIGHTS_LIMIT(STDOUT_FILENO, CAP_WRITE);
+        CAP_RIGHTS_LIMIT(STDERR_FILENO, CAP_WRITE);
+        if (0 == argc) {
+            fp[0] = stdin;
+            CAP_RIGHTS_LIMIT(STDIN_FILENO, CAP_READ);
+        } else {
+            int i;
+            char **p;
 
-                for (i = argc, p = argv; 0 != i--; ++p) {
-                    if (0 == strcmp(*p, "-")) {
-                        fp[p - argv] = stdin;
-                        CAP_RIGHTS_LIMIT(STDIN_FILENO, CAP_READ);
+            for (i = argc, p = argv; 0 != i--; ++p) {
+                if (0 == strcmp(*p, "-")) {
+                    fp[p - argv] = stdin;
+                    CAP_RIGHTS_LIMIT(STDIN_FILENO, CAP_READ);
+                } else {
+                    if (NULL == (fp[p - argv] = fopen(*p, "r"))) {
+                        fprintf(stderr, "unable to open '%s', skip\n", *p);
                     } else {
-                        if (NULL == (fp[p - argv] = fopen(*p, "r"))) {
-                            fprintf(stderr, "unable to open '%s', skip\n", *p);
-                        } else {
-                            CAP_RIGHTS_LIMIT(fileno(fp[p - argv]), CAP_READ);
-                        }
+                        CAP_RIGHTS_LIMIT(fileno(fp[p - argv]), CAP_READ);
                     }
                 }
             }
-#if defined(__FreeBSD__) && __FreeBSD__ >= 9
-            if (0 != cap_enter() && ENOSYS != errno) {
-                perror("cap_enter");
-            }
-#endif /* FreeBSD >= 9.0 */
         }
+#if defined(__FreeBSD__) && __FreeBSD__ >= 9
+        if (0 != cap_enter() && ENOSYS != errno) {
+            perror("cap_enter");
+        }
+#endif /* FreeBSD >= 9.0 */
         if (0 == argc) {
             procfile("-", fp[0], fmt);
         } else {

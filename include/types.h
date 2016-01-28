@@ -1,10 +1,10 @@
-#ifndef TYPES_H
+#pragma once
 
-# define TYPES_H
+#include <stddef.h> /* size_t */
+#include <stdint.h> /* uint\d+_t */
+#include <stdbool.h>
 
-# include <stddef.h> /* size_t */
-# include <stdint.h> /* uint\d+_t */
-# include "cpp.h"
+#include "cpp.h"
 
 typedef struct LexerImplementation LexerImplementation;
 typedef struct Lexer Lexer;
@@ -86,5 +86,3 @@ typedef struct {
 
 # define OPT_PTR(opt) \
     (opt).ptr
-
-#endif /* TYPES_H */
