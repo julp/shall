@@ -164,15 +164,16 @@ target_link_libraries(shalldoc shall_lib)
 
 set(SHALL_PUBLIC_HEADERS
     ${PROJECT_BINARY_DIR}/vernum.h
+    ${PROJECT_SOURCE_DIR}/include/version.h
     ${PROJECT_SOURCE_DIR}/include/shall.h
     ${PROJECT_SOURCE_DIR}/include/themes.h
-    ${PROJECT_SOURCE_DIR}/shared/cpp.h
     ${PROJECT_SOURCE_DIR}/include/tokens.h
     ${PROJECT_SOURCE_DIR}/include/keywords.h
     ${PROJECT_SOURCE_DIR}/include/formatter.h
     ${PROJECT_SOURCE_DIR}/include/xtring.h
     ${PROJECT_SOURCE_DIR}/include/types.h
     ${PROJECT_SOURCE_DIR}/include/iterator.h
+    ${PROJECT_SOURCE_DIR}/shared/cpp.h
 )
 
 set_target_properties(shall_lib PROPERTIES

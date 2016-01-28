@@ -196,11 +196,12 @@ static PHP_MINFO_FUNCTION(shall)
     php_info_print_table_start();
     php_info_print_table_row(2, "shall", "enabled");
     {
+#include <shall/version.h>
         Version v;
-        char tmp[256];
+        char tmp[VERSION_STRING_MAX_LENGTH];
 
-        shall_version_get(v);
-        snprintf(tmp, sizeof(tmp), "%" PRIu8 ".%" PRIu8 ".%" PRIu8, v[0], v[1], v[2]);
+        version_get(v);
+        version_to_string(v, tmp, STR_SIZE(tmp));
         php_info_print_table_row(2, "Version", tmp);
     }
     {
