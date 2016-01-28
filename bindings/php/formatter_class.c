@@ -419,7 +419,8 @@ void shall_register_Formatter_class(TSRMLS_D)
 
 void shall_unregister_Formatter_class(TSRMLS_D)
 {
-// TODO: segfault in PHP 7
+    // TODO: segfault in PHP 7
+    // PHP, since PHP 7, automaticaly destroys zval and/or zend_string by itself before calling MSHUTDOWN callbacks?
 #if PHP_MAJOR_VERSION < 7
     size_t i;
 
