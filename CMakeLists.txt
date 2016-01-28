@@ -24,6 +24,14 @@ check_include_files("stdbool.h" HAVE_STDBOOL_H)
 check_function_exists("fnmatch" HAVE_FNMATCH)
 check_function_exists("stpcpy" HAVE_STPCPY)
 
+set(COMMON_INCLUDE_DIRECTORIES #
+    ${PROJECT_SOURCE_DIR}/lib/
+    ${PROJECT_SOURCE_DIR}/shared/
+    ${PROJECT_SOURCE_DIR}/include/
+    ${PROJECT_BINARY_DIR}
+)
+set(SHALL_LIB_INCLUDE_DIRS ${COMMON_INCLUDE_DIRECTORIES})
+
 set(WITH_ICU false)
 set(WITH_ICONV false)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
@@ -33,6 +41,7 @@ if(NOT ICU_FOUND)
     find_library(ICONV_LIBRARIES NAMES iconv libiconv c)
     if(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
         set(WITH_ICONV true)
+        list(APPEND SHALL_LIB_INCLUDE_DIRS ${ICONV_INCLUDE_DIR})
         set(CMAKE_REQUIRED_FLAGS "-Werror")
         check_c_source_compiles("
         #include <iconv.h>
@@ -55,6 +64,7 @@ if(NOT ICU_FOUND)
     endif(ICONV_INCLUDE_DIR AND ICONV_LIBRARIES)
 else(NOT ICU_FOUND)
     set(WITH_ICU true)
+    list(APPEND SHALL_LIB_INCLUDE_DIRS ${ICU_INCLUDE_DIRS})
 endif(NOT ICU_FOUND)
 
 get_filename_component(srcdir "${CMAKE_SOURCE_DIR}" REALPATH)
@@ -72,11 +82,9 @@ find_package(RE2C 0.13.7 REQUIRED)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
-    # TODO: commented because HashTable conflicts with PHP binding
+    # TODO: -DTEST disabled because HashTable conflicts with PHP binding
 #     add_definitions(-DDEBUG -DTEST)
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
-set(COMMON_INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/lib/;${PROJECT_SOURCE_DIR}/shared/;${PROJECT_SOURCE_DIR}/include/;${PROJECT_BINARY_DIR}")
 
 set(SOURCES #
     lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/tokens.c lib/lexers/helpers.c lib/version.c lib/encoding.c
@@ -144,7 +152,7 @@ target_link_libraries(shalldoc shall_lib)
 
 set_target_properties(shall_lib PROPERTIES
 #     COMPILE_DEFINITIONS "-DHAVE_ICONVCTL=${HAVE_ICONVCTL} -DICONV_CONST=${ICONV_CONST} -DWITH_ICU=${} -DWITH_ICONV=${}"
-    INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES};${ICONV_INCLUDE_DIR};${ICU_INCLUDE_DIRS}"
+    INCLUDE_DIRECTORIES "${SHALL_LIB_INCLUDE_DIRS}"
     PUBLIC_HEADER "${PROJECT_BINARY_DIR}/shall.h;include/themes.h;shared/cpp.h;include/tokens.h;include/keywords.h;include/formatter.h;include/xtring.h;include/types.h;include/xtring.h"
 )
 set_target_properties(shall_bin shalltest shalldoc PROPERTIES INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")

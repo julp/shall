@@ -118,6 +118,7 @@ static bool encoding_convert(const char *from, const char *to, const char *in, s
 #  include <errno.h>
 #  include <iconv.h>
 #  include <string.h>
+#  include <stdio.h>
 
 #  define INVALID_SIZE_T ((size_t) -1)
 #  define INVALID_ICONV_T ((iconv_t) -1)
