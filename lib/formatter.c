@@ -4,10 +4,8 @@
 
 #include "cpp.h"
 #include "utils.h"
-#include "iterator.h"
-#include "formatter.h"
 #include "shall.h"
-#include "options.h"
+#include "formatter.h"
 
 // #ifndef DOXYGEN
 extern const FormatterImplementation _bbcodefmt;
@@ -115,7 +113,7 @@ SHALL_API void formatter_implementation_each_option(const FormatterImplementatio
  */
 SHALL_API void formatter_implementation_to_iterator(Iterator *it)
 {
-    null_terminated_ptr_array_to_iterator(it, available_formatters);
+    null_terminated_ptr_array_to_iterator(it, (void *) available_formatters);
 }
 
 /**

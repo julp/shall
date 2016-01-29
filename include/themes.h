@@ -46,6 +46,7 @@ struct Theme {
 SHALL_API const char *theme_name(const Theme *);
 
 SHALL_API void theme_each(void (*) (const Theme *, void *), void *);
+SHALL_API void themes_to_iterator(Iterator *);
 
 SHALL_API const Theme *theme_by_name(const char *);
 

@@ -2,6 +2,8 @@
 
 #define SHALL_API
 
+#include <stdbool.h>
+
 #include "types.h"
 #include "options.h"
 #include "iterator.h"

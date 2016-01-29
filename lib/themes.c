@@ -1,4 +1,3 @@
-#include <stddef.h>
 #include <string.h>
 
 #include "cpp.h"
@@ -12,14 +11,15 @@ extern SHALL_API const Theme molokai;
 static const Theme *available_themes[] = {
     &monokai,
     &molokai,
+    NULL
 };
 
 /**
  * Exposes the number of available builtin themes
  *
- * @note for external use only, keep using ARRAY_SIZE internally
+ * @note for external use only
  */
-SHALL_API const size_t SHALL_THEME_COUNT = ARRAY_SIZE(available_themes);
+SHALL_API const size_t SHALL_THEME_COUNT = ARRAY_SIZE(available_themes) - 1;
 
 /**
  * Executes the given callback for each builtin lexer implementation
@@ -29,11 +29,21 @@ SHALL_API const size_t SHALL_THEME_COUNT = ARRAY_SIZE(available_themes);
  */
 SHALL_API void theme_each(void (*cb)(const Theme *, void *), void *data)
 {
-    size_t i;
+    const Theme **theme;
 
-    for (i = 0; i < ARRAY_SIZE(available_themes); i++) {
-        cb(available_themes[i], data);
+    for (theme = available_themes; NULL != *theme; theme++) {
+        cb(*theme, data);
     }
+}
+
+/**
+ * Initialize an iterator to iterate on available themes
+ *
+ * @param it the iterator to set properly
+ */
+SHALL_API void themes_to_iterator(Iterator *it)
+{
+    null_terminated_ptr_array_to_iterator(it, (void *) available_themes);
 }
 
 /**
@@ -57,11 +67,11 @@ SHALL_API const char *theme_name(const Theme *theme)
  */
 SHALL_API const Theme *theme_by_name(const char *name)
 {
-    size_t i;
+    const Theme **theme;
 
-    for (i = 0; i < ARRAY_SIZE(available_themes); i++) {
-        if (0 == ascii_strcasecmp(name, available_themes[i]->name)) {
-            return available_themes[i];
+    for (theme = available_themes; NULL != *theme; theme++) {
+        if (0 == ascii_strcasecmp(name, (*theme)->name)) {
+            return *theme;
         }
     }
 
