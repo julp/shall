@@ -1,50 +1,13 @@
 #pragma once
 
 #include "types.h"
+#include "options.h"
 #include "xtring.h"
 #ifdef TEST
 # include "hashtable.h"
 #endif /* TEST */
 
 typedef void FormatterData;
-
-#define S(s) s, STR_LEN(s)
-
-/**
- * Formatter option
- */
-typedef struct {
-    /**
-     * Option's name
-     */
-    const char *name;
-    /**
-     * Option's name length
-     */
-    size_t name_len;
-    /**
-     * Its type, one of OPT_TYPE_* constants
-     */
-    OptionType type;
-    /**
-     * Offset of the member into the struct that override FormatterData
-     */
-    size_t offset;
-//     int (*accept)(?);
-    /**
-     * Its default value
-     */
-    OptionValue defval;
-    /**
-     * A string for self documentation
-     */
-    const char *docstr;
-} FormatterOption;
-
-#define END_OF_FORMATTER_OPTIONS \
-    { NULL, 0, 0, 0, OPT_DEF_INT(0), NULL }
-
-// typedef struct Formatter Formatter;
 
 /**
  * Define a formatter (acts as a class)
@@ -139,4 +102,4 @@ struct Formatter {
     OptionValue optvals[];
 };
 
-extern OptionValue *formatter_implementation_default_get_option_ptr(Formatter *, int, size_t, const char *, size_t);
+OptionValue *formatter_implementation_default_get_option_ptr(Formatter *, int, size_t, const char *, size_t);

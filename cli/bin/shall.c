@@ -5,7 +5,6 @@
 #include <errno.h>
 
 #include "cpp.h"
-#include "types.h"
 #include "optparse.h"
 #include "shall.h"
 #include "xtring.h"

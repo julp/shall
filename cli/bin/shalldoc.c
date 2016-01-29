@@ -6,9 +6,8 @@
 
 #include "cpp.h"
 #include "tokens.h"
-#include "types.h"
-#include "themes.h"
 #include "shall.h"
+#include "themes.h"
 #include "xtring.h"
 
 #ifndef EUSAGE

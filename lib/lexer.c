@@ -8,7 +8,6 @@
 #include "utils.h"
 #include "lexer.h"
 #include "shall.h"
-#include "options.h"
 
 #ifndef DOXYGEN
 extern const LexerImplementation apache_lexer;

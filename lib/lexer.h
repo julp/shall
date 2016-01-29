@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.h"
+#include "options.h"
 #include "darray.h"
 
 #ifndef DOXYGEN
@@ -238,40 +239,6 @@ struct LexerInput {
 
 #define LEXER_UNWRAP(optval) \
     (NULL == OPT_LEXUWF(optval) ? (Lexer *) OPT_LEXPTR(optval) : (OPT_LEXUWF(optval)(OPT_LEXPTR(optval))))
-
-/**
- * Lexer option
- */
-typedef struct {
-    /**
-     * Option's name
-     */
-    const char *name;
-    /**
-     * Its length
-     */
-    size_t name_len;
-    /**
-     * Its type, one of OPT_TYPE_* constants
-     */
-    OptionType type;
-    /**
-     * Offset of the member into the struct that override LexerData
-     */
-    size_t offset;
-//     int (*accept)(?);
-    /**
-     * Its default value
-     */
-    OptionValue defval;
-    /**
-     * A string for self documentation
-     */
-    const char *docstr;
-} LexerOption;
-
-#define END_OF_LEXER_OPTIONS \
-    { NULL, 0, 0, 0, OPT_DEF_INT(0), NULL }
 
 typedef struct LexerInput LexerInput;
 typedef struct LexerReturnValue LexerReturnValue;
