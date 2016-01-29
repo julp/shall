@@ -31,7 +31,9 @@ SHALL_API const char *encoding_guess(const char *string, size_t string_len, size
     int32_t length;
     UErrorCode status;
     const char *encoding;
+    UCharsetDetector *csd;
 
+    csd = NULL;
     length = 0;
     status = U_ZERO_ERROR;
     encoding = ucnv_detectUnicodeSignature(string, string_len, &length, &status);
@@ -41,7 +43,6 @@ SHALL_API const char *encoding_guess(const char *string, size_t string_len, size
         }
         if (NULL == encoding) {
             int32_t confidence;
-            UCharsetDetector *csd;
             const char *tmpencoding;
             const UCharsetMatch *ucm;
 
@@ -58,19 +59,23 @@ SHALL_API const char *encoding_guess(const char *string, size_t string_len, size
                 goto end;
             }
             confidence = ucsdet_getConfidence(ucm, &status);
+            if (U_FAILURE(status)) {
+                goto end;
+            }
             tmpencoding = ucsdet_getName(ucm, &status);
             if (U_FAILURE(status)) {
-                ucsdet_close(csd);
                 goto end;
             }
             if (confidence > MIN_CONFIDENCE) {
                 encoding = tmpencoding;
             }
-            ucsdet_close(csd);
         }
     }
-
 end:
+    if (NULL != csd) {
+        ucsdet_close(csd);
+    }
+
     return encoding;
 }
 
