@@ -172,6 +172,7 @@ set(SHALL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/formatter.h
     ${PROJECT_SOURCE_DIR}/include/xtring.h
     ${PROJECT_SOURCE_DIR}/include/types.h
+    ${PROJECT_SOURCE_DIR}/include/options.h
     ${PROJECT_SOURCE_DIR}/include/iterator.h
     ${PROJECT_SOURCE_DIR}/shared/cpp.h
 )
