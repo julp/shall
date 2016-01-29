@@ -1,12 +1,7 @@
-#ifndef THEMES_H
+#pragma once
 
-# define THEMES_H
-
-# include <stddef.h> /* size_t */
-# include <stdbool.h>
-# include <stdint.h> /* uint\d+_t */
-# include "tokens.h"
-# include "shall.h"
+#include "shall.h"
+#include "tokens.h"
 
 typedef struct {
     uint8_t r, g, b;
@@ -55,5 +50,3 @@ SHALL_API void theme_each(void (*) (const Theme *, void *), void *);
 SHALL_API const Theme *theme_by_name(const char *);
 
 SHALL_API char *theme_export_as_css(const Theme *, const char *, bool);
-
-#endif /* THEMES_H */
