@@ -87,6 +87,7 @@ static const FormatterImplementation _plainfmt = {
     write_token,
     start_lexing,
     end_lexing,
+    NULL,
     sizeof(PlainFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("nolexing"), OPT_TYPE_BOOL,  offsetof(PlainFormatterData, nolexing), OPT_DEF_BOOL(1), "if set to false, mention, in output, lexer switches" },

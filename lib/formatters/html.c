@@ -75,6 +75,7 @@ static int html_start_document(String *out, FormatterData *data)
             STRING_APPEND_STRING(out, "\">");
         }
     }
+    // TODO: build "cache" only the first time and rebuild it only if theme has changed between 2 start_document calls
     if (mydata->noclasses) {
         size_t i;
         String *buffer;
@@ -123,15 +124,6 @@ static int html_end_document(String *out, FormatterData *data)
     }
     if (0 != mydata->full) {
         STRING_APPEND_STRING(out, NL INDENT "</body>" NL "</html>");
-    }
-    if (mydata->noclasses) {
-        size_t i;
-
-        for (i = 0; i < _TOKEN_COUNT; i++) {
-            if (mydata->open_span_tag[i].len > 0) {
-                free((void *) mydata->open_span_tag[i].val);
-            }
-        }
     }
 
     return 0;
@@ -199,6 +191,22 @@ static int html_end_lexing(const char *UNUSED(lexname), String *out, FormatterDa
     return 0;
 }
 
+static void html_finalize(FormatterData *data)
+{
+    HTMLFormatterData *mydata;
+
+    mydata = (HTMLFormatterData *) data;
+    if (mydata->noclasses) {
+        size_t i;
+
+        for (i = 0; i < _TOKEN_COUNT; i++) {
+            if (mydata->open_span_tag[i].len > 0) {
+                free((void *) mydata->open_span_tag[i].val);
+            }
+        }
+    }
+}
+
 const FormatterImplementation _htmlfmt = {
     "HTML",
     "Format tokens as HTML <span> tags within a <pre> tag",
@@ -210,6 +218,7 @@ const FormatterImplementation _htmlfmt = {
     html_write_token,
     html_start_lexing,
     html_end_lexing,
+    html_finalize,
     sizeof(HTMLFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("full"),      OPT_TYPE_INT,    offsetof(HTMLFormatterData, full),      OPT_DEF_INT(0),     "if not 0, embeds generated output in a whole HTML 4 page (use 5 for a HTML 5 document)" },

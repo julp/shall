@@ -72,6 +72,10 @@ struct FormatterImplementation {
      */
     int (*end_lexing)(const char *, String *, FormatterData *);
     /**
+     * Callback called at formatter's destruction
+     */
+    void (*finalize)(FormatterData *);
+    /**
      * Size to allocate to create a Formatter
      * default is `sizeof(FormatterData)`
      */
@@ -96,6 +100,10 @@ struct Formatter {
      */
     HashTable optmap;
 #endif
+    /**
+     * A pointer, for the user, to associate data to Formatter instance
+     */
+    void *userdata;
     /**
      * (Variable) Space to store current values of options
      */

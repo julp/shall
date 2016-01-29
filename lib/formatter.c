@@ -299,6 +299,9 @@ SHALL_API Formatter *formatter_create(const FormatterImplementation *imp)
  */
 SHALL_API void formatter_destroy(Formatter *fmt)
 {
+    if (NULL != fmt->imp->finalize) {
+        fmt->imp->finalize(&fmt->optvals);
+    }
     if (NULL != fmt->imp->options) {
         FormatterOption *fo;
 

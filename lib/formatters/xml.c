@@ -56,6 +56,7 @@ const FormatterImplementation _xmlfmt = {
     start_token,
     end_token,
     write_token,
+    NULL,
     sizeof(FormatterData),
     NULL
 };

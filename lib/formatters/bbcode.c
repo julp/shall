@@ -37,6 +37,7 @@ static int bbcode_start_document(String *out, FormatterData *data)
     if (NULL == (theme = mydata->theme)) {
         theme = theme_by_name("molokai");
     }
+    // TODO: build "cache" only the first time and rebuild it only if theme has changed between 2 start_document calls
     for (i = 0; i < _TOKEN_COUNT; i++) {
         mydata->sequences[i].prefix_len = mydata->sequences[i].suffix_len = 0;
         mydata->sequences[i].prefix = mydata->sequences[i].suffix = NULL;
@@ -86,7 +87,6 @@ static int bbcode_start_document(String *out, FormatterData *data)
 
 static int bbcode_end_document(String *out, FormatterData *data)
 {
-    size_t i;
     BBCodeFormatterData *mydata;
 
     mydata = (BBCodeFormatterData *) data;
@@ -95,12 +95,6 @@ static int bbcode_end_document(String *out, FormatterData *data)
     }
     if (mydata->codetag) {
         STRING_APPEND_STRING(out, "[/code]");
-    }
-    for (i = 0; i < _TOKEN_COUNT; i++) {
-        if (mydata->sequences[i].prefix_len > 0) {
-            free((void *) mydata->sequences[i].prefix);
-            free((void *) mydata->sequences[i].suffix);
-        }
     }
 
     return 0;
@@ -137,6 +131,20 @@ static int bbcode_write_token(String *out, const char *token, size_t token_len, 
     return 0;
 }
 
+static void bbcode_finalize(FormatterData *data)
+{
+    size_t i;
+    BBCodeFormatterData *mydata;
+
+    mydata = (BBCodeFormatterData *) data;
+    for (i = 0; i < _TOKEN_COUNT; i++) {
+        if (mydata->sequences[i].prefix_len > 0) {
+            free((void *) mydata->sequences[i].prefix);
+            free((void *) mydata->sequences[i].suffix);
+        }
+    }
+}
+
 const FormatterImplementation _bbcodefmt = {
     "BBCode",
     "Format tokens for forums using bbcode syntax to format post",
@@ -150,6 +158,7 @@ const FormatterImplementation _bbcodefmt = {
     bbcode_write_token,
     NULL,
     NULL,
+    bbcode_finalize,
     sizeof(BBCodeFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("theme"),    OPT_TYPE_THEME, offsetof(BBCodeFormatterData, theme),    OPT_DEF_THEME,   "the theme to use" },

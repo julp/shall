@@ -341,6 +341,7 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
     if (NULL == (theme = mydata->theme)) {
         theme = theme_by_name("molokai");
     }
+    // TODO: build "cache" only the first time and rebuild it only if theme has changed between 2 start_document calls
     for (i = 0; i < _TOKEN_COUNT; i++) {
         mydata->sequences[i].value_len = 0;
         mydata->sequences[i].value = NULL;
@@ -380,20 +381,16 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
     return 0;
 }
 
+#if 0
 static int terminal_end_document(String *UNUSED(out), FormatterData *data)
 {
-    size_t i;
     TerminalFormatterData *mydata;
 
     mydata = (TerminalFormatterData *) data;
-    for (i = 0; i < _TOKEN_COUNT; i++) {
-        if (mydata->sequences[i].value_len > 0) {
-            free((void *) mydata->sequences[i].value);
-        }
-    }
 
     return 0;
 }
+#endif
 
 static int terminal_start_token(int token, String *out, FormatterData *data)
 {
@@ -426,6 +423,19 @@ static int terminal_write_token(String *out, const char *token, size_t token_len
     return 0;
 }
 
+static void terminal_finalize(FormatterData *data)
+{
+    size_t i;
+    TerminalFormatterData *mydata;
+
+    mydata = (TerminalFormatterData *) data;
+    for (i = 0; i < _TOKEN_COUNT; i++) {
+        if (mydata->sequences[i].value_len > 0) {
+            free((void *) mydata->sequences[i].value);
+        }
+    }
+}
+
 const FormatterImplementation _termfmt = {
     "Terminal",
     "Format tokens with ANSI color sequences, for output in a text console",
@@ -433,12 +443,13 @@ const FormatterImplementation _termfmt = {
     formatter_implementation_default_get_option_ptr,
 #endif
     terminal_start_document,
-    terminal_end_document,
+    NULL/*terminal_end_document*/,
     terminal_start_token,
     terminal_end_token,
     terminal_write_token,
     NULL,
     NULL,
+    terminal_finalize,
     sizeof(TerminalFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("theme"),   OPT_TYPE_THEME, offsetof(TerminalFormatterData, theme),   OPT_DEF_THEME,   "the theme to use" },
