@@ -123,9 +123,7 @@ struct OptionDeclaration {
     { NULL, 0, 0, 0, OPT_DEF_INT(0), NULL }
 
 #define LexerOption OptionDeclaration
-#define END_OF_LEXER_OPTIONS END_OF_OPTIONS
 #define FormatterOption OptionDeclaration
-#define END_OF_FORMATTER_OPTIONS END_OF_OPTIONS
 
 void option_copy(OptionType, OptionValue *, OptionValue, OptionValue);
 int option_parse_as_string(OptionValue *, int, const char *, size_t, int);

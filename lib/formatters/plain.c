@@ -90,7 +90,7 @@ static const FormatterImplementation _plainfmt = {
     sizeof(PlainFormatterData),
     (/*const*/ FormatterOption /*const*/ []) {
         { S("nolexing"), OPT_TYPE_BOOL,  offsetof(PlainFormatterData, nolexing), OPT_DEF_BOOL(1), "if set to false, mention, in output, lexer switches" },
-        END_OF_FORMATTER_OPTIONS
+        END_OF_OPTIONS
     }
 };
 

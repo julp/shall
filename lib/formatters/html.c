@@ -219,7 +219,7 @@ const FormatterImplementation _htmlfmt = {
         { S("theme"),     OPT_TYPE_THEME,  offsetof(HTMLFormatterData, theme),     OPT_DEF_THEME,      "the theme to use" },
         { S("cssclass"),  OPT_TYPE_STRING, offsetof(HTMLFormatterData, cssclass),  OPT_DEF_STRING(""), "if valued to `foo`, ` class=\"foo\"` is added to `<pre>` tag" },
         { S("linestart"), OPT_TYPE_INT,    offsetof(HTMLFormatterData, linestart), OPT_DEF_INT(1),     "the line number for the first line" },
-        END_OF_FORMATTER_OPTIONS
+        END_OF_OPTIONS
     }
 };
 

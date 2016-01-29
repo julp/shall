@@ -1029,7 +1029,7 @@ LexerImplementation php_lexer = {
         { S("start_inline"),   OPT_TYPE_BOOL,  offsetof(PHPLexerOption, start_inline),   OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
         { S("short_open_tag"), OPT_TYPE_BOOL,  offsetof(PHPLexerOption, short_open_tag), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
         { S("secondary"),      OPT_TYPE_LEXER, offsetof(PHPLexerOption, secondary),      OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
-        END_OF_LEXER_OPTIONS
+        END_OF_OPTIONS
     },
     NULL // dependencies
 };
