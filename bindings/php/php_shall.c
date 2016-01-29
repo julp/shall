@@ -170,7 +170,7 @@ static PHP_MINIT_FUNCTION(shall)
     REGISTER_INI_ENTRIES();
 
     // token constants
-#define TOKEN(constant, description, cssclass) \
+#define TOKEN(constant, parent, description, cssclass) \
     REGISTER_NS_LONG_CONSTANT("Shall\\Token", #constant, constant, CONST_CS | CONST_PERSISTENT TSRMLS_CC);
 #include <shall/keywords.h>
 #undef TOKEN

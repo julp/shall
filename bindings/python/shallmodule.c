@@ -929,7 +929,7 @@ void init_shall_token(void)
     PyModule_AddObject(shallmodulep, "token", shalltokenmodulep);
 
     debug("init_shall_token called\n");
-#define TOKEN(constant, description, cssclass) \
+#define TOKEN(constant, parent, description, cssclass) \
     PyModule_AddIntConstant(shalltokenmodulep, #constant, constant);
 //     PyDict_SetItemString(tokens, #constant, PyLong_FromLong(constant));
 #include <shall/keywords.h>
@@ -998,7 +998,7 @@ initshall
     tokens = PyDict_New();
     Py_INCREF(tokens);
     PyModule_AddObject(shallmodulep, "Token", tokens);
-#define TOKEN(constant, description, cssclass) \
+#define TOKEN(constant, parent, description, cssclass) \
     PyModule_AddIntConstant(shalltokenmodulep, #constant, constant);
 //     PyDict_SetItemString(tokens, #constant, PyLong_FromLong(constant));
 #include <shall/keywords.h>

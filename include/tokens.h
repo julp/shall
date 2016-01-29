@@ -3,7 +3,7 @@
 #include <stddef.h> /* size_t */
 
 enum {
-#define TOKEN(constant, description, cssclass) \
+#define TOKEN(constant, parent, description, cssclass) \
     constant,
 #include "keywords.h"
 #undef TOKEN

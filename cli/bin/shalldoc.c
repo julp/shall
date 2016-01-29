@@ -236,7 +236,7 @@ static void generate_rdoc(FILE *fp)
     }
     fprintf(fp, "%*cmodule Token\n", indent * 4, ' ');
     ++indent;
-#define TOKEN(constant, description, cssclass) \
+#define TOKEN(constant, parent, description, cssclass) \
     do { \
         fprintf(fp, "%*c# %s\n", indent * 4, ' ', description); \
         fprintf(fp, "%*c%s = %d\n", indent * 4, ' ', #constant, constant); \

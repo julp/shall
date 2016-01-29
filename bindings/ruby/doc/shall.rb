@@ -50,97 +50,109 @@ module Shall
         IGNORABLE = 1
         # regular text
         TEXT = 2
-        # tag PI
-        TAG_PREPROC = 3
-        # builtin names; names that are available in the global namespace
-        NAME_BUILTIN = 4
-        # builtin names that are implicit
-        NAME_BUILTIN_PSEUDO = 5
-        # tag name
-        NAME_TAG = 6
-        # HTML/XML name entity
-        NAME_ENTITY = 7
-        # tag attribute's name
-        NAME_ATTRIBUTE = 8
-        # variable name
-        NAME_VARIABLE = 9
-        # name of a class variable
-        NAME_VARIABLE_CLASS = 10
-        # name of a variable instance
-        NAME_VARIABLE_INSTANCE = 11
-        # name of a global variable
-        NAME_VARIABLE_GLOBAL = 12
-        # a function name
-        NAME_FUNCTION = 13
-        # a class name
-        NAME_CLASS = 14
-        # a namespace name
-        NAME_NAMESPACE = 15
-        # syntax element like ';' in C
-        PUNCTUATION = 16
-        # 
-        KEYWORD = 17
-        # 
-        KEYWORD_DEFAULT = 18
-        # 
-        KEYWORD_BUILTIN = 19
-        # keyword for constants
-        KEYWORD_CONSTANT = 20
-        # 
-        KEYWORD_DECLARATION = 21
-        # 
-        KEYWORD_NAMESPACE = 22
-        # 
-        KEYWORD_PSEUDO = 23
-        # reserved keyword
-        KEYWORD_RESERVED = 24
-        # builtin type
-        KEYWORD_TYPE = 25
         # operator
-        OPERATOR = 26
+        OPERATOR = 3
+        # syntax element like ';' in C
+        PUNCTUATION = 4
+        # tag PI
+        TAG_PREPROC = 5
+        # uncategorized name type
+        NAME = 6
+        # builtin names; names that are available in the global namespace
+        NAME_BUILTIN = 7
+        # builtin names that are implicit (`self` in Ruby, `this` in Java)
+        NAME_BUILTIN_PSEUDO = 8
+        # tag name
+        NAME_TAG = 9
+        # HTML/XML name entity
+        NAME_ENTITY = 10
+        # tag attribute's name
+        NAME_ATTRIBUTE = 11
+        # a function name
+        NAME_FUNCTION = 12
+        # a class name
+        NAME_CLASS = 13
+        # a namespace name
+        NAME_NAMESPACE = 14
+        # variable name
+        NAME_VARIABLE = 15
+        # name of a class variable
+        NAME_VARIABLE_CLASS = 16
+        # name of a variable instance
+        NAME_VARIABLE_INSTANCE = 17
+        # name of a global variable
+        NAME_VARIABLE_GLOBAL = 18
+        # uncategorized keyword type
+        KEYWORD = 19
+        # 
+        KEYWORD_DEFAULT = 20
+        # 
+        KEYWORD_BUILTIN = 21
+        # a keyword that is constant
+        KEYWORD_CONSTANT = 22
+        # a keyword used for variable declaration (`var` or `let` in Javascript)
+        KEYWORD_DECLARATION = 23
+        # a keyword used for namespace declaration (`namespace` in PHP, `package` in Java
+        KEYWORD_NAMESPACE = 24
+        # a keyword that is't really a keyword
+        KEYWORD_PSEUDO = 25
+        # a reserved keyword
+        KEYWORD_RESERVED = 26
+        # a builtin type (`char`, `int`, ... in C)
+        KEYWORD_TYPE = 27
+        # uncategorized number type
+        NUMBER = 28
         # float number
-        NUMBER_FLOAT = 27
+        NUMBER_FLOAT = 29
         # decimal number
-        NUMBER_DECIMAL = 28
+        NUMBER_DECIMAL = 30
         # binary number
-        NUMBER_BINARY = 29
+        NUMBER_BINARY = 31
         # octal number
-        NUMBER_OCTAL = 30
+        NUMBER_OCTAL = 32
         # hexadecimal number
-        NUMBER_HEXADECIMAL = 31
+        NUMBER_HEXADECIMAL = 33
+        # uncategorized comment type
+        COMMENT = 34
         # comment which ends at the end of the line
-        COMMENT_SINGLE = 32
+        COMMENT_SINGLE = 35
         # multiline comment
-        COMMENT_MULTILINE = 33
+        COMMENT_MULTILINE = 36
         # comment with documentation value
-        COMMENT_DOCUMENTATION = 34
+        COMMENT_DOCUMENTATION = 37
+        # uncategorized string type
+        STRING = 38
         # single quoted string
-        STRING_SINGLE = 35
+        STRING_SINGLE = 39
         # double quoted string
-        STRING_DOUBLE = 36
+        STRING_DOUBLE = 40
         # string enclosed in backticks
-        STRING_BACKTICK = 37
+        STRING_BACKTICK = 41
         # regular expression
-        STRING_REGEX = 38
+        STRING_REGEX = 42
         # interned string
-        STRING_INTERNED = 39
+        STRING_INTERNED = 43
         # escaped sequence in string like \n, \x32, \u1234, etc
-        SEQUENCE_ESCAPED = 40
+        SEQUENCE_ESCAPED = 44
         # sequence in string for interpolated variables
-        SEQUENCE_INTERPOLATED = 41
+        SEQUENCE_INTERPOLATED = 45
+        # uncategorized literal type
+        LITERAL = 46
         # size literals (eg: 3ko)
-        LITERAL_SIZE = 42
+        LITERAL_SIZE = 47
         # duration literals (eg: 23s)
-        LITERAL_DURATION = 43
+        LITERAL_DURATION = 48
+        # 
+        GENERIC = 49
         # the token value as bold
-        GENERIC_STRONG = 44
+        GENERIC_STRONG = 50
         # the token value is a headline
-        GENERIC_HEADING = 45
+        GENERIC_HEADING = 51
         # the token value is a subheadline
-        GENERIC_SUBHEADING = 46
+        GENERIC_SUBHEADING = 52
         # marks the token value as deleted
-        GENERIC_DELETED = 47
+        GENERIC_DELETED = 53
         # marks the token value as inserted
-        GENERIC_INSERTED = 48
+        GENERIC_INSERTED = 54
     end
 end

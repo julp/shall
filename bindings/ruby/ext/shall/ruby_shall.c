@@ -45,7 +45,7 @@ void Init_shall(void)
     mShall = rb_define_module("Shall");
     mToken = rb_define_module_under(mShall, "Token");
 
-#define TOKEN(constant, description, cssclass) \
+#define TOKEN(constant, parent, description, cssclass) \
     rb_define_const(mToken, #constant, INT2FIX(constant));
 #include <shall/keywords.h>
 #undef TOKEN
