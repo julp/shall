@@ -40,47 +40,47 @@ typedef struct {
     uint8_t flags ALIGNED(16);
 } OptionValue;
 
-# define OPT_DEF_BOOL(value) \
+#define OPT_DEF_BOOL(value) \
     OPT_DEF_INT(!!value)
 
-# define OPT_GET_BOOL(opt) \
+#define OPT_GET_BOOL(opt) \
     OPT_GET_INT(opt)
 
-# define OPT_SET_BOOL(opt, val) \
+#define OPT_SET_BOOL(opt, val) \
     do { (opt).intval = !!val; } while (0);
 
-# define OPT_DEF_INT(value) \
+#define OPT_DEF_INT(value) \
     { .intval = value }
 
-# define OPT_GET_INT(opt) \
+#define OPT_GET_INT(opt) \
     (opt).intval
 
-# define OPT_SET_INT(opt, val) \
+#define OPT_SET_INT(opt, val) \
     do { (opt).intval = val; } while (0);
 
-# define OPT_DEF_STRING(value) \
+#define OPT_DEF_STRING(value) \
     { .str = { value, STR_LEN(value) } }
 
-# define OPT_STRVAL(opt) \
+#define OPT_STRVAL(opt) \
     (opt).str.val
 
-# define OPT_STRLEN(opt) \
+#define OPT_STRLEN(opt) \
     (opt).str.len
 
-# define OPT_DEF_LEXER \
+#define OPT_DEF_LEXER \
     { .lexer = { NULL, NULL } }
 
-# define OPT_LEXPTR(opt) \
+#define OPT_LEXPTR(opt) \
     (opt).lexer.ptr
 
-# define OPT_LEXUWF(opt) \
+#define OPT_LEXUWF(opt) \
     (opt).lexer.unwrap_func
 
-# define OPT_DEF_THEME \
+#define OPT_DEF_THEME \
     { .theme = NULL }
 
-# define OPT_THEMPTR(opt) \
+#define OPT_THEMPTR(opt) \
     (opt).theme
 
-# define OPT_PTR(opt) \
+#define OPT_PTR(opt) \
     (opt).ptr
