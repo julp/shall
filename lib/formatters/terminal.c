@@ -25,7 +25,7 @@ typedef struct {
     } sequences[_TOKEN_COUNT];
 } TerminalFormatterData;
 
-// bold (1) + italic (3) + underline (4) (unused for now) + fg (38;2;R;G;B) + bg (48;2;R;G;B)
+// bold (1) + italic (3) + underline (4) + fg (38;2;R;G;B) + bg (48;2;R;G;B)
 #define LONGEST_ANSI_ESCAPE_SEQUENCE \
     "\e[1;3;4;38;2;RRR;GGG;BBB;48;2;RRR;GGG;BBBm"
 
