@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include <stdlib.h>
 
 #include "cpp.h"
 #include "iterator.h"
@@ -81,6 +82,8 @@ SHALL_API bool iterator_is_valid(Iterator *it)
     return it->valid(it->collection, &it->state);
 }
 
+/* ========== NULL terminated (pointers) array ========== */
+
 static void null_terminated_ptr_array_iterator_first(const void *collection, void **state)
 {
     assert(NULL != collection);
@@ -121,5 +124,79 @@ SHALL_API void null_terminated_ptr_array_to_iterator(Iterator *it, void **array)
         null_terminated_ptr_array_iterator_next, NULL,
         null_terminated_ptr_array_iterator_is_valid,
         NULL
+    );
+}
+
+/* ========== NULL sentineled field terminated array of struct/union ========== */
+
+typedef struct {
+    const char *ptr;
+    size_t element_size;
+    size_t field_offset;
+} nsftas_t /*null_sentineled_field_terminated_array_state*/;
+
+static void null_sentineled_field_terminated_array_iterator_first(const void *collection, void **state)
+{
+    nsftas_t *s;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (nsftas_t *) *state;
+    s->ptr = collection;
+}
+
+static bool null_sentineled_field_terminated_array_iterator_is_valid(const void *UNUSED(collection), void **state)
+{
+    nsftas_t *s;
+
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (nsftas_t *) *state;
+
+    return NULL != (const void *) *(s->ptr + s->field_offset);
+}
+
+static void null_sentineled_field_terminated_array_iterator_current(const void *UNUSED(collection), void **state, void **value)
+{
+    nsftas_t *s;
+
+    assert(NULL != state);
+    assert(NULL != value);
+    assert(NULL != *state);
+
+    s = (nsftas_t *) *state;
+    *value = (void *) s->ptr;
+}
+
+static void null_sentineled_field_terminated_array_iterator_next(const void *UNUSED(collection), void **state)
+{
+    nsftas_t *s;
+
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (nsftas_t *) *state;
+    s->ptr += s->element_size;
+}
+
+SHALL_API void null_sentineled_field_terminated_array_to_iterator(Iterator *it, void *array, size_t element_size, size_t field_offset)
+{
+    nsftas_t *s;
+
+    s = malloc(sizeof(*s));
+    s->ptr = (const char *) array;
+    s->element_size = element_size;
+    s->field_offset = field_offset;
+
+    iterator_init(
+        it, array, s,
+        null_sentineled_field_terminated_array_iterator_first, NULL,
+        null_sentineled_field_terminated_array_iterator_current,
+        null_sentineled_field_terminated_array_iterator_next, NULL,
+        null_sentineled_field_terminated_array_iterator_is_valid,
+        free
     );
 }

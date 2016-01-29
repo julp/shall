@@ -48,3 +48,4 @@ SHALL_API bool iterator_is_valid(Iterator *);
 SHALL_API void iterator_close(Iterator *);
 
 SHALL_API void null_terminated_ptr_array_to_iterator(Iterator *, void **);
+SHALL_API void null_sentineled_field_terminated_array_to_iterator(Iterator *, void *, size_t, size_t);

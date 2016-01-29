@@ -164,6 +164,30 @@ static FormatterOption *formatter_option_by_name(const FormatterImplementation *
     return NULL;
 }
 
+static const FormatterOption *NO_FMT_OPTIONS = (FormatterOption []) {
+    END_OF_FORMATTER_OPTIONS
+};
+
+/**
+ * Initialize an iterator to iterate on available options of the given
+ * formatter
+ *
+ * @param it the iterator to set properly
+ * @param imp the formatter implementation to iterate on its options
+ *
+ * @return false if the formatter implementation defines no option
+ * (there is nothing to iterate). The given Iterator will not
+ * subsequently be initialized in this case.
+ */
+SHALL_API bool formatter_implementation_options_to_iterator(Iterator *it, const FormatterImplementation *imp)
+{
+    if (NULL != imp->options) {
+        null_sentineled_field_terminated_array_to_iterator(it, imp->options, sizeof(FormatterOption), offsetof(FormatterOption, name));
+    }
+
+    return NULL != imp->options;
+}
+
 /* ========== Formatter functions ========== */
 
 /**

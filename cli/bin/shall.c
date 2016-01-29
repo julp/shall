@@ -316,18 +316,32 @@ int main(int argc, char **argv)
                     lexer_implementation_each(print_lexer_cb, NULL);
                     puts("\nAvailable formatters are:");
 #if 0
-                    Iterator it;
+                    {
+#include "formatter.h"
+                        Iterator it;
 
-                    formatter_iterator(&it);
-                    for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
-                        const FormatterImplementation *imp;
+                        formatter_implementation_to_iterator(&it);
+                        for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
+                            Iterator subit;
+                            const FormatterImplementation *imp;
 
-                        imp = (const FormatterImplementation *) iterator_current(&it);
-                        printf("- %s\n", formatter_implementation_name(imp));
+                            imp = (const FormatterImplementation *) iterator_current(&it);
+                            printf("- %s\n", formatter_implementation_name(imp));
+                            if (formatter_implementation_options_to_iterator(&subit, imp)) {
+                                for (iterator_first(&subit); iterator_is_valid(&subit); iterator_next(&subit)) {
+                                    const FormatterOption *option;
+
+                                    option = (const FormatterOption *) iterator_current(&subit);
+                                    print_option_cb(option->type, option->name, option->defval, option->docstr, NULL);
+                                }
+                                iterator_close(&subit);
+                            }
+                        }
+                        iterator_close(&it);
                     }
-                    iterator_close(&it);
-#endif
+#else
                     formatter_implementation_each(print_formatter_cb, NULL);
+#endif
                     puts("\nAvailable themes are:");
                     theme_each(print_theme_cb, NULL);
                     return EXIT_SUCCESS;

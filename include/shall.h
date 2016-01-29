@@ -55,6 +55,7 @@ SHALL_API const char *formatter_implementation_name(const FormatterImplementatio
 SHALL_API const char *formatter_implementation_description(const FormatterImplementation *);
 SHALL_API void formatter_implementation_to_iterator(Iterator *);
 SHALL_API void formatter_implementation_each(void (*)(const FormatterImplementation *, void *), void *);
+SHALL_API bool formatter_implementation_options_to_iterator(Iterator *, const FormatterImplementation *);
 SHALL_API void formatter_implementation_each_option(const FormatterImplementation *, void (*)(int, const char *, OptionValue, const char *, void *), void *);
 
 SHALL_API void formatter_destroy(Formatter *);
