@@ -319,7 +319,7 @@ int main(int argc, char **argv)
 #include "formatter.h"
                         Iterator it;
 
-                        formatter_implementation_to_iterator(&it);
+                        formatter_implementations_to_iterator(&it);
                         for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
                             Iterator subit;
                             const FormatterImplementation *imp;

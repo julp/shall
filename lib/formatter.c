@@ -111,7 +111,7 @@ SHALL_API void formatter_implementation_each_option(const FormatterImplementatio
  *
  * @param it the iterator to set properly
  */
-SHALL_API void formatter_implementation_to_iterator(Iterator *it)
+SHALL_API void formatter_implementations_to_iterator(Iterator *it)
 {
     null_terminated_ptr_array_to_iterator(it, (void *) available_formatters);
 }
@@ -170,7 +170,7 @@ static const FormatterOption *NO_FMT_OPTIONS = (FormatterOption []) {
 
 /**
  * Initialize an iterator to iterate on available options of the given
- * formatter
+ * formatter implementation
  *
  * @param it the iterator to set properly
  * @param imp the formatter implementation to iterate on its options

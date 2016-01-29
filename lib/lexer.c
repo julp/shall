@@ -231,6 +231,16 @@ SHALL_API void lexer_implementation_each(void (*cb)(const LexerImplementation *,
 }
 
 /**
+ * Initialize an iterator to iterate on available formatters
+ *
+ * @param it the iterator to set properly
+ */
+SHALL_API void lexer_implementations_to_iterator(Iterator *it)
+{
+    null_terminated_ptr_array_to_iterator(it, (void *) available_lexers);
+}
+
+/**
  * Gets official name of a lexer implementation
  *
  * @param imp the lexer implementation
@@ -273,6 +283,26 @@ SHALL_API void lexer_implementation_each_mimetype(const LexerImplementation *imp
 }
 
 /**
+ * Initialize an iterator to iterate on MIME types associated to the given
+ * lexer implementation
+ *
+ * @param it the iterator to set properly
+ * @param imp the lexer implementation to iterate on its mimetypes
+ *
+ * @return false if the lexer implementation defines no mimetypes
+ * (there is nothing to iterate). The given Iterator will not
+ * subsequently be initialized in this case.
+ */
+SHALL_API bool lexer_implementation_mimetypes_to_iterator(Iterator *it, const LexerImplementation *imp)
+{
+    if (NULL != imp->mimetypes) {
+        null_terminated_ptr_array_to_iterator(it, (void *) imp->mimetypes);
+    }
+
+    return NULL != imp->mimetypes;
+}
+
+/**
  * Executes the given callback for each additionnal name (or alias) of a given lexer implementation
  *
  * @param imp the lexer implementation
@@ -288,6 +318,26 @@ SHALL_API void lexer_implementation_each_alias(const LexerImplementation *imp, v
             cb(*alias, data);
         }
     }
+}
+
+/**
+ * Initialize an iterator to iterate on aliases associated to the given
+ * lexer implementation
+ *
+ * @param it the iterator to set properly
+ * @param imp the lexer implementation to iterate on its aliases
+ *
+ * @return false if the lexer implementation defines no aliases
+ * (there is nothing to iterate). The given Iterator will not
+ * subsequently be initialized in this case.
+ */
+SHALL_API bool lexer_implementation_aliases_to_iterator(Iterator *it, const LexerImplementation *imp)
+{
+    if (NULL != imp->aliases) {
+        null_terminated_ptr_array_to_iterator(it, (void *) imp->aliases);
+    }
+
+    return NULL != imp->aliases;
 }
 
 /**
@@ -309,6 +359,26 @@ SHALL_API void lexer_implementation_each_filename(const LexerImplementation *imp
 }
 
 /**
+ * Initialize an iterator to iterate on filenames (fnmatch pattern) associated
+ * to the given lexer implementation
+ *
+ * @param it the iterator to set properly
+ * @param imp the lexer implementation to iterate on its filenames
+ *
+ * @return false if the lexer implementation defines no filenames
+ * (there is nothing to iterate). The given Iterator will not
+ * subsequently be initialized in this case.
+ */
+SHALL_API bool lexer_implementation_filenames_to_iterator(Iterator *it, const LexerImplementation *imp)
+{
+    if (NULL != imp->patterns) {
+        null_terminated_ptr_array_to_iterator(it, (void *) imp->patterns);
+    }
+
+    return NULL != imp->patterns;
+}
+
+/**
  * Executes the given callback for each predefined option of a given lexer implementation
  *
  * @param imp the lexer implementation
@@ -324,6 +394,26 @@ SHALL_API void lexer_implementation_each_option(const LexerImplementation *imp, 
             cb(lo->type, lo->name, lo->defval, lo->docstr, data);
         }
     }
+}
+
+/**
+ * Initialize an iterator to iterate on available options of the given
+ * lexer implementation
+ *
+ * @param it the iterator to set properly
+ * @param imp the lexer implementation to iterate on its options
+ *
+ * @return false if the lexer implementation defines no option
+ * (there is nothing to iterate). The given Iterator will not
+ * subsequently be initialized in this case.
+ */
+SHALL_API bool lexer_implementation_options_to_iterator(Iterator *it, const LexerImplementation *imp)
+{
+    if (NULL != imp->options) {
+        null_sentineled_field_terminated_array_to_iterator(it, imp->options, sizeof(LexerOption), offsetof(LexerOption, name));
+    }
+
+    return NULL != imp->options;
 }
 
 /**

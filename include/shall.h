@@ -25,14 +25,15 @@ SHALL_API void lexer_implementation_each(void (*) (const LexerImplementation *, 
 SHALL_API void lexer_implementation_each_alias(const LexerImplementation *, void (*)(const char *, void *), void *);
 SHALL_API void lexer_implementation_each_filename(const LexerImplementation *, void (*)(const char *, void *), void *);
 SHALL_API void lexer_implementation_each_mimetype(const LexerImplementation *, void (*)(const char *, void *), void *);
+// SHALL_API void lexer_implementation_each_interpreter(const LexerImplementation *, void (*)(const char *, void *), void *);
 SHALL_API void lexer_implementation_each_option(const LexerImplementation *, void (*)(int, const char *, OptionValue, const char *, void *), void *);
 
-// TODO
-// SHALL_API void lexer_implementations_to_iterator(Iterator *);
-// SHALL_API bool lexer_implementation_options_to_iterator(Iterator *, const LexerImplementation *);
-// SHALL_API bool lexer_implementation_aliases_to_iterator(Iterator *, const LexerImplementation *);
-// SHALL_API bool lexer_implementation_filenames_to_iterator(Iterator *, const LexerImplementation *);
-// SHALL_API bool lexer_implementation_mimetypes_to_iterator(Iterator *, const LexerImplementation *);
+SHALL_API void lexer_implementations_to_iterator(Iterator *);
+SHALL_API bool lexer_implementation_options_to_iterator(Iterator *, const LexerImplementation *);
+SHALL_API bool lexer_implementation_aliases_to_iterator(Iterator *, const LexerImplementation *);
+SHALL_API bool lexer_implementation_filenames_to_iterator(Iterator *, const LexerImplementation *);
+SHALL_API bool lexer_implementation_mimetypes_to_iterator(Iterator *, const LexerImplementation *);
+// SHALL_API bool lexer_implementation_interpreters_to_iterator(Iterator *, const LexerImplementation *);
 
 SHALL_API void lexer_each_sublexers(Lexer *, on_lexer_destroy_cb_t);
 SHALL_API void lexer_destroy(Lexer *, on_lexer_destroy_cb_t);
@@ -68,8 +69,7 @@ SHALL_API const char *formatter_implementation_description(const FormatterImplem
 SHALL_API void formatter_implementation_each(void (*)(const FormatterImplementation *, void *), void *);
 SHALL_API void formatter_implementation_each_option(const FormatterImplementation *, void (*)(int, const char *, OptionValue, const char *, void *), void *);
 
-// TODO: plural
-SHALL_API void formatter_implementation_to_iterator(Iterator *);
+SHALL_API void formatter_implementations_to_iterator(Iterator *);
 SHALL_API bool formatter_implementation_options_to_iterator(Iterator *, const FormatterImplementation *);
 
 SHALL_API void formatter_destroy(Formatter *);
