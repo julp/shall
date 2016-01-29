@@ -48,14 +48,15 @@ static const LexerImplementation *available_lexers[] = {
     &text_lexer, // may be a good idea to keep it last?
     &varnish_lexer,
     &xml_lexer,
+    NULL
 };
 
 /**
  * Exposes the number of available builtin lexers
  *
- * @note for external use only, keep using ARRAY_SIZE internally
+ * @note for external use only
  */
-SHALL_API const size_t SHALL_LEXER_COUNT = ARRAY_SIZE(available_lexers);
+SHALL_API const size_t SHALL_LEXER_COUNT = ARRAY_SIZE(available_lexers) - 1;
 
 /* ========== helpers ========== */
 
@@ -137,18 +138,18 @@ static char *shall_basename(const char *path, char *bname, size_t bname_size)
  */
 SHALL_API const LexerImplementation *lexer_implementation_by_name(const char *name)
 {
-    size_t i;
+    const LexerImplementation **imp;
 
-    for (i = 0; i < ARRAY_SIZE(available_lexers); i++) {
-        if (0 == ascii_strcasecmp(name, available_lexers[i]->name)) {
-            return available_lexers[i];
+    for (imp = available_lexers; NULL != *imp; imp++) {
+        if (0 == ascii_strcasecmp(name, (*imp)->name)) {
+            return *imp;
         }
-        if (NULL != available_lexers[i]->aliases) {
+        if (NULL != (*imp)->aliases) {
             const char * const *alias;
 
-            for (alias = available_lexers[i]->aliases; NULL != *alias; alias++) {
+            for (alias = (*imp)->aliases; NULL != *alias; alias++) {
                 if (0 == ascii_strcasecmp(name, *alias)) {
-                    return available_lexers[i];
+                    return *imp;
                 }
             }
         }
@@ -167,17 +168,18 @@ SHALL_API const LexerImplementation *lexer_implementation_by_name(const char *na
  */
 SHALL_API const LexerImplementation *lexer_implementation_for_filename(const char *filename)
 {
-    size_t i;
     char basename[PATH_MAX];
 
     if (NULL != shall_basename(filename, basename, ARRAY_SIZE(basename))) {
-        for (i = 0; i < ARRAY_SIZE(available_lexers); i++) {
-            if (NULL != available_lexers[i]->patterns) {
+        const LexerImplementation **imp;
+
+        for (imp = available_lexers; NULL != *imp; imp++) {
+            if (NULL != (*imp)->patterns) {
                 const char * const *pattern;
 
-                for (pattern = available_lexers[i]->patterns; NULL != *pattern; pattern++) {
+                for (pattern = (*imp)->patterns; NULL != *pattern; pattern++) {
                     if (0 == fnmatch(*pattern, basename, 0)) {
-                        return available_lexers[i];
+                        return *imp;
                     }
                 }
             }
@@ -196,15 +198,15 @@ SHALL_API const LexerImplementation *lexer_implementation_for_filename(const cha
  */
 SHALL_API const LexerImplementation *lexer_implementation_for_mimetype(const char *name)
 {
-    size_t i;
+    const LexerImplementation **imp;
 
-    for (i = 0; i < ARRAY_SIZE(available_lexers); i++) {
-        if (NULL != available_lexers[i]->mimetypes) {
+    for (imp = available_lexers; NULL != *imp; imp++) {
+        if (NULL != (*imp)->mimetypes) {
             const char * const *mimetype;
 
-            for (mimetype = available_lexers[i]->mimetypes; NULL != *mimetype; mimetype++) {
+            for (mimetype = (*imp)->mimetypes; NULL != *mimetype; mimetype++) {
                 if (0 == strcmp(name, *mimetype)) {
-                    return available_lexers[i];
+                    return *imp;
                 }
             }
         }
@@ -221,10 +223,10 @@ SHALL_API const LexerImplementation *lexer_implementation_for_mimetype(const cha
  */
 SHALL_API void lexer_implementation_each(void (*cb)(const LexerImplementation *, void *), void *data)
 {
-    size_t i;
+    const LexerImplementation **imp;
 
-    for (i = 0; i < ARRAY_SIZE(available_lexers); i++) {
-        cb(available_lexers[i], data);
+    for (imp = available_lexers; NULL != *imp; imp++) {
+        cb(*imp, data);
     }
 }
 
@@ -335,15 +337,15 @@ SHALL_API void lexer_implementation_each_option(const LexerImplementation *imp, 
  */
 static const LexerImplementation *find_interpreter(const char *basename_interpreter)
 {
-    size_t i;
+    const LexerImplementation **imp;
 
-    for (i = 0; i < ARRAY_SIZE(available_lexers); i++) {
-        if (NULL != available_lexers[i]->interpreters) {
+    for (imp = available_lexers; NULL != *imp; imp++) {
+        if (NULL != (*imp)->interpreters) {
             const char * const *interpreter;
 
-            for (interpreter = available_lexers[i]->interpreters; NULL != *interpreter; interpreter++) {
+            for (interpreter = (*imp)->interpreters; NULL != *interpreter; interpreter++) {
                 if (0 == fnmatch(*interpreter, basename_interpreter, 0)) {
-                    return available_lexers[i];
+                    return (*imp);
                 }
             }
         }
@@ -439,15 +441,15 @@ SHALL_API const LexerImplementation *lexer_implementation_guess(const char *src,
         src = p + 1;
     }
     {
-        size_t i;
         int best_score, score;
+        const LexerImplementation **imp;
 
         score = best_score = 0;
-        for (i = 0; i < ARRAY_SIZE(available_lexers); i++) {
-            if (NULL != available_lexers[i]->analyse) {
-                if ((score = available_lexers[i]->analyse(src, src_len)) > best_score) {
+        for (imp = available_lexers; NULL != *imp; imp++) {
+            if (NULL != (*imp)->analyse) {
+                if ((score = (*imp)->analyse(src, src_len)) > best_score) {
+                    best_match = *imp;
                     best_score = score;
-                    best_match = available_lexers[i];
                 }
             }
         }
