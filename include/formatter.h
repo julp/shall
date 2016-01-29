@@ -1,12 +1,10 @@
-#ifndef FORMATTER_H
+#pragma once
 
-# define FORMATTER_H
-
-# include "types.h"
-# include "xtring.h"
-# ifdef TEST
-#  include "hashtable.h"
-# endif /* TEST */
+#include "types.h"
+#include "xtring.h"
+#ifdef TEST
+# include "hashtable.h"
+#endif /* TEST */
 
 typedef void FormatterData;
 
@@ -129,12 +127,12 @@ struct Formatter {
      * Implementation on which depends the formatter (like its "class")
      */
     const FormatterImplementation *imp;
-# ifdef TEST
+#ifdef TEST
     /**
      * Hashtable to associate option's name to its value
      */
     HashTable optmap;
-# endif
+#endif
     /**
      * (Variable) Space to store current values of options
      */
@@ -142,5 +140,3 @@ struct Formatter {
 };
 
 extern OptionValue *formatter_implementation_default_get_option_ptr(Formatter *, int, size_t, const char *, size_t);
-
-#endif /* FORMATTER_H */

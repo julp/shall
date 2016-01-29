@@ -993,8 +993,8 @@ LexerImplementation postgresql_lexer = {
     pgfinalize,
     sizeof(PgLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "uppercase_keywords",          OPT_TYPE_BOOL, offsetof(PgLexerOption, uppercase_keywords),          OPT_DEF_BOOL(0), "when true, PostgreSQL keywords are uppercased" },
-        { "standard_conforming_strings", OPT_TYPE_BOOL, offsetof(PgLexerOption, standard_conforming_strings), OPT_DEF_BOOL(1), "To treat backslashes literally in ordinary string literals (`'...'`) or not" },
+        { S("uppercase_keywords"),          OPT_TYPE_BOOL, offsetof(PgLexerOption, uppercase_keywords),          OPT_DEF_BOOL(0), "when true, PostgreSQL keywords are uppercased" },
+        { S("standard_conforming_strings"), OPT_TYPE_BOOL, offsetof(PgLexerOption, standard_conforming_strings), OPT_DEF_BOOL(1), "To treat backslashes literally in ordinary string literals (`'...'`) or not" },
         END_OF_LEXER_OPTIONS
     },
     NULL // dependencies

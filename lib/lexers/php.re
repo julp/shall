@@ -99,35 +99,35 @@ static void phpfinalize(LexerData *data)
 }
 
 static int default_token_type[] = {
-    IGNORABLE, // INITIAL
-    IGNORABLE, // ST_IN_SCRIPTING
-    COMMENT_MULTILINE, // ST_COMMENT_MULTI
-    STRING_BACKTICK, // ST_BACKQUOTE
-    STRING_SINGLE, // ST_SINGLE_QUOTES
-    STRING_DOUBLE, // ST_DOUBLE_QUOTES
-    STRING_SINGLE, // ST_NOWDOC
-    STRING_DOUBLE, // ST_HEREDOC
-    IGNORABLE, // ST_VAR_OFFSET
-    IGNORABLE, // ST_LOOKING_FOR_VARNAME
-    IGNORABLE  // ST_LOOKING_FOR_PROPERTY
+    [ STATE(INITIAL) ] = IGNORABLE,
+    [ STATE(ST_IN_SCRIPTING) ] = IGNORABLE,
+    [ STATE(ST_COMMENT_MULTI) ] = COMMENT_MULTILINE,
+    [ STATE(ST_BACKQUOTE) ] = STRING_BACKTICK,
+    [ STATE(ST_SINGLE_QUOTES) ] = STRING_SINGLE,
+    [ STATE(ST_DOUBLE_QUOTES) ] = STRING_DOUBLE,
+    [ STATE(ST_NOWDOC) ] = STRING_SINGLE,
+    [ STATE(ST_HEREDOC) ] = STRING_DOUBLE,
+    [ STATE(ST_VAR_OFFSET) ] = IGNORABLE,
+    [ STATE(ST_LOOKING_FOR_VARNAME) ] = IGNORABLE,
+    [ STATE(ST_LOOKING_FOR_PROPERTY) ] = IGNORABLE,
 };
 
 // http://lxr.php.net/xref/phpng/Zend/zend_language_scanner.l
 
-#define DECL_OP(s) \
-    { OPERATOR, s, STR_LEN(s) },
-#define DECL_KW(s) \
-    { KEYWORD, s, STR_LEN(s) },
-#define DECL_KW_NS(s) \
-    { KEYWORD_NAMESPACE, s, STR_LEN(s) },
-#define DECL_KW_DECL(s) \
-    { KEYWORD_DECLARATION, s, STR_LEN(s) },
-#define DECL_KW_CONSTANT(s) \
-    { KEYWORD_CONSTANT, s, STR_LEN(s) },
-#define DECL_NAME_B(s) \
-    { NAME_BUILTIN, s, STR_LEN(s) },
-#define DECL_NAME_BP(s) \
-    { NAME_BUILTIN_PSEUDO, s, STR_LEN(s) },
+#define DECL_OP(s, t) \
+    { OPERATOR, t, s, STR_LEN(s) },
+#define DECL_KW(s, t) \
+    { KEYWORD, t, s, STR_LEN(s) },
+#define DECL_KW_NS(s, t) \
+    { KEYWORD_NAMESPACE, t, s, STR_LEN(s) },
+#define DECL_KW_DECL(s, t) \
+    { KEYWORD_DECLARATION, t, s, STR_LEN(s) },
+#define DECL_KW_CONSTANT(s, t) \
+    { KEYWORD_CONSTANT, t, s, STR_LEN(s) },
+#define DECL_NAME_B(s, t) \
+    { NAME_BUILTIN, t, s, STR_LEN(s) },
+#define DECL_NAME_BP(s, t) \
+    { NAME_BUILTIN_PSEUDO, t, s, STR_LEN(s) },
 
 // https://gcc.gnu.org/onlinedocs/gcc/Designated-Inits.html#Designated-Inits
 static int case_insentive[_TOKEN_COUNT] = {
@@ -140,103 +140,255 @@ static int case_insentive[_TOKEN_COUNT] = {
     [ NAME_BUILTIN_PSEUDO ] = 1,
 };
 
-// stdClass, __PHP_Incomplete_Class
+// regrouper: les opérateurs (par groupe sur nb d'opérandes ?), casts, constantes "magiques", (include|require)(_once)?, etc
+enum {
+    END = 0, // end of file
+    T_LNUMBER = 256, // integer number (T_LNUMBER)
+    T_DNUMBER, // floating-point number (T_DNUMBER)
+    T_STRING, // identifier (T_STRING)
+    T_VARIABLE, // variable (T_VARIABLE)
+    T_INLINE_HTML, // text outside PHP tags
+    T_ENCAPSED_AND_WHITESPACE, // quoted-string and whitespace (T_ENCAPSED_AND_WHITESPACE)
+    T_CONSTANT_ENCAPSED_STRING, // quoted-string (T_CONSTANT_ENCAPSED_STRING)
+    T_STRING_VARNAME, // variable name (T_STRING_VARNAME)
+    T_NUM_STRING, // number (T_NUM_STRING)
+    T_INCLUDE, // include (T_INCLUDE)
+    T_INCLUDE_ONCE, // include_once (T_INCLUDE_ONCE)
+    T_EVAL, // eval (T_EVAL)
+    T_REQUIRE, // require (T_REQUIRE)
+    T_REQUIRE_ONCE, // require_once (T_REQUIRE_ONCE)
+    T_LOGICAL_OR, // or (T_LOGICAL_OR)
+    T_LOGICAL_XOR, // xor (T_LOGICAL_XOR)
+    T_LOGICAL_AND, // and (T_LOGICAL_AND)
+    T_PRINT, // print (T_PRINT)
+    T_YIELD, // yield (T_YIELD)
+    T_YIELD_FROM, // yield from (T_YIELD_FROM)
+    T_PLUS_EQUAL, // += (T_PLUS_EQUAL)
+    T_MINUS_EQUAL, // -= (T_MINUS_EQUAL)
+    T_MUL_EQUAL, // *= (T_MUL_EQUAL)
+    T_DIV_EQUAL, // /= (T_DIV_EQUAL)
+    T_CONCAT_EQUAL, // .= (T_CONCAT_EQUAL)
+    T_MOD_EQUAL, // %= (T_MOD_EQUAL)
+    T_AND_EQUAL, // &= (T_AND_EQUAL)
+    T_OR_EQUAL, // |= (T_OR_EQUAL)
+    T_XOR_EQUAL, // ^= (T_XOR_EQUAL)
+    T_SL_EQUAL, // <<= (T_SL_EQUAL)
+    T_SR_EQUAL, // >>= (T_SR_EQUAL)
+    T_BOOLEAN_OR, // || (T_BOOLEAN_OR)
+    T_BOOLEAN_AND, // && (T_BOOLEAN_AND)
+    T_IS_EQUAL, // == (T_IS_EQUAL)
+    T_IS_NOT_EQUAL, // != (T_IS_NOT_EQUAL)
+    T_IS_IDENTICAL, // === (T_IS_IDENTICAL)
+    T_IS_NOT_IDENTICAL, // !== (T_IS_NOT_IDENTICAL)
+    T_IS_SMALLER_OR_EQUAL, // <= (T_IS_SMALLER_OR_EQUAL)
+    T_IS_GREATER_OR_EQUAL, // >= (T_IS_GREATER_OR_EQUAL)
+    T_SPACESHIP, // <=> (T_SPACESHIP)
+    T_SL, // << (T_SL)
+    T_SR, // >> (T_SR)
+    T_INSTANCEOF, // instanceof (T_INSTANCEOF)
+    T_INC, // ++ (T_INC)
+    T_DEC, // -- (T_DEC)
+    T_INT_CAST, // (int) (T_INT_CAST)
+    T_DOUBLE_CAST, // (double) (T_DOUBLE_CAST)
+    T_STRING_CAST, // (string) (T_STRING_CAST)
+    T_ARRAY_CAST, // (array) (T_ARRAY_CAST)
+    T_OBJECT_CAST, // (object) (T_OBJECT_CAST)
+    T_BOOL_CAST, // (bool) (T_BOOL_CAST)
+    T_UNSET_CAST, // (unset) (T_UNSET_CAST)
+    T_NEW, // new (T_NEW)
+    T_CLONE, // clone (T_CLONE)
+    T_EXIT, // exit (T_EXIT)
+    T_IF, // if (T_IF)
+    T_ELSEIF, // elseif (T_ELSEIF)
+    T_ELSE, // else (T_ELSE)
+    T_ENDIF, // endif (T_ENDIF)
+    T_ECHO, // echo (T_ECHO)
+    T_DO, // do (T_DO)
+    T_WHILE, // while (T_WHILE)
+    T_ENDWHILE, // endwhile (T_ENDWHILE)
+    T_FOR, // for (T_FOR)
+    T_ENDFOR, // endfor (T_ENDFOR)
+    T_FOREACH, // foreach (T_FOREACH)
+    T_ENDFOREACH, // endforeach (T_ENDFOREACH)
+    T_DECLARE, // declare (T_DECLARE)
+    T_ENDDECLARE, // enddeclare (T_ENDDECLARE)
+    T_AS, // as (T_AS)
+    T_SWITCH, // switch (T_SWITCH)
+    T_ENDSWITCH, // endswitch (T_ENDSWITCH)
+    T_CASE, // case (T_CASE)
+    T_DEFAULT, // default (T_DEFAULT)
+    T_BREAK, // break (T_BREAK)
+    T_CONTINUE, // continue (T_CONTINUE)
+    T_GOTO, // goto (T_GOTO)
+    T_FUNCTION, // function (T_FUNCTION)
+    T_CONST, // const (T_CONST)
+    T_RETURN, // return (T_RETURN)
+    T_TRY, // try (T_TRY)
+    T_CATCH, // catch (T_CATCH)
+    T_FINALLY, // finally (T_FINALLY)
+    T_THROW, // throw (T_THROW)
+    T_USE, // use (T_USE)
+    T_INSTEADOF, // insteadof (T_INSTEADOF)
+    T_GLOBAL, // global (T_GLOBAL)
+    T_STATIC, // static (T_STATIC)
+    T_ABSTRACT, // abstract (T_ABSTRACT)
+    T_FINAL, // final (T_FINAL)
+    T_PRIVATE, // private (T_PRIVATE)
+    T_PROTECTED, // protected (T_PROTECTED)
+    T_PUBLIC, // public (T_PUBLIC)
+    T_VAR, // var (T_VAR)
+    T_UNSET, // unset (T_UNSET)
+    T_ISSET, // isset (T_ISSET)
+    T_EMPTY, // empty (T_EMPTY)
+    T_HALT_COMPILER, // __halt_compiler (T_HALT_COMPILER)
+    T_CLASS, // class (T_CLASS)
+    T_TRAIT, // trait (T_TRAIT)
+    T_INTERFACE, // interface (T_INTERFACE)
+    T_EXTENDS, // extends (T_EXTENDS)
+    T_IMPLEMENTS, // implements (T_IMPLEMENTS)
+    T_OBJECT_OPERATOR, // -> (T_OBJECT_OPERATOR)
+    T_DOUBLE_ARROW, // => (T_DOUBLE_ARROW)
+    T_LIST, // list (T_LIST)
+    T_ARRAY, // array (T_ARRAY)
+    T_CALLABLE, // callable (T_CALLABLE)
+    T_LINE, // __LINE__ (T_LINE)
+    T_FILE, // __FILE__ (T_FILE)
+    T_DIR, // __DIR__ (T_DIR)
+    T_CLASS_C, // __CLASS__ (T_CLASS_C)
+    T_TRAIT_C, // __TRAIT__ (T_TRAIT_C)
+    T_METHOD_C, // __METHOD__ (T_METHOD_C)
+    T_FUNC_C, // __FUNCTION__ (T_FUNC_C)
+    T_COMMENT, // comment (T_COMMENT)
+    T_DOC_COMMENT, // doc comment (T_DOC_COMMENT)
+    T_OPEN_TAG, // open tag (T_OPEN_TAG)
+    T_OPEN_TAG_WITH_ECHO, // open tag with echo (T_OPEN_TAG_WITH_ECHO)
+    T_CLOSE_TAG, // close tag (T_CLOSE_TAG)
+    T_WHITESPACE, // whitespace (T_WHITESPACE)
+    T_START_HEREDOC, // heredoc start (T_START_HEREDOC)
+    T_END_HEREDOC, // heredoc end (T_END_HEREDOC)
+    T_DOLLAR_OPEN_CURLY_BRACES, // ${ (T_DOLLAR_OPEN_CURLY_BRACES)
+    T_CURLY_OPEN, // {$ (T_CURLY_OPEN)
+    T_PAAMAYIM_NEKUDOTAYIM, // :: (T_PAAMAYIM_NEKUDOTAYIM)
+    T_NAMESPACE, // namespace (T_NAMESPACE)
+    T_NS_C, // __NAMESPACE__ (T_NS_C)
+    T_NS_SEPARATOR, // \\ (T_NS_SEPARATOR)
+    T_ELLIPSIS, // ... (T_ELLIPSIS)
+    T_COALESCE, // ?? (T_COALESCE)
+    T_POW, // ** (T_POW)
+    T_POW_EQUAL, // **= (T_POW_EQUAL)
+    T_ERROR, // token used to force a parse error from the lexer
+};
+
+static int default_token_value[] = {
+    [ STATE(INITIAL) ] = T_INLINE_HTML,
+    [ STATE(ST_IN_SCRIPTING) ] = -1,
+    [ STATE(ST_COMMENT_MULTI) ] = T_COMMENT,
+    [ STATE(ST_VAR_OFFSET) ] = -1,
+    [ STATE(ST_SINGLE_QUOTES) ] = T_CONSTANT_ENCAPSED_STRING,
+    [ STATE(ST_NOWDOC) ] = T_ENCAPSED_AND_WHITESPACE,
+    [ STATE(ST_DOUBLE_QUOTES) ] = T_ENCAPSED_AND_WHITESPACE,
+    [ STATE(ST_HEREDOC) ] = T_ENCAPSED_AND_WHITESPACE,
+    [ STATE(ST_BACKQUOTE) ] = T_ENCAPSED_AND_WHITESPACE,
+    [ STATE(ST_LOOKING_FOR_VARNAME) ] = -1,
+    [ STATE(ST_LOOKING_FOR_PROPERTY) ] = -1,
+};
 
 static struct {
     int type;
+    int token;
     const char *name;
     size_t name_len;
 } keywords[] = {
     //
-    DECL_OP("and")
-    DECL_OP("or")
-    DECL_OP("xor")
+    DECL_OP("and", T_LOGICAL_AND)
+    DECL_OP("or", T_LOGICAL_OR)
+    DECL_OP("xor", T_LOGICAL_XOR)
     //
-    DECL_KW_CONSTANT("NULL")
-    DECL_KW_CONSTANT("TRUE")
-    DECL_KW_CONSTANT("FALSE")
+    DECL_KW_CONSTANT("NULL", T_STRING)
+    DECL_KW_CONSTANT("TRUE", T_STRING)
+    DECL_KW_CONSTANT("FALSE", T_STRING)
     // http://php.net/manual/fr/reserved.constants.php
     // ...
     //
-    DECL_NAME_BP("this")
-    DECL_NAME_BP("self")
-    DECL_NAME_BP("parent")
-    DECL_NAME_BP("__CLASS__")
-    DECL_NAME_BP("__COMPILER_HALT_OFFSET__")
-    DECL_NAME_BP("__DIR__")
-    DECL_NAME_BP("__FILE__")
-    DECL_NAME_BP("__FUNCTION__")
-    DECL_NAME_BP("__LINE__")
-    DECL_NAME_BP("__METHOD__")
-    DECL_NAME_BP("__NAMESPACE__")
-    DECL_NAME_BP("__TRAIT__")
+    DECL_NAME_BP("this", T_STRING)
+    DECL_NAME_BP("self", T_STRING)
+    DECL_NAME_BP("parent", T_STRING)
+    DECL_NAME_BP("__CLASS__", T_CLASS_C)
+    DECL_NAME_BP("__COMPILER_HALT_OFFSET__", T_STRING)
+    DECL_NAME_BP("__DIR__", T_DIR)
+    DECL_NAME_BP("__FILE__", T_FILE)
+    DECL_NAME_BP("__FUNCTION__", T_FUNC_C)
+    DECL_NAME_BP("__LINE__", T_LINE)
+    DECL_NAME_BP("__METHOD__", T_METHOD_C)
+    DECL_NAME_BP("__NAMESPACE__", T_NS_C)
+    DECL_NAME_BP("__TRAIT__", T_TRAIT_C)
     //
-    DECL_NAME_B("__halt_compiler")
-    DECL_NAME_B("echo")
-    DECL_NAME_B("empty")
-    DECL_NAME_B("eval")
-    DECL_NAME_B("exit")
-    DECL_NAME_B("die")
-    DECL_NAME_B("include")
-    DECL_NAME_B("include_once")
-    DECL_NAME_B("isset")
-    DECL_NAME_B("list")
-    DECL_NAME_B("print")
-    DECL_NAME_B("require")
-    DECL_NAME_B("require_once")
-    DECL_NAME_B("unset")
+    DECL_NAME_B("__halt_compiler", T_HALT_COMPILER)
+    DECL_NAME_B("echo", T_ECHO)
+    DECL_NAME_B("empty", T_EMPTY)
+    DECL_NAME_B("eval", T_EVAL)
+    DECL_NAME_B("exit", T_EXIT)
+    DECL_NAME_B("die", T_EXIT)
+    DECL_NAME_B("include", T_INCLUDE)
+    DECL_NAME_B("include_once", T_INCLUDE_ONCE)
+    DECL_NAME_B("isset", T_ISSET)
+    DECL_NAME_B("list", T_LIST)
+    DECL_NAME_B("print", T_PRINT)
+    DECL_NAME_B("require", T_REQUIRE)
+    DECL_NAME_B("require_once", T_REQUIRE_ONCE)
+    DECL_NAME_B("unset", T_UNSET)
     //
-//     DECL_KW_NS("namespace")
-//     DECL_KW("use") // is used for namespaces and by closures
+    DECL_KW_NS("namespace", T_NAMESPACE)
+    DECL_KW("use", T_USE) // is used for namespaces and by closures
     //
-    DECL_KW_DECL("var")
-    DECL_KW("abstract")
-    DECL_KW("final")
-    DECL_KW("private")
-    DECL_KW("protected")
-    DECL_KW("public")
-    DECL_KW("static")
-    DECL_KW("extends")
-    DECL_KW("implements")
+    DECL_KW_DECL("var", T_VAR)
+    DECL_KW("abstract", T_ABSTRACT)
+    DECL_KW("final", T_FINAL)
+    DECL_KW("private", T_PRIVATE)
+    DECL_KW("protected", T_PROTECTED)
+    DECL_KW("public", T_PUBLIC)
+    DECL_KW("static", T_STATIC)
+    DECL_KW("extends", T_EXTENDS)
+    DECL_KW("implements", T_IMPLEMENTS)
     //
-    DECL_KW("callable")
-    DECL_KW("insteadof")
-    DECL_KW("new")
-    DECL_KW("clone")
-    DECL_KW("class")
-    DECL_KW("trait")
-    DECL_KW("interface")
-    DECL_KW("function")
-    DECL_KW("global")
-    DECL_KW("const")
-    DECL_KW("return")
-    DECL_KW("yield")
-    DECL_KW("try")
-    DECL_KW("catch")
-    DECL_KW("finally")
-    DECL_KW("throw")
-    DECL_KW("if")
-    DECL_KW("else")
-    DECL_KW("elseif")
-    DECL_KW("endif")
-    DECL_KW("while")
-    DECL_KW("endwhile")
-    DECL_KW("do")
-    DECL_KW("for")
-    DECL_KW("endfor")
-    DECL_KW("foreach")
-    DECL_KW("endforeach")
-    DECL_KW("declare")
-    DECL_KW("enddeclare")
-    DECL_KW("instanceof")
-    DECL_KW("as")
-    DECL_KW("switch")
-    DECL_KW("endswitch")
-    DECL_KW("case")
-    DECL_KW("default")
-    DECL_KW("break")
-    DECL_KW("continue")
-    DECL_KW("goto")
+    DECL_KW("callable", T_CALLABLE)
+    DECL_KW("insteadof", T_INSTEADOF)
+    DECL_KW("new", T_NEW)
+    DECL_KW("clone", T_CLONE)
+    DECL_KW("class", T_CLASS)
+    DECL_KW("trait", T_TRAIT)
+    DECL_KW("interface", T_INTERFACE)
+    DECL_KW("function", T_FUNCTION)
+    DECL_KW("global", T_GLOBAL)
+    DECL_KW("const", T_CONST)
+    DECL_KW("return", T_RETURN)
+    DECL_KW("yield", T_YIELD)
+    DECL_KW("try", T_TRY)
+    DECL_KW("catch", T_CATCH)
+    DECL_KW("finally", T_FINALLY)
+    DECL_KW("throw", T_THROW)
+    DECL_KW("if", T_IF)
+    DECL_KW("else", T_ELSE)
+    DECL_KW("elseif", T_ELSEIF)
+    DECL_KW("endif", T_ENDIF)
+    DECL_KW("while", T_WHILE)
+    DECL_KW("endwhile", T_ENDWHILE)
+    DECL_KW("do", T_DO)
+    DECL_KW("for", T_FOR)
+    DECL_KW("endfor", T_ENDFOR)
+    DECL_KW("foreach", T_FOREACH)
+    DECL_KW("endforeach", T_ENDFOREACH)
+    DECL_KW("declare", T_DECLARE)
+    DECL_KW("enddeclare", T_ENDDECLARE)
+    DECL_KW("instanceof", T_INSTANCEOF)
+    DECL_KW("as", T_AS)
+    DECL_KW("switch", T_SWITCH)
+    DECL_KW("endswitch", T_ENDSWITCH)
+    DECL_KW("case", T_CASE)
+    DECL_KW("default", T_DEFAULT)
+    DECL_KW("break", T_BREAK)
+    DECL_KW("continue", T_CONTINUE)
+    DECL_KW("goto", T_GOTO)
 };
 
 #if 0 /* UNUSED YET */
@@ -305,19 +457,19 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <INITIAL>'<?php' ([ \t]|NEWLINE) {
     yyless(STR_LEN("<?php"));
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(NAME_TAG);
+    VALUED_TOKEN(NAME_TAG, T_OPEN_TAG);
 }
 
 <INITIAL>"<?=" {
     // NOTE: <?= does not depend on short_open_tag since PHP 5.4.0
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(NAME_TAG);
+    VALUED_TOKEN(NAME_TAG, T_OPEN_TAG_WITH_ECHO);
 }
 
 <INITIAL>"<?" {
     if (myoptions->short_open_tag) {
         BEGIN(ST_IN_SCRIPTING);
-        TOKEN(NAME_TAG);
+        VALUED_TOKEN(NAME_TAG, T_OPEN_TAG);
     } else {
         goto not_php; // if short_open_tag is off, give it to sublexer (if any)
     }
@@ -326,7 +478,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <INITIAL>"<%" {
     if (myoptions->version < 7 && myoptions->asp_tags) {
         BEGIN(ST_IN_SCRIPTING);
-        TOKEN(NAME_TAG);
+        VALUED_TOKEN(NAME_TAG, T_OPEN_TAG);
     } else {
         goto not_php; // if asp_tags is off, give it to sublexer (if any)
     }
@@ -335,35 +487,35 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <INITIAL>'<script' WHITESPACE+ 'language' WHITESPACE* "=" WHITESPACE* ('php'|'"php"'|'\'php\'') WHITESPACE* ">" {
     if (myoptions->version < 7) {
         BEGIN(ST_IN_SCRIPTING);
-        TOKEN(NAME_TAG);
+        VALUED_TOKEN(NAME_TAG, T_OPEN_TAG);
     } else {
         goto not_php;
     }
 }
 
 <ST_IN_SCRIPTING> "=>" {
-    TOKEN(OPERATOR);
+    VALUED_TOKEN(OPERATOR, T_DOUBLE_ARROW);
 }
 
 <ST_IN_SCRIPTING>"->" {
     PUSH_STATE(ST_LOOKING_FOR_PROPERTY);
-    TOKEN(OPERATOR);
+    VALUED_TOKEN(OPERATOR, T_OBJECT_OPERATOR);
 }
 
 <ST_IN_SCRIPTING>'yield' WHITESPACE 'from' {
     if (myoptions->version < 7) {
         yyless(STR_LEN("yield"));
     }
-    TOKEN(KEYWORD);
+    VALUED_TOKEN(KEYWORD, T_YIELD_FROM);
 }
 
 <ST_LOOKING_FOR_PROPERTY>"->" {
-    TOKEN(OPERATOR);
+    VALUED_TOKEN(OPERATOR, T_OBJECT_OPERATOR);
 }
 
 <ST_LOOKING_FOR_PROPERTY>LABEL {
     POP_STATE();
-    TOKEN(NAME_VARIABLE_INSTANCE);
+    VALUED_TOKEN(NAME_VARIABLE_INSTANCE, T_STRING);
 }
 
 <ST_LOOKING_FOR_PROPERTY>ANY_CHAR {
@@ -378,11 +530,15 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         //yyless(STR_LEN("<="));
         yyless(YYLENG - 1);
     }
-    TOKEN(OPERATOR);
+    VALUED_TOKEN(OPERATOR, T_SPACESHIP);
+}
+
+<ST_IN_SCRIPTING>"\\" {
+    VALUED_TOKEN(IGNORABLE, T_NS_SEPARATOR);
 }
 
 <ST_IN_SCRIPTING> "++" | "--" | [!=]"==" | "<>" | [-+*/%.<>+&|^!=]"=" | ">>=" | "<<=" | "**=" | "<<" | ">>" | "**" | [-+.*/%=^&|!~<>?:@] {
-    TOKEN(OPERATOR);
+    VALUED_TOKEN(OPERATOR, T_INC);
 }
 
 <ST_IN_SCRIPTING>"#" | "//" {
@@ -411,16 +567,16 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         }
         break;
     }
-    TOKEN(COMMENT_SINGLE);
+    VALUED_TOKEN(COMMENT_SINGLE, T_COMMENT);
 }
 
 <ST_IN_SCRIPTING>"(" TABS_AND_SPACES ('int' | 'integer' | 'bool' | 'boolean' | 'string' | 'binary' | 'real' | 'float' | 'double' | 'array' | 'object' | 'unset') TABS_AND_SPACES ")" {
-    TOKEN(OPERATOR);
+    VALUED_TOKEN(OPERATOR, T_INT_CAST);
 }
 
 <ST_IN_SCRIPTING>"{" {
     PUSH_STATE(ST_IN_SCRIPTING);
-    TOKEN(PUNCTUATION);
+    VALUED_TOKEN(PUNCTUATION, *YYTEXT);
 }
 
 <ST_IN_SCRIPTING>"}" {
@@ -428,28 +584,28 @@ NEWLINE = ("\r"|"\n"|"\r\n");
         POP_STATE();
 //     }
     if (STATE(ST_IN_SCRIPTING) == YYSTATE) {
-        TOKEN(PUNCTUATION);
+        VALUED_TOKEN(PUNCTUATION, *YYTEXT);
     } else {
-        TOKEN(SEQUENCE_INTERPOLATED);
+        VALUED_TOKEN(SEQUENCE_INTERPOLATED, *YYTEXT);
     }
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"${" {
     PUSH_STATE(ST_LOOKING_FOR_VARNAME);
-    TOKEN(SEQUENCE_INTERPOLATED);
+    VALUED_TOKEN(SEQUENCE_INTERPOLATED, T_DOLLAR_OPEN_CURLY_BRACES);
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"{$" {
     PUSH_STATE(ST_IN_SCRIPTING);
     yyless(1);
-    TOKEN(SEQUENCE_INTERPOLATED); // token is shorten to '{'
+    VALUED_TOKEN(SEQUENCE_INTERPOLATED, T_CURLY_OPEN); // token is shorten to '{'
 }
 
 <ST_LOOKING_FOR_VARNAME>LABEL [[}] {
     yyless(YYLENG - 1);
     POP_STATE();
     PUSH_STATE(ST_IN_SCRIPTING);
-    TOKEN(NAME_VARIABLE);
+    VALUED_TOKEN(NAME_VARIABLE, T_STRING_VARNAME);
 }
 
 <ST_LOOKING_FOR_VARNAME>ANY_CHAR {
@@ -462,54 +618,54 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <ST_DOUBLE_QUOTES,ST_HEREDOC,ST_BACKQUOTE>"$" LABEL "->" [a-zA-Z_\x7f-\xff] {
     yyless(YYLENG - 3);
     PUSH_STATE(ST_LOOKING_FOR_PROPERTY);
-    TOKEN(NAME_VARIABLE);
+    VALUED_TOKEN(NAME_VARIABLE, T_VARIABLE);
 }
 
 <ST_DOUBLE_QUOTES,ST_HEREDOC,ST_BACKQUOTE>"$" LABEL "[" {
     yyless(YYLENG - 1);
     PUSH_STATE(ST_VAR_OFFSET);
-    TOKEN(NAME_VARIABLE);
+    VALUED_TOKEN(NAME_VARIABLE, T_VARIABLE);
 }
 
 <ST_IN_SCRIPTING,ST_DOUBLE_QUOTES,ST_HEREDOC,ST_BACKQUOTE,ST_VAR_OFFSET>"$" LABEL {
-    TOKEN(NAME_VARIABLE);
+    VALUED_TOKEN(NAME_VARIABLE, T_VARIABLE);
 }
 
 <ST_VAR_OFFSET>"]" {
     POP_STATE();
-    TOKEN(PUNCTUATION);
+    VALUED_TOKEN(PUNCTUATION, *YYTEXT);
 }
 
 <ST_VAR_OFFSET>[0] | [1-9][0-9]* {
-    TOKEN(NUMBER_DECIMAL);
+    VALUED_TOKEN(NUMBER_DECIMAL, T_NUM_STRING);
 }
 
 <ST_VAR_OFFSET>LNUM | HNUM | BNUM {
     /* Offset must be treated as a string */
-    TOKEN(STRING_SINGLE);
+    VALUED_TOKEN(STRING_SINGLE, T_NUM_STRING);
 }
 
 <ST_VAR_OFFSET>"[" {
-    TOKEN(PUNCTUATION);
+    VALUED_TOKEN(PUNCTUATION, *YYTEXT); // ???
 }
 
 <ST_VAR_OFFSET>LABEL {
-    TOKEN(NAME_VARIABLE); // TODO: it's a constant
+    VALUED_TOKEN(NAME_VARIABLE, T_STRING); // TODO: it's a constant
 }
 
 <ST_IN_SCRIPTING>[,;()] {
-    TOKEN(PUNCTUATION);
+    VALUED_TOKEN(PUNCTUATION, *YYTEXT);
 }
 
 <ST_IN_SCRIPTING,ST_LOOKING_FOR_PROPERTY>WHITESPACE+ {
-    TOKEN(IGNORABLE);
+    VALUED_TOKEN(IGNORABLE, T_WHITESPACE);
 }
 
 <ST_IN_SCRIPTING>"/**" WHITESPACE {
 #if 1
     mydata->in_doc_comment = true;
     BEGIN(ST_COMMENT_MULTI);
-    TOKEN(COMMENT_DOCUMENTATION);
+    VALUED_TOKEN(COMMENT_DOCUMENTATION, T_DOC_COMMENT);
 #else
     // TODO
     YYCTYPE *end;
@@ -529,172 +685,98 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 <ST_IN_SCRIPTING>"/*" {
     mydata->in_doc_comment = false;
     BEGIN(ST_COMMENT_MULTI);
-    TOKEN(COMMENT_MULTILINE);
+    VALUED_TOKEN(COMMENT_MULTILINE, T_COMMENT);
 }
 
 <ST_COMMENT_MULTI>"*/" {
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE);
-}
-
-<ST_IN_SCRIPTING> 'new' {
-    data->next_label = CLASS;
-    TOKEN(KEYWORD);
-}
-
-/*
-<ST_IN_SCRIPTING> 'class' | 'interface' {
-    data->next_label = CLASS;
-    TOKEN(KEYWORD);
-}
-
-<ST_IN_SCRIPTING> 'function' {
-    data->next_label = FUNCTION;
-    TOKEN(KEYWORD);
-}
-*/
-
-/*
-<ST_IN_SCRIPTING> LABEL WHITESPACE* '(' {
-    size_t i;
-
-    // TODO: rempiler les ( + espaces
-    // TODO: marquer si on a vu -> ou :: (on ne chercherait plus une fonction mais une méthode)
-    for (i = 0; i < ARRAY_SIZE(functions); i++) {
-        if (0 == ascii_strcasecmp_l(functions[i].name, functions[i].name_len, YYTEXT, YYLENG)) {
-            TOKEN(NAME_FUNCTION);
-        }
-    }
-
-    TOKEN(IGNORABLE);
-//     TOKEN(NAME_FUNCTION);
-}
-*/
-
-// TODO: handle '{' ... '}'
-<ST_IN_SCRIPTING> 'namespace' {
-    data->next_label = NAMESPACE;
-    mydata->in_namespace = true;
-    TOKEN(KEYWORD_NAMESPACE);
-}
-
-// TODO: at BOL "use" is related to namespace else to closure
-<ST_IN_SCRIPTING> 'use' {
-    data->next_label = NAMESPACE;
-    TOKEN(KEYWORD_NAMESPACE);
+    VALUED_TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE, T_COMMENT);
 }
 
 <ST_IN_SCRIPTING> LABEL | NAMESPACED_LABEL {
-    int type;
+    size_t i;
+    int type, token;
 
-    type = data->next_label;
-    data->next_label = 0;
-    switch (type) {
-        case NAMESPACE:
-        {
-            TOKEN(NAME_NAMESPACE);
-        }
-        case FUNCTION:
-        {
-            TOKEN(NAME_FUNCTION);
-        }
-        case CLASS:
-        {
-#if 0
-            // TODO: prendre en compte le namespace
-            for (i = 0; i < ARRAY_SIZE(classes); i++) {
-                if (0 == ascii_strcasecmp_l(classes[i].name, classes[i].name_len, YYTEXT, YYLENG)) {
-                    // link it
-                }
+    token = 0;
+    type = IGNORABLE;
+    for (i = 0; i < ARRAY_SIZE(keywords); i++) {
+        if (0 == ascii_strcasecmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
+            if (case_insentive[keywords[i].type] || 0 == strcmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
+                type = keywords[i].type;
+                token = keywords[i].token;
             }
-#endif
-            TOKEN(NAME_CLASS);
-        }
-        default:
-        {
-            size_t i;
-            int token;
-
-            token = IGNORABLE;
-            for (i = 0; i < ARRAY_SIZE(keywords); i++) {
-                if (0 == ascii_strcasecmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
-                    if (case_insentive[keywords[i].type] || 0 == strcmp_l(keywords[i].name, keywords[i].name_len, (char *) YYTEXT, YYLENG)) {
-                        token = keywords[i].type;
-                    }
-                    break;
-                }
-            }
-#if 0
-            // il faudrait pouvoir regarder en avant pour distinguer fonction / constante / classe
-            // par contre, si on marque le passage d'opérateurs objet (:: et ->) on devrait savoir que c'est un nom de méthode
-            for (i = 0; i < ARRAY_SIZE(functions); i++) {
-                if (0 == ascii_strcasecmp_l(functions[i].name, functions[i].name_len, YYTEXT, YYLENG)) {
-                    TOKEN(NAME_FUNCTION);
-                }
-            }
-#endif
-            TOKEN(token);
+            break;
         }
     }
+#if 0
+    // il faudrait pouvoir regarder en avant pour distinguer fonction / constante / classe
+    // par contre, si on marque le passage d'opérateurs objet (:: et ->) on devrait savoir que c'est un nom de méthode
+    for (i = 0; i < ARRAY_SIZE(functions); i++) {
+        if (0 == ascii_strcasecmp_l(functions[i].name, functions[i].name_len, YYTEXT, YYLENG)) {
+            VALUED_TOKEN(NAME_FUNCTION);
+        }
+    }
+#endif
+    VALUED_TOKEN(type, token);
 }
 
 <ST_IN_SCRIPTING>LNUM {
     if ('0' == *YYTEXT) {
-        TOKEN(NUMBER_OCTAL);
+        VALUED_TOKEN(NUMBER_OCTAL, T_LNUMBER);
     } else {
-        TOKEN(NUMBER_DECIMAL);
+        VALUED_TOKEN(NUMBER_DECIMAL, T_LNUMBER);
     }
 }
 
 <ST_IN_SCRIPTING>HNUM {
-    TOKEN(NUMBER_HEXADECIMAL);
+    VALUED_TOKEN(NUMBER_HEXADECIMAL, T_LNUMBER);
 }
 
 <ST_IN_SCRIPTING>BNUM {
-    TOKEN(NUMBER_BINARY);
+    VALUED_TOKEN(NUMBER_BINARY, T_LNUMBER);
 }
 
 <ST_IN_SCRIPTING>DNUM | EXPONENT_DNUM {
-    TOKEN(NUMBER_FLOAT);
+    VALUED_TOKEN(NUMBER_FLOAT, T_DNUMBER);
 }
 
 <ST_IN_SCRIPTING>'</script' WHITESPACE* ">" NEWLINE? {
     if (myoptions->version < 7) {
         BEGIN(INITIAL);
-        TOKEN(NAME_TAG);
+        VALUED_TOKEN(NAME_TAG, T_CLOSE_TAG);
     } else {
-        TOKEN(IGNORABLE);
+        VALUED_TOKEN(IGNORABLE, T_INLINE_HTML);
     }
 }
 
 <ST_IN_SCRIPTING>"?>" NEWLINE? {
     BEGIN(INITIAL);
-    TOKEN(NAME_TAG);
+    VALUED_TOKEN(NAME_TAG, T_CLOSE_TAG);
 }
 
 <ST_IN_SCRIPTING>"%>" NEWLINE? {
     if (myoptions->version < 7 && myoptions->asp_tags) {
         yyless(STR_LEN("%>"));
         BEGIN(INITIAL);
-        TOKEN(NAME_TAG);
+        VALUED_TOKEN(NAME_TAG, T_CLOSE_TAG);
     } else {
-        TOKEN(IGNORABLE);
+        VALUED_TOKEN(IGNORABLE, T_INLINE_HTML);
     }
 }
 
 <ST_IN_SCRIPTING>"`" {
     BEGIN(ST_BACKQUOTE);
-    TOKEN(STRING_BACKTICK);
+    VALUED_TOKEN(STRING_BACKTICK, *YYTEXT);
 }
 
 <ST_IN_SCRIPTING>"b"? "'" {
     BEGIN(ST_SINGLE_QUOTES);
-    TOKEN(STRING_SINGLE);
+    VALUED_TOKEN(STRING_SINGLE, T_CONSTANT_ENCAPSED_STRING);
 }
 
 <ST_IN_SCRIPTING>"b"? "\"" {
     BEGIN(ST_DOUBLE_QUOTES);
-    TOKEN(STRING_DOUBLE);
+    VALUED_TOKEN(STRING_DOUBLE, '"');
 }
 
 // TODO: split "b"? "<<<" [ \t]* (["']?) LABEL \1 NEWLINE into separate tokens ?
@@ -726,27 +808,27 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     mydata->doclabel_len = YYCURSOR - p - quoted - STR_LEN("\n") - ('\r' == YYCURSOR[-2]);
     mydata->doclabel = strndup((char *) p, mydata->doclabel_len);
 
-    TOKEN(default_token_type[YYSTATE]);
+    VALUED_TOKEN(default_token_type[YYSTATE], T_START_HEREDOC);
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"\\u{" [0-9a-fA-F]+ "}" {
     if (myoptions->version >= 7) {
-        TOKEN(ESCAPED_CHAR);
+        VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
     } else {
-        TOKEN(default_token_type[YYSTATE]);
+        VALUED_TOKEN(default_token_type[YYSTATE], T_ENCAPSED_AND_WHITESPACE);
     }
 }
 
 <ST_DOUBLE_QUOTES>"\\\"" {
-    TOKEN(ESCAPED_CHAR);
+    VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
 }
 
 <ST_BACKQUOTE>"\\`" {
-    TOKEN(ESCAPED_CHAR);
+    VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
 }
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>("\\0"[0-9]{2}) | ("\\" 'x' [0-9A-Fa-f]{2}) | ("\\"[$efrntv\\]) {
-    TOKEN(ESCAPED_CHAR);
+    VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
 }
 
 <ST_HEREDOC,ST_NOWDOC>NEWLINE LABEL ";" NEWLINE {
@@ -782,34 +864,34 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 
         BEGIN(ST_IN_SCRIPTING);
     }
-    TOKEN(default_token_type[old_state]);
+    VALUED_TOKEN(default_token_type[old_state], T_END_HEREDOC);
 }
 
 <ST_DOUBLE_QUOTES>"\"" {
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(STRING_DOUBLE);
+    VALUED_TOKEN(STRING_DOUBLE, T_ENCAPSED_AND_WHITESPACE);
 }
 
 <ST_IN_SCRIPTING> "$" LABEL {
-    TOKEN(NAME_VARIABLE);
+    VALUED_TOKEN(NAME_VARIABLE, T_VARIABLE);
 }
 
 <ST_BACKQUOTE>"\\" [\\`] {
-    TOKEN(ESCAPED_CHAR);
+    VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
 }
 
 <ST_BACKQUOTE>"`" {
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(STRING_BACKTICK);
+    VALUED_TOKEN(STRING_BACKTICK, *YYTEXT);
 }
 
 <ST_SINGLE_QUOTES>"\\" [\\'] {
-    TOKEN(ESCAPED_CHAR);
+    VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
 }
 
 <ST_SINGLE_QUOTES>"'" {
     BEGIN(ST_IN_SCRIPTING);
-    TOKEN(STRING_SINGLE);
+    VALUED_TOKEN(STRING_SINGLE, T_CONSTANT_ENCAPSED_STRING);
 }
 
 <INITIAL>ANY_CHAR {
@@ -904,16 +986,25 @@ not_php:
 }
 
 <ST_COMMENT_MULTI>ANY_CHAR {
-    TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE);
+    VALUED_TOKEN(mydata->in_doc_comment ? COMMENT_DOCUMENTATION : COMMENT_MULTILINE, T_COMMENT);
 }
 
 <*>NEWLINE {
-    // TODO
-    TOKEN(default_token_type[YYSTATE]);
+    int type;
+
+    if (-1 == (type = default_token_value[YYSTATE])) {
+        type = *YYTEXT;
+    }
+    VALUED_TOKEN(default_token_type[YYSTATE], type);
 }
 
 <*>ANY_CHAR { // should be the last "rule"
-    TOKEN(default_token_type[YYSTATE]);
+    int type;
+
+    if (-1 == (type = default_token_value[YYSTATE])) {
+        type = *YYTEXT;
+    }
+    VALUED_TOKEN(default_token_type[YYSTATE], type);
 }
 */
     }
@@ -933,11 +1024,11 @@ LexerImplementation php_lexer = {
     phpfinalize,
     sizeof(PHPLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "version",        OPT_TYPE_INT,   offsetof(PHPLexerOption, version),        OPT_DEF_INT(7),  "major versions of PHP brings some changes, use this parameter to parse PHP code as a newer or older version" },
-        { "asp_tags",       OPT_TYPE_BOOL,  offsetof(PHPLexerOption, asp_tags),       OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7)" },
-        { "start_inline",   OPT_TYPE_BOOL,  offsetof(PHPLexerOption, start_inline),   OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
-        { "short_open_tag", OPT_TYPE_BOOL,  offsetof(PHPLexerOption, short_open_tag), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
-        { "secondary",      OPT_TYPE_LEXER, offsetof(PHPLexerOption, secondary),      OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
+        { S("version"),        OPT_TYPE_INT,   offsetof(PHPLexerOption, version),        OPT_DEF_INT(7),  "major versions of PHP brings some changes, use this parameter to parse PHP code as a newer or older version" },
+        { S("asp_tags"),       OPT_TYPE_BOOL,  offsetof(PHPLexerOption, asp_tags),       OPT_DEF_BOOL(0), "support, or not, `<%`/`%>` tags to begin/end PHP code ([asp_tags](http://php.net/asp_tags)) (only if version < 7)" },
+        { S("start_inline"),   OPT_TYPE_BOOL,  offsetof(PHPLexerOption, start_inline),   OPT_DEF_BOOL(0), "if true the lexer starts highlighting with php code (ie no starting `<?php`/`<?`/`<script language=\"php\">` is required at top)" },
+        { S("short_open_tag"), OPT_TYPE_BOOL,  offsetof(PHPLexerOption, short_open_tag), OPT_DEF_BOOL(1), "support, or not, `<?` tags to begin PHP code ([short_open_tag](http://php.net/short_open_tag))" },
+        { S("secondary"),      OPT_TYPE_LEXER, offsetof(PHPLexerOption, secondary),      OPT_DEF_LEXER,   "Lexer to highlight content outside of PHP tags (if none, these parts will not be highlighted)" },
         END_OF_LEXER_OPTIONS
     },
     NULL // dependencies

@@ -164,9 +164,11 @@ static FormatterOption *formatter_option_by_name(const FormatterImplementation *
     return NULL;
 }
 
+/*
 static const FormatterOption *NO_FMT_OPTIONS = (FormatterOption []) {
     END_OF_FORMATTER_OPTIONS
 };
+*/
 
 /**
  * Initialize an iterator to iterate on available options of the given

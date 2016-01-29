@@ -480,7 +480,7 @@ LexerImplementation varnish_lexer = {
     NULL, // finalize
     sizeof(VarnishLexerData),
     (/*const*/ LexerOption /*const*/ []) {
-        { "version", OPT_TYPE_INT, offsetof(VarnishLexerOption, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },
+        { S("version"), OPT_TYPE_INT, offsetof(VarnishLexerOption, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },
         END_OF_LEXER_OPTIONS
     },
     (const LexerImplementation * const []) { &c_lexer, NULL }

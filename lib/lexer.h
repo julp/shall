@@ -1,25 +1,23 @@
-#ifndef LEXER_H
+#pragma once
 
-# define LEXER_H
+#include "types.h"
+#include "darray.h"
 
-# include "types.h"
-# include "darray.h"
+#ifndef DOXYGEN
+# define SHELLMAGIC "#!"
+# define UTF8_BOM "\xEF\xBB\xBF"
+#endif /* !DOXYGEN */
 
-# ifndef DOXYGEN
-#  define SHELLMAGIC "#!"
-#  define UTF8_BOM "\xEF\xBB\xBF"
-# endif /* !DOXYGEN */
-
-# define YYLEX_ARGS LexerInput *yy, LexerData *data, const OptionValue *options, LexerReturnValue *rv, void *ctxt
-# define YYCTYPE  unsigned char
-# define YYSRC    (yy->src)
-# define YYTEXT   (yy->yytext)
+#define YYLEX_ARGS LexerInput *yy, LexerData *data, const OptionValue *options, LexerReturnValue *rv, void *ctxt
+#define YYCTYPE  unsigned char
+#define YYSRC    (yy->src)
+#define YYTEXT   (yy->yytext)
 // # define YYLINENO (yy->lineno)
-# define YYLIMIT  (yy->limit)  /*re2c:define:YYLIMIT  = yy->limit;*/
-# define YYCURSOR (yy->cursor) /*re2c:define:YYCURSOR = yy->cursor;*/
-# define YYMARKER (yy->marker) /*re2c:define:YYMARKER = yy->marker;*/
-# define YYLENG   (yy->cursor - yy->yytext)
-# define YYFILL(n) \
+#define YYLIMIT  (yy->limit)  /*re2c:define:YYLIMIT  = yy->limit;*/
+#define YYCURSOR (yy->cursor) /*re2c:define:YYCURSOR = yy->cursor;*/
+#define YYMARKER (yy->marker) /*re2c:define:YYMARKER = yy->marker;*/
+#define YYLENG   (yy->cursor - yy->yytext)
+#define YYFILL(n) \
     do { \
         if ((YYCURSOR/* + n*/) >= YYLIMIT) { \
             return 0; \
@@ -31,24 +29,24 @@
         YYCURSOR = YYTEXT + x; \
     } while (0);
 
-# define STATE(name)  yyc##name /* re2c:condenumprefix */
-# define BEGIN(state) YYSETCONDITION(STATE(state))
-# define YYSTATE      YYGETCONDITION()
+#define STATE(name)  yyc##name /* re2c:condenumprefix */
+#define BEGIN(state) YYSETCONDITION(STATE(state))
+#define YYSTATE      YYGETCONDITION()
 
-# define YYGETCONDITION()  data->state
-# define YYSETCONDITION(s) data->state = s
-# if 0
-#  define YYDEBUG(s, c) fprintf(stderr, "state: %d char: %c\n", s, c)
-# else
-#  define YYDEBUG(s, c)
-# endif
+#define YYGETCONDITION()  data->state
+#define YYSETCONDITION(s) data->state = s
+#if 0
+# define YYDEBUG(s, c) fprintf(stderr, "state: %d char: %c\n", s, c)
+#else
+# define YYDEBUG(s, c)
+#endif
 
-# define yymore() goto yymore_restart
+#define yymore() goto yymore_restart
 
-# define IS_BOL \
+#define IS_BOL \
     (YYSRC == YYTEXT || IS_NL(YYTEXT[-1]))
 
-# define SIZE_T(v) ((size_t) (v))
+#define SIZE_T(v) ((size_t) (v))
 
 enum {
     TOKEN = 1,
@@ -62,16 +60,16 @@ enum {
 //     DELEGATE_UNTIL_AFTER_TOKEN = 13,
 };
 
-# ifdef DEBUG
-#  define TRACK_ORIGIN \
+#ifdef DEBUG
+# define TRACK_ORIGIN \
     do { \
         rv->return_line = __LINE__; \
         rv->return_file = __FILE__; \
         rv->return_func = __func__; \
     } while (0);
-# else
-#  define TRACK_ORIGIN
-# endif
+#else
+# define TRACK_ORIGIN
+#endif
 
 #define DONE() \
     do { \
@@ -169,15 +167,15 @@ enum {
     } while (0);
 
 /*
-#   define YYCTYPE        char
-#   define YYPEEK()       *cursor
-#   define YYSKIP()       ++cursor
-#   define YYBACKUP()     marker = cursor
-#   define YYBACKUPCTX()  ctxmarker = cursor
-#   define YYRESTORE()    cursor = marker
-#   define YYRESTORECTX() cursor = ctxmarker
-#   define YYLESSTHAN(n)  limit - cursor < n
-#   define YYFILL(n)      {}
+#  define YYCTYPE        char
+#  define YYPEEK()       *cursor
+#  define YYSKIP()       ++cursor
+#  define YYBACKUP()     marker = cursor
+#  define YYBACKUPCTX()  ctxmarker = cursor
+#  define YYRESTORE()    cursor = marker
+#  define YYRESTORECTX() cursor = ctxmarker
+#  define YYLESSTHAN(n)  limit - cursor < n
+#  define YYFILL(n)      {}
 */
 
 enum {
@@ -186,6 +184,8 @@ enum {
     FUNCTION,
     NAMESPACE
 };
+
+#define S(s) s, STR_LEN(s)
 
 /**
  * Common data of any lexer for its internal state
@@ -236,7 +236,7 @@ struct LexerInput {
 //     int bol;
 };
 
-# define LEXER_UNWRAP(optval) \
+#define LEXER_UNWRAP(optval) \
     (NULL == OPT_LEXUWF(optval) ? (Lexer *) OPT_LEXPTR(optval) : (OPT_LEXUWF(optval)(OPT_LEXPTR(optval))))
 
 /**
@@ -247,6 +247,10 @@ typedef struct {
      * Option's name
      */
     const char *name;
+    /**
+     * Its length
+     */
+    size_t name_len;
     /**
      * Its type, one of OPT_TYPE_* constants
      */
@@ -266,8 +270,8 @@ typedef struct {
     const char *docstr;
 } LexerOption;
 
-# define END_OF_LEXER_OPTIONS \
-    { NULL, 0, 0, OPT_DEF_INT(0), NULL }
+#define END_OF_LEXER_OPTIONS \
+    { NULL, 0, 0, 0, OPT_DEF_INT(0), NULL }
 
 typedef struct LexerInput LexerInput;
 typedef struct LexerReturnValue LexerReturnValue;
@@ -360,20 +364,20 @@ struct LexerReturnValue {
     int token_default_type; // TOKEN
     YYCTYPE *child_limit; // DELEGATE_*
     int delegation_fallback; // DELEGATE_*
-# ifdef DEBUG
+#ifdef DEBUG
     int return_line;
     const char *return_file;
     const char *return_func;
-# endif
+#endif
 };
 
-# define YYSTRNCMP(x) \
+#define YYSTRNCMP(x) \
     strcmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)
 
-# define YYSTRNCASECMP(x) \
+#define YYSTRNCASECMP(x) \
     ascii_strcasecmp_l(x, STR_LEN(x), (char *) YYTEXT, YYLENG/*, STR_LEN(x)*/)
 
-# define NE(s) \
+#define NE(s) \
     { s, STR_LEN(s) }
 
 #define IS_NL(c) \
@@ -405,5 +409,3 @@ void append_lexer_implementation(void *, const LexerImplementation *);
 void prepend_lexer_implementation(void *, const LexerImplementation *);
 void unappend_lexer(void *, const LexerImplementation *);
 void unprepend_lexer(void *, const LexerImplementation *);
-
-#endif /* !LEXER_H */
