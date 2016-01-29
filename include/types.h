@@ -23,8 +23,6 @@ typedef enum {
     OPT_TYPE_STRING
 } OptionType;
 
-# define FL_OPT_EMBED (1<<1)
-
 typedef struct {
     union { // have to be the first member
         int intval;

@@ -749,7 +749,7 @@ SHALL_API int lexer_set_option(Lexer *lexer, const char *name, OptionType type, 
                     *oldval = NULL; // inform caller that wasn't a lexer
                 }
             }
-            opt_copy(lo->type, optvalptr, newval, lo->defval);
+            option_copy(lo->type, optvalptr, newval, lo->defval);
             return OPT_SUCCESS;
         }
     }
@@ -778,7 +778,7 @@ SHALL_API int lexer_set_option_as_string(Lexer *lexer, const char *name, const c
     LexerOption *lo;
 
     if (NULL != (lo = lexer_option_by_name(lexer->imp, name))) {
-        return parse_option_as_string(&lexer->optvals[lo->offset / sizeof(OptionValue)], lo->type, value, value_len, 0);
+        return option_parse_as_string(&lexer->optvals[lo->offset / sizeof(OptionValue)], lo->type, value, value_len, 0);
     }
 
     return OPT_ERR_INVALID_OPTION;

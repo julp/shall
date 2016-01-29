@@ -366,7 +366,7 @@ SHALL_API int formatter_set_option_as_string(Formatter *fmt, const char *name, c
             return OPT_ERR_INVALID_OPTION;
         }
 #endif
-        return parse_option_as_string(optvalptr, fo->type, value, value_len, 1);
+        return option_parse_as_string(optvalptr, fo->type, value, value_len, 1);
     }
 
     return OPT_ERR_INVALID_OPTION;
@@ -400,7 +400,7 @@ SHALL_API int formatter_set_option(Formatter *fmt, const char *name, OptionType 
         } else if (type != fo->type) {
             return OPT_ERR_TYPE_MISMATCH;
         } else {
-            opt_copy(fo->type, optvalptr, newval, fo->defval);
+            option_copy(fo->type, optvalptr, newval, fo->defval);
             return OPT_SUCCESS;
         }
     }

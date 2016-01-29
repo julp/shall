@@ -18,7 +18,7 @@
  * @param src the option value where to copy from
  * @param defval the default value
  */
-void opt_copy(OptionType type, OptionValue *dest, OptionValue src, OptionValue defval)
+void option_copy(OptionType type, OptionValue *dest, OptionValue src, OptionValue defval)
 {
     switch (type) {
         case OPT_TYPE_BOOL:
@@ -59,7 +59,7 @@ void opt_copy(OptionType type, OptionValue *dest, OptionValue src, OptionValue d
  *  + OPT_ERR_UNKNOWN_LEXER if option expect a lexer but value is not a valid lexer implementation name
  *  + OPT_ERR_INVALID_VALUE if the value is not acceptable
  */
-int parse_option_as_string(OptionValue *optvalptr, int type, const char *value, size_t value_len, int reject_lexer_type)
+int option_parse_as_string(OptionValue *optvalptr, int type, const char *value, size_t value_len, int reject_lexer_type)
 {
     switch (type) {
         case OPT_TYPE_BOOL:
