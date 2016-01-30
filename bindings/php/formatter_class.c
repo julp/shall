@@ -232,6 +232,7 @@ const FormatterImplementation phpfmt = {
     php_write_token,
     php_start_lexing,
     php_end_lexing,
+    NULL,
     sizeof(PHPFormatterData),
     NULL
 };

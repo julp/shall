@@ -13,9 +13,6 @@
 #include <shall/types.h>
 #undef S
 
-#define STRINGIFY(x) #x
-#define STRINGIFY_EXPANDED(x) STRINGIFY(x)
-
 #ifdef DEBUG
 # include <stdio.h>
 # define debug(format, ...) \
