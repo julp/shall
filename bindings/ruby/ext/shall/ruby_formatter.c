@@ -5,6 +5,8 @@ VALUE cBaseFormatter;
 static VALUE formatters;
 static VALUE mFormatter;
 
+static ID sStartLexing, sEndLexing, sStartDocument, sEndDocument, sStartToken, sEndToken, sWriteToken;
+
 /* ruby internal */
 
 static int free_optionvalue(st_data_t UNUSED(key), st_data_t value, st_data_t UNUSED(data))
@@ -50,8 +52,6 @@ typedef struct {
     VALUE self;
     st_table *options;
 } RubyFormatterData;
-
-static ID sStartLexing, sEndLexing, sStartDocument, sEndDocument, sStartToken, sEndToken, sWriteToken;
 
 #define RUBY_CALLBACK(/*ID*/ method, /*int*/ argc, ...) \
     do { \
@@ -143,6 +143,7 @@ static const FormatterImplementation rubyfmt = {
     ruby_write_token,
     ruby_start_lexing,
     ruby_end_lexing,
+    NULL,
     sizeof(RubyFormatterData),
     NULL
 };
@@ -257,7 +258,7 @@ static void create_formatter_class_cb(const FormatterImplementation *imp, void *
     rb_ary_push((VALUE) data, cXFormatter);
 }
 
-/* instance methods */
+/* ========== instance methods ========== */
 
 static VALUE rb_formatter_get_option(VALUE self, VALUE name)
 {

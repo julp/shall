@@ -4,7 +4,7 @@
 
 void ary_push_string_cb(const char *string, void *data)
 {
-    rb_ary_push((VALUE) data, rb_str_new_cstr(string));
+    rb_ary_push((VALUE) data, rb_usascii_str_new_cstr(string));
 }
 
 VALUE rb_get_option(int type, OptionValue *optvalptr)

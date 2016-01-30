@@ -1,11 +1,10 @@
 # coding: utf-8
-# lib = File.expand_path('../lib', __FILE__)
-# $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require File.expand_path('../lib/shall/version', __FILE__)
+
+version = File.read(File.expand_path('../../../CMakeLists.txt', __FILE__)).scan(/set\(SHALL_VERSION_[[:upper:]]+ (\d+)\)/).join('.')
 
 Gem::Specification.new do |s|
     s.name = 'shall'
-    s.version = Shall::VERSION
+    s.version = version
     s.homepage = 'https://github.com/julp/shall'
     s.summary = 'Ruby bindings for Shall, syntax highlighter'
     s.authors = ['julp']

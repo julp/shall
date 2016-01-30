@@ -6,7 +6,95 @@ static VALUE themes;
 static VALUE mTheme;
 static VALUE cBaseTheme;
 
+struct attr_desc {
+    ID id;
+    const char *name;
+};
+
+static union {
+    struct {
+        struct attr_desc fg;
+        struct attr_desc bg;
+        struct attr_desc bold;
+        struct attr_desc italic;
+        struct attr_desc underline;
+    };
+    struct attr_desc attrs[5];
+} defined_attributes = {
+    .fg = { .name = "fg" },
+    .bg = { .name = "bg" },
+    .bold = { .name = "bold" },
+    .italic = { .name = "italic" },
+    .underline = { .name = "underline" },
+};
+
 /* ruby internal */
+
+#if 0
+Possible approaches:
+* Shall::BaseTheme inherit from Hash and at instanciation from a builtin theme, we populate the inner Hash
+    + pro: easier to manage (gc/mark)?
+    + cons: more work and implies a callback in shall library to translate ruby objects/values to C
+    + unknown: how to manage sub Style objects?
+* we work on Theme *, so, for Ruby themes, we malloc a Theme and for builtin instanciation, we make a copy? (const Theme * => Theme * to be modifiable)
+    + pro: no modification to do in shall library
+    + cons: more greedy? (maybe not)
+    + cons: how to manage sub Style objects?
+* separate builtins themes from ruby ones
+    + cons: twice more work to do
+    + cons: implies a callback in shall library to translate ruby objects/values to C
+    + cons: have to translate builtins in ruby object
+#endif
+
+typedef struct {
+    Theme theme;
+} rb_theme_object;
+
+#ifdef WITH_TYPED_DATA
+const struct rb_data_type_struct theme_type;
+
+# define UNWRAP_THEME(/*VALUE*/ input, /**/ output) \
+    TypedData_Get_Struct(input, rb_theme_object, &theme_type, output)
+#else
+# define UNWRAP_THEME(/*VALUE*/ input, /**/ output) \
+    Data_Get_Struct(input, rb_theme_object, output)
+#endif /* WITH_TYPED_DATA */
+
+#ifdef WITH_TYPED_DATA
+static void rb_theme_free(void *ptr)
+{
+    rb_theme_object *o;
+
+    o = (rb_theme_object *) ptr;
+#else
+static void rb_theme_free(rb_theme_object *o)
+{
+#endif /* WITH_TYPED_DATA */
+    xfree(o);
+}
+
+#ifdef WITH_TYPED_DATA
+static void rb_theme_mark(void *ptr)
+{
+    rb_theme_object *o;
+
+    o = (rb_theme_object *) ptr;
+#else
+static void rb_theme_mark(rb_theme_object *o)
+{
+#endif /* WITH_TYPED_DATA */
+    // NOP for now
+}
+
+#ifdef WITH_TYPED_DATA
+const struct rb_data_type_struct theme_type = {
+    "shall theme",
+    { rb_theme_mark, rb_theme_free, 0/*, { 0, 0 }*/ },
+    NULL,
+    NULL,
+    0 | RUBY_TYPED_FREE_IMMEDIATELY
+};
+#endif /* WITH_TYPED_DATA */
 
 /* :nodoc: */
 static void create_theme_class_cb(const Theme *theme, void *data)
@@ -17,9 +105,114 @@ static void create_theme_class_cb(const Theme *theme, void *data)
     rb_ary_push((VALUE) data, cXTheme);
 }
 
-/* class methods */
+static VALUE wrap_builtin_theme(VALUE klass, const Theme *theme)
+{
+    VALUE o;
+    rb_theme_object *t;
 
-/* instance methods */
+#ifdef WITH_TYPED_DATA
+    o = TypedData_Make_Struct(klass, rb_theme_object, &theme_type, t);
+#else
+    o = Data_Make_Struct(klass, rb_theme_object, rb_theme_mark, rb_theme_free, t);
+#endif /* WITH_TYPED_DATA */
+    if (NULL == theme) {
+        bzero(&t->theme, sizeof(t->theme));
+    } else {
+        memcpy(&t->theme, theme, sizeof(t->theme));
+    }
+
+    return o;
+}
+
+static VALUE rb_theme_alloc(VALUE klass)
+{
+    VALUE o;
+
+    o = Qnil;
+    if (Qtrue == rb_ary_includes(themes, klass)) {
+        const Theme *theme;
+
+        if (NULL != (theme = theme_by_name(rb_class2name(klass) + STR_LEN("Shall::Theme::")))) {
+            o = wrap_builtin_theme(klass, theme);
+        }
+    }
+    if (NIL_P(o)) {
+        o = wrap_builtin_theme(klass, NULL);
+    }
+
+    return o;
+}
+
+/* ========== instance methods ========== */
+
+// name + export_as_css + ...
+
+/*
+ * call-seq:
+ *   TODO
+ */
+static VALUE rb_theme_export_export_as_css(int argc, VALUE *argv, VALUE self)
+{
+    VALUE ret;
+    char *css;
+    VALUE scope;
+    rb_theme_object *t;
+
+    rb_scan_args(argc, argv, "01", &scope);
+    if (!NIL_P(scope)) {
+        Check_Type(scope, T_STRING);
+    }
+    UNWRAP_THEME(self, t);
+    css = theme_export_as_css(&t->theme, Qnil == scope ? NULL : StringValueCStr(scope), true);
+
+    ret = rb_usascii_str_new_cstr(css);
+    free(css);
+
+    return ret;
+}
+
+/*
+ * call-seq:
+ *   TODO
+ */
+static VALUE rb_theme_get_style(VALUE self, VALUE type)
+{
+    // TODO: should be a class method (same as rb_theme_set_style to set it)
+    // TODO: return a Shall::Style object
+    return Qnil;
+}
+
+/* ========== class methods ========== */
+
+/*
+ * call-seq:
+ *   Shall::MyTheme.style(Shall::Token, ..., attributes) -> nil
+ *
+ * Define style of given token type(s).
+ *
+ *   Shall::MyTheme.style(
+ *     Shall::Token::Comment, Shall::Token::Comment::Multiline,
+ *     fg: '#cccccc', underline: true
+ *   ) # => nil
+ */
+static VALUE rb_theme_set_style(int argc, VALUE *argv, VALUE klass)
+{
+    size_t i;
+    VALUE types, attributes;
+    ID keywords[ARRAY_SIZE(defined_attributes.attrs)];
+    VALUE values[ARRAY_SIZE(defined_attributes.attrs)];
+
+//     types = attributes = Qnil; // according to extension.rdoc, rb_scan_args take care of this for unused arguments
+    rb_scan_args(argc, argv, "1*:", &types, &attributes);
+    for (i = 0; i < ARRAY_SIZE(defined_attributes.attrs); i++) {
+        values[i] = Qnil;
+        keywords[i] = defined_attributes.attrs[i].id;
+    }
+    rb_get_kwargs(attributes, keywords, 0, ARRAY_SIZE(defined_attributes.attrs), values);
+    // TODO: iterates on types and values
+
+    return Qnil;
+}
 
 /* ========== Shall module functions ========== */
 
@@ -27,7 +220,7 @@ static void create_theme_class_cb(const Theme *theme, void *data)
  * call-seq:
  *   Shall::theme_by_name(string) -> (nil|Shall::Theme)
  *
- * Attempts to find out a theme from its name.
+ * Attempts to find out a (builtin) theme from its name.
  * Returns +nil+ if there is no match else the theme
  * respoding to the given name.
  *
@@ -40,9 +233,12 @@ static VALUE rb_theme_by_name(VALUE module, VALUE name)
     const Theme *theme;
 
     self = Qnil;
+    if (T_SYMBOL == TYPE(name)) {
+        name = rb_sym2str(name);
+    }
     Check_Type(name, T_STRING);
     if (NULL != (theme = theme_by_name(StringValueCStr(name)))) {
-//         self = XXX;
+        self = wrap_builtin_theme(rb_const_get_at(mTheme, rb_intern(theme_name(theme))), theme);
     }
     /*if (Qnil == self) {
         rb_raise(rb_eNameError, "%s is not a known theme", name);
@@ -55,13 +251,24 @@ static VALUE rb_theme_by_name(VALUE module, VALUE name)
 
 void rb_shall_init_theme(void)
 {
+    size_t i;
+
+    for (i = 0; i < ARRAY_SIZE(defined_attributes.attrs); i++) {
+        defined_attributes.attrs[i].id = rb_intern(defined_attributes.attrs[i].name);
+    }
+
     mTheme = rb_define_module_under(mShall, "Theme");
 
     // Shall module functions
     rb_define_module_function(mShall, "theme_by_name", rb_theme_by_name, 1);
 
     // Shall::Theme::Base, theme superclass
-    cBaseTheme = rb_define_class_under(mTheme, "Base", rb_cObject);
+    cBaseTheme = rb_define_class_under(mTheme, "Base", rb_cObject); // inherit Hash?
+    rb_define_alloc_func(cBaseTheme, rb_theme_alloc);
+//     rb_define_method(cBaseTheme, "name", rb_theme_name, 0); // class or instance?
+    rb_define_method(cBaseTheme, "export_as_css", rb_theme_export_export_as_css, -1); // class or instance?
+
+    rb_define_singleton_method(cBaseTheme, "style", rb_theme_set_style, -1);
 
     // expose available themes as frozen Shall::THEMES constant
     themes = rb_ary_new();

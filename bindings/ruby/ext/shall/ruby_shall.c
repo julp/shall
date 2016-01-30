@@ -32,7 +32,7 @@ static VALUE rb_shall_highlight(VALUE module, VALUE string, VALUE lexer, VALUE f
     UNWRAP_FORMATTER(formatter, f);
     highlight_string(l->lexer, f->formatter, StringValueCStr(string), RSTRING_LEN(string), &dest, &dest_len);
 
-    return rb_str_new(dest, dest_len);
+    return rb_utf8_str_new(dest, dest_len);
 }
 
 /* ========== Initialisation ========== */
@@ -52,6 +52,16 @@ void Init_shall(void)
 
     // Shall module functions
     rb_define_module_function(mShall, "highlight", rb_shall_highlight, 3);
+
+    {
+#include <shall/version.h>
+        Version v;
+        char tmp[VERSION_STRING_MAX_LENGTH];
+
+        version_get(v);
+        version_to_string(v, tmp, STR_SIZE(tmp));
+        rb_define_const(mShall, "VERSION", rb_usascii_str_new_cstr(tmp));
+    }
 
     rb_shall_init_lexer();
     rb_shall_init_formatter();

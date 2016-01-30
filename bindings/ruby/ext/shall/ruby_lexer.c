@@ -116,7 +116,7 @@ static void create_lexer_class_cb(const LexerImplementation *imp, void *data)
     rb_ary_push((VALUE) data, cXLexer);
 
 #ifndef WITHOUT_LEXER_CONST
-    rb_define_const(cXLexer, "NAME", rb_str_new_cstr(imp_name));
+    rb_define_const(cXLexer, "NAME", rb_usascii_str_new_cstr(imp_name));
     ary = rb_ary_new();
     lexer_implementation_each_alias(imp, ary_push_string_cb, (void *) ary);
     rb_define_const(cXLexer, "ALIASES", ary);
@@ -126,7 +126,7 @@ static void create_lexer_class_cb(const LexerImplementation *imp, void *data)
 #endif
 }
 
-/* class methods */
+/* ========== class methods ========== */
 
 /*
  * call-seq:
@@ -142,7 +142,7 @@ static VALUE rb_lexer_name(VALUE klass)
 
     imp = klass_to_lexer_implementation(klass);
 
-    return rb_str_new_cstr(lexer_implementation_name(imp));
+    return rb_usascii_str_new_cstr(lexer_implementation_name(imp));
 }
 
 /*
