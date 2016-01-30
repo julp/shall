@@ -21,6 +21,17 @@ typedef struct {
     };
 } Style;
 
+enum {
+    FG_BIT,
+    BG_BIT,
+    ITALIC_BIT,
+    BOLD_BIT,
+    UNDERLINE_BIT
+};
+
+#define ATTR_MASK(bit) \
+    (1<<bit)
+
 #define FG(color) \
     .fg = color, .fg_set = true
 

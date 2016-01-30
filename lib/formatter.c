@@ -10,12 +10,14 @@
 // #ifndef DOXYGEN
 extern const FormatterImplementation _bbcodefmt;
 extern const FormatterImplementation _htmlfmt;
+extern const FormatterImplementation _rtffmt;
 extern const FormatterImplementation _termfmt;
 // #endif /* !DOXYGEN */
 
 static const FormatterImplementation *available_formatters[] = {
     &_bbcodefmt,
     &_htmlfmt,
+    &_rtffmt,
     &_termfmt,
     NULL
 };
@@ -23,7 +25,7 @@ static const FormatterImplementation *available_formatters[] = {
 /**
  * Exposes the number of available builtin formatters
  *
- * @note for external use only
+ * @note for external use only (preallocation for example)
  */
 SHALL_API const size_t SHALL_FORMATTER_COUNT = ARRAY_SIZE(available_formatters) - 1;
 

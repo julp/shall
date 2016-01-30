@@ -54,7 +54,7 @@ static const LexerImplementation *available_lexers[] = {
 /**
  * Exposes the number of available builtin lexers
  *
- * @note for external use only
+ * @note for external use only (preallocation for example)
  */
 SHALL_API const size_t SHALL_LEXER_COUNT = ARRAY_SIZE(available_lexers) - 1;
 

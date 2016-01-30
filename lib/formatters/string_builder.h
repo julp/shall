@@ -15,6 +15,9 @@
 #define STRING_BUILDER_APPEND(sb, string) \
     (sb).w = stpcpy((sb).w, string)
 
+#define STRING_BUILDER_APPEND_1(sb, c) \
+    *(sb).w++ = c, *(sb).w = '\0'
+
 #define STRING_BUILDER_APPEND_FORMATTED(sb, fmt, ...) \
     (sb).w += sprintf((sb).w, fmt, ## __VA_ARGS__)
 

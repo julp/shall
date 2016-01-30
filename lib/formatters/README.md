@@ -26,6 +26,14 @@ Format tokens as HTML <span> tags within a <pre> tag
 | cssclass | string | "" | if valued to `foo`, ` class="foo"` is added to `<pre>` tag |
 | linestart | int | 1 | the line number for the first line |
 
+## RTF
+
+Format tokens for forums using bbcode syntax to format post
+
+| Option | Type | Default value | Description |
+| ------ | ---- | ------------- | ----------- |
+| theme | (null) | null/none | the theme to use |
+
 ## Terminal
 
 Format tokens with ANSI color sequences, for output in a text console

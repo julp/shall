@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "themes.h"
 #include "xtring.h"
+#include "hashtable.h"
 
 extern SHALL_API const Theme monokai;
 extern SHALL_API const Theme molokai;
@@ -87,21 +88,16 @@ SHALL_API const Theme *theme_by_name(const char *name)
         } \
     } while (0);
 
-#include "hashtable.h"
-
-struct hashed_style {
-    union {
-        Style style;
-        ht_hash_t h;
-    };
-};
-
 static ht_hash_t hash_style(const Style *style)
 {
-    struct hashed_style h;
+    struct hashed_style {
+        union {
+            Style style;
+            ht_hash_t h;
+        };
+    } h;
 
     memcpy(&h.style, style, sizeof(*style));
-
 
     return h.h;
 }
