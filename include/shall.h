@@ -79,4 +79,4 @@ SHALL_API int formatter_get_option(Formatter *, const char *, OptionValue **);
 SHALL_API int formatter_set_option(Formatter *, const char *, OptionType, OptionValue);
 SHALL_API int formatter_set_option_as_string(Formatter *, const char *, const char *, size_t);
 
-SHALL_API int highlight_string(Lexer *, Formatter *, const char *, size_t, char **, size_t *);
+SHALL_API int highlight_string(const char *, size_t, char **, size_t *, Formatter *, size_t, Lexer **);

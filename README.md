@@ -46,6 +46,7 @@ shall include a command line tool with the same name to highlight directely docu
 | -O \<name>=\<value> | set formatter option *name* to *value* |
 | -t \<name> | dump CSS to use *name* theme with the html formatter |
 | -v | prints processed filename before highlighting it (usefull when you highlight few files at once - glob) |
+| -c | chain the following lexer (-l) with the previous one (eg: -l erb -cl php -cl xml to highlight a code mixing ERB, PHP and XML) |
 
 Examples:
 
@@ -54,12 +55,13 @@ Examples:
 
 # Credits
 
-* Largely inspired on pygments
+* Largely inspired on pygments (themes, terminal formatter: conversion 24-bit color => 256)
 * PHP lexer: PHP developpers
 * PostgreSQL lexer: PostgreSQL developpers
 
-# Current limitations
+# Current limitations/Known issues
 
+* re2c: -b option generates broken lexers?
 * input/output strings have to be UTF-8 encoded
-* for the terminal formatter and/or shall binary, current locale have to be in UTF-8 as well
-* -b option of re2c generates broken lexers?
+* formatters: there are leaking (for now) if a same formatter is used to highlight more than one source
+* themes: style hashing (recognize that 2 styles are the same) requires a 64-bit system (results may be wrong on 32-bit system)

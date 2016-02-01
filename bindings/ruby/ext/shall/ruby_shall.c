@@ -30,7 +30,7 @@ static VALUE rb_shall_highlight(VALUE module, VALUE string, VALUE lexer, VALUE f
     }
     UNWRAP_LEXER(lexer, l);
     UNWRAP_FORMATTER(formatter, f);
-    highlight_string(l->lexer, f->formatter, StringValueCStr(string), RSTRING_LEN(string), &dest, &dest_len);
+    highlight_string(StringValueCStr(string), RSTRING_LEN(string), &dest, &dest_len, f->formatter, 1, &l->lexer);
 
     return rb_utf8_str_new(dest, dest_len);
 }

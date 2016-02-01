@@ -15,6 +15,28 @@ void options_init(Options *opt)
 }
 
 /**
+ * TODO:
+ *
+ * caller have to free(option->name)
+ */
+void option_parse(const char *optarg, Option *option)
+{
+    char *p;
+
+    option->name = strdup(optarg);
+    if (NULL == (p = strchr(option->name, '='))) {
+        option->value = "";
+        option->value_len = 0;
+        option->name_len = strlen(optarg);
+    } else {
+        *p = '\0';
+        option->value = p + 1;
+        option->value_len = strlen(option->value);
+        option->name_len = p - option->name - 1;
+    }
+}
+
+/**
  * Parse a raw value in the form "key=value" or "key" (empty string
  * will be assigned as value in the later case)
  *
@@ -25,23 +47,11 @@ void options_init(Options *opt)
  */
 void options_add(Options *opt, const char *optarg/*, const char **name, const char **value*/)
 {
-    char *p;
-
     if (opt->options_len >= opt->options_size) {
         opt->options_size = 0 == opt->options_size ? 8 : opt->options_size << 1;
         opt->options = realloc(opt->options, opt->options_size * sizeof(*opt->options));
     }
-    opt->options[opt->options_len].name = strdup(optarg);
-    if (NULL == (p = strchr(opt->options[opt->options_len].name, '='))) {
-        opt->options[opt->options_len].value = "";
-        opt->options[opt->options_len].name_len = strlen(optarg);
-        opt->options[opt->options_len].value_len = 0;
-    } else {
-        *p = '\0';
-        opt->options[opt->options_len].value = p + 1;
-        opt->options[opt->options_len].value_len = strlen(opt->options[opt->options_len].value);
-        opt->options[opt->options_len].name_len = p - opt->options[opt->options_len].name - 1;
-    }
+    option_parse(optarg, &opt->options[opt->options_len]);
 #if 0
     if (NULL != name) {
         *name = opt->options[opt->options_len].name;

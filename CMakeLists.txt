@@ -142,8 +142,8 @@ configure_file(
 add_library(common OBJECT EXCLUDE_FROM_ALL shared/utils.c)
 set_target_properties(common PROPERTIES COMPILE_FLAGS "-fPIC")
 
-add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/shared/optparse.c)
-set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC")
+add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/shared/optparse.c cli/shared/lexer_group.c)
+set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC" INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")
 
 add_library(shall_lib SHARED ${SOURCES} $<TARGET_OBJECTS:common>)
 if(WITH_ICU OR WITH_ICONV)

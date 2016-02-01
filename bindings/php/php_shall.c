@@ -80,7 +80,7 @@ PHP_FUNCTION(Shall_highlight)
     SHALL_FETCH_LEXER(l, lexer, true);
     SHALL_FETCH_FORMATTER(f, formatter, true);
 debug("HL WITH IMP = %s/%p/%p/%p", lexer_implementation_name(lexer_implementation(l->lexer)), l->lexer, lexer, Z_OBJ_P(lexer));
-    highlight_string(l->lexer, f->formatter, source, source_len, &dest, &dest_len);
+    highlight_string(source, source_len, &dest, &dest_len, f->formatter, 1, &l->lexer);
 
     RETURN_STRINGL_COPY(dest, dest_len);
 }

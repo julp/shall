@@ -818,7 +818,7 @@ static PyObject *shall_highlight(PyObject *self, PyObject *args)
 
 // print issubclass(shall.PHP, shall.Base)
 // printf("PyObject_IsInstance = %d\n", PyObject_IsInstance(lexer, (PyObject *) &ShallLexerBaseType));
-        highlight_string(((ShallLexerObject *) lexer)->lexer, ((ShallFormatterObject *) fmt)->fmt, string, string_len, &dest, &dest_len);
+        highlight_string(string, string_len, &dest, &dest_len, ((ShallFormatterObject *) fmt)->fmt, 1, &((ShallLexerObject *) lexer)->lexer);
         ret = PyUnicode_FromStringAndSize(dest, dest_len);
     }
     Py_INCREF(ret);

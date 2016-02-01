@@ -447,17 +447,16 @@ static const named_element_t eol[] = {
 /**
  * Highlight string according to given lexer and formatter
  *
- * @param lexer the lexer to tokenize the input string
- * @param fmt the formatter to generate output from tokens
  * @param src the input string
  * @param src_len its length
  * @param dst the output string
  * @param dst_len its length if not null
+ * @param fmt the formatter to generate output from tokens
+ * @param lexer the lexer to tokenize the input string
  *
  * @return zero if successfull
  */
-// better to have: int highlight_string(size_t lexerc, Lexer *lexerv, /* a list - as array - of additionnal and already initialized lexer? */ Formatter *fmt, const char *src, size_t src_len, char **dst, size_t *dst_len)
-SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, size_t src_len, char **dst, size_t *dst_len/*, uint32_t flags*/)
+SHALL_API int highlight_string(const char *src, size_t src_len, char **dst, size_t *dst_len, Formatter *fmt, size_t lexerc, Lexer **lexerv/*, uint32_t flags*/)
 {
     String *buffer;
     LexerData *ldata;
@@ -471,10 +470,13 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
     size_t buffer_len, yycursor_unchanged;
     const char * const src_end = src + src_len;
 
+    assert(lexerc > 0); // nothing to do, returns ""?
+    assert(NULL != lexerv);
+
     yy = &xx;
     ldata = NULL;
     delegation_init(&ds);
-    current_lexer = lexer;
+    current_lexer = lexerv[0];
     yycursor_unchanged = 0;
 //     rv = (LexerReturnValue){0};
     dlist_init(&ctxt.lexer_stack, NULL);
@@ -515,6 +517,14 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
     append_lexer(&ctxt, current_lexer);
     ldata = ((LexerListElement *) ctxt.lexer_stack.head->data)->data;
     ctxt.current_lexer_offset = ctxt.lexer_stack.head;
+    {
+        size_t l;
+
+        for (l = 1; l < lexerc; l++) {
+            // TODO: don't append a same lexer twice?
+            append_lexer(&ctxt, lexerv[l]);
+        }
+    }
     while (1) {
 // debug("YYLEX %s %p %p", current_lexer->imp->name, current_lexer, ldata);
         YYTEXT = YYCURSOR;

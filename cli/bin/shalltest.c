@@ -18,6 +18,7 @@
 #include "shall.h"
 #include "utils.h"
 #include "xtring.h"
+#include "lexer_group.h"
 
 #ifndef EUSAGE
 # define EUSAGE -2
@@ -139,21 +140,23 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
     FILE *fp;
     Lexer *lexer;
     char *result;
+    LexerGroup *g;
     Formatter *fmt;
+    bool guess_limp;
     int oldpart, part;
     size_t result_len;
     Options options[COUNT];
     int ret, status, fd[FD_COUNT] = { -1, -1 };
-    int guess_limp;
     const LexerImplementation *limp;
     const FormatterImplementation *fimp;
 //     char ppath[FD_COUNT][PATH_MAX]; // TODO: build a unique path to run several shalltest in parallel ("/tmp/shall.<source/expect>.$$")?
     const char *ppath[FD_COUNT] = { "/tmp/shallexpect", "/tmp/shallsource" };
 
     ret = 0;
+    g = NULL;
     limp = NULL;
     result = NULL;
-    guess_limp = 0;
+    guess_limp = false;
     fimp = plainfmt;
     oldpart = part = PART_NONE;
     ctxt_flush(ctxt);
@@ -203,19 +206,52 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
         }
         if (part == oldpart) {
             if (PART_LEXER == part || PART_FORMATTER == part) {
-                int has_equal;
+                bool has_equal;
 
                 string_chomp(ctxt->line);
                 has_equal = NULL != memchr(ctxt->line->ptr, '=', ctxt->line->len);
                 if (PART_LEXER == part) {
+                    /**
+                     * TODO: options before any lexer are common/shared?
+                     *
+                     * NOTE: options applies to the immediate lastly declared lexer
+                     * Eg:
+                     *   option1=value1 # unused (doesn't follow a lexer)
+                     *   guess
+                     *   option2=value2 # ok, applies to the guessed lexer
+                     *   html
+                     *   option3=value3 # ok, applies to the stacked html lexer
+                     */
                     if (!has_equal) {
                         if (0 == strcmp_l(ctxt->line->ptr, ctxt->line->len, "guess", STR_LEN("guess"))) {
-                            guess_limp = 1;
+                            guess_limp = true;
+                            group_append(&g, NULL); // reservation for the top lexer
                         } else {
-                            limp = lexer_implementation_by_name(ctxt->line->ptr);
+                            if (NULL == (limp = lexer_implementation_by_name(ctxt->line->ptr))) {
+                                STERR("there is no lexer named %s", ctxt->line->ptr);
+                                // TODO: cleanup?
+                                return 0;
+                            } else {
+                                group_append(&g, lexer = lexer_create(limp));
+                            }
                         }
                     } else {
-                        options_add(&options[LEXER], ctxt->line->ptr);
+                        if (guess_limp && NULL == g->lexers[0]) {
+                            // we don't known yet the top lexer, so memorize its options
+                            options_add(&options[LEXER], ctxt->line->ptr);
+                        } else {
+                            if (NULL == lexer) {
+                                // NOP? (no active lexer)
+                            } else {
+                                Option opt;
+
+                                option_parse(ctxt->line->ptr, &opt);
+                                if (0 != lexer_set_option_as_string(lexer, opt.name, opt.value, opt.value_len)) {
+                                    STWARN("option '%s' rejected by %s lexer", opt.name, lexer_implementation_name(lexer_implementation(lexer)));
+                                }
+                                free((void *) opt.name);
+                            }
+                        }
                     }
                 } else if (PART_FORMATTER == part) {
                     if (!has_equal) {
@@ -236,17 +272,22 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
         STWARN("no description set for %s", filename);
     }
     if (guess_limp) {
-        limp = lexer_implementation_guess(ctxt->source->ptr, ctxt->source->len);
-    }
-    if (NULL == limp) {
-        STERR("no lexer set for %s", filename);
-        // TODO: cleanup?
-        return 0;
-    }
-    lexer = lexer_create(limp);
-    for (i = 0; i < options[LEXER].options_len; i++) {
-        if (0 != lexer_set_option_as_string(lexer, options[LEXER].options[i].name, options[LEXER].options[i].value, options[LEXER].options[i].value_len)) {
-            STWARN("option '%s' rejected by %s lexer", options[LEXER].options[i].name, lexer_implementation_name(lexer_implementation(lexer)));
+        if (NULL == (limp = lexer_implementation_guess(ctxt->source->ptr, ctxt->source->len))) {
+            STERR("not able to guess a lexer for %s", filename);
+            // TODO: cleanup?
+            return 0;
+        }
+        g->lexers[0] = lexer = lexer_create(limp);
+        for (i = 0; i < options[LEXER].options_len; i++) {
+            if (0 != lexer_set_option_as_string(lexer, options[LEXER].options[i].name, options[LEXER].options[i].value, options[LEXER].options[i].value_len)) {
+                STWARN("option '%s' rejected by %s lexer", options[LEXER].options[i].name, lexer_implementation_name(lexer_implementation(lexer)));
+            }
+        }
+    } else {
+        if (NULL == g) {
+            STERR("no lexer defined for %s", filename);
+            // TODO: cleanup?
+            return 0;
         }
     }
     fmt = formatter_create(fimp);
@@ -255,13 +296,13 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
             STWARN("option '%s' rejected by %s formatter", options[FORMATTER].options[i].name, formatter_implementation_name(formatter_implementation(fmt)));
         }
     }
-    highlight_string(lexer, fmt, ctxt->source->ptr, ctxt->source->len, &result, &result_len);
+    highlight_string(ctxt->source->ptr, ctxt->source->len, &result, &result_len, fmt, 1, &lexer);
     if (verbosity) {
         printf("=== <source> ===\n%s\n=== </source> ===\n", ctxt->source->ptr);
         printf("=== <get> ===\n%s\n=== </get> ===\n", result);
         printf("=== <expect> ===\n%s\n=== </expect> ===\n", ctxt->expect->ptr);
     }
-    lexer_destroy(lexer, (on_lexer_destroy_cb_t) lexer_destroy);
+    group_destroy(g);
     formatter_destroy(fmt);
     for (i = 0; i < COUNT; i++) {
         options_free(&options[i]);

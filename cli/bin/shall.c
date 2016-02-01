@@ -13,6 +13,7 @@
 #include "vernum.h"
 #include "version.h"
 #include "encoding.h"
+#include "lexer_group.h"
 
 #if defined(__FreeBSD__) && __FreeBSD__ >= 9
 # include <unistd.h>
@@ -27,8 +28,18 @@
             perror("cap_rights_limit"); \
         } \
     } while (0);
+
+# define CAP_ENTER() \
+    do { \
+        if (0 != cap_enter() && ENOSYS != errno) { \
+            perror("cap_enter"); \
+        } \
+    } while (0);
 #else
 # define CAP_RIGHTS_LIMIT(fd, ...) \
+    /* NOP */
+
+# define CAP_ENTER() \
     /* NOP */
 #endif /* FreeBSD >= 9.0 */
 
@@ -46,9 +57,10 @@ static bool vFlag;
 static HashTable lexers;
 static const char *outputenc;
 static Options options[COUNT];
-static char optstr[] = "f:l:o:t:vLO:";
+static char optstr[] = "cf:l:o:t:vLO:";
 
 static struct option long_options[] = {
+    { "chain",            no_argument,       NULL, 'c' },
     { "list",             required_argument, NULL, 'L' },
     { "lexer",            required_argument, NULL, 'l' },
     { "formatter",        required_argument, NULL, 'f' },
@@ -76,6 +88,7 @@ static void procfile(const char *filename, FILE *fp, Formatter *fmt)
     size_t o;
     char *result;
     Lexer *lexer;
+    LexerGroup *g;
     String *buffer;
     size_t result_len;
     const char *inputenc;
@@ -127,9 +140,11 @@ static void procfile(const char *filename, FILE *fp, Formatter *fmt)
     if (NULL == (limp = lexer_implementation_for_filename(filename))) {
         if (NULL == (limp = lexer_implementation_guess(buffer->ptr, buffer->len))) {
             // if at least one -l was used, use first one
-            if (NULL == (lexer = hashtable_first(&lexers))) {
+            if (NULL == (g = hashtable_first(&lexers))) {
                 // else use text (acts as cat)
                 limp = lexer_implementation_by_name("text");
+            } else {
+                lexer = g->lexers[0];
             }
         }
     }
@@ -138,24 +153,24 @@ static void procfile(const char *filename, FILE *fp, Formatter *fmt)
         // (we are using the first registered one)
         limp = lexer_implementation(lexer);
     } else {
-        if (!hashtable_direct_get(&lexers, limp, &lexer)) {
-            lexer = lexer_create(limp);
+        if (!hashtable_direct_get(&lexers, limp, &g)) {
+            g = group_new(lexer = lexer_create(limp));
             for (o = 0; o < options[LEXER].options_len; o++) {
                 if (0 != lexer_set_option_as_string(lexer, options[LEXER].options[o].name, options[LEXER].options[o].value, options[LEXER].options[o].value_len)) {
                     fprintf(stderr, "option '%s' rejected by %s lexer\n", options[LEXER].options[o].name, lexer_implementation_name(lexer_implementation(lexer)));
                 }
             }
-            hashtable_direct_put(&lexers, 0, limp, lexer, NULL);
+            hashtable_direct_put(&lexers, 0, limp, g, NULL);
 #ifdef DEBUG
         } else {
-            debug("[CACHE] Hit for %s", lexer_implementation_name(lexer_implementation(lexer)));
+            debug("[CACHE] Hit for %s", lexer_implementation_name(lexer_implementation(g->lexers[0])));
 #endif /* DEBUG */
         }
     }
     if (vFlag) {
         fprintf(stdout, "%s:\n", filename);
     }
-    highlight_string(lexer, fmt, buffer->ptr, buffer->len, &result, &result_len);
+    highlight_string(buffer->ptr, buffer->len, &result, &result_len, fmt, g->count, g->lexers);
     if (0 != strcmp("UTF-8", outputenc)) {
         bool ok;
         char *nonutf8;
@@ -262,6 +277,7 @@ static void print_theme_cb(const Theme *theme, void *UNUSED(data))
     printf("- %s\n", name);
 }
 
+/*
 static void destroy_lexer_cb(void *ptr)
 {
     Lexer *lexer;
@@ -269,6 +285,7 @@ static void destroy_lexer_cb(void *ptr)
     lexer = (Lexer *) ptr;
     lexer_destroy(lexer, (on_lexer_destroy_cb_t) lexer_destroy);
 }
+*/
 
 static void on_exit_cb(void)
 {
@@ -284,6 +301,8 @@ int main(int argc, char **argv)
 {
     int o;
     size_t i;
+    bool cFlag;
+    LexerGroup *g;
     Formatter *fmt;
     const FormatterImplementation *fimp;
 
@@ -295,14 +314,15 @@ int main(int argc, char **argv)
             return EXIT_FAILURE;
         }
     }
+    g = NULL;
     fmt = NULL;
-    vFlag = false;
     fimp = termfmt;
+    cFlag = vFlag = false;
     for (o = 0; o < COUNT; o++) {
         options_init(&options[o]);
     }
     outputenc = encoding_stdout_get();
-    hashtable_ascii_cs_init(&lexers, NULL, NULL, destroy_lexer_cb);
+    hashtable_ascii_cs_init(&lexers, NULL, NULL, group_destroy);
     atexit(on_exit_cb);
     while (-1 != (o = getopt_long(argc, argv, optstr, long_options, NULL))) {
         switch (o) {
@@ -314,33 +334,7 @@ int main(int argc, char **argv)
                     puts("Available lexers are:");
                     lexer_implementation_each(print_lexer_cb, NULL);
                     puts("\nAvailable formatters are:");
-#if 0
-                    {
-#include "formatter.h"
-                        Iterator it;
-
-                        formatter_implementations_to_iterator(&it);
-                        for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
-                            Iterator subit;
-                            const FormatterImplementation *imp;
-
-                            imp = (const FormatterImplementation *) iterator_current(&it);
-                            printf("- %s\n", formatter_implementation_name(imp));
-                            if (formatter_implementation_options_to_iterator(&subit, imp)) {
-                                for (iterator_first(&subit); iterator_is_valid(&subit); iterator_next(&subit)) {
-                                    const FormatterOption *option;
-
-                                    option = (const FormatterOption *) iterator_current(&subit);
-                                    print_option_cb(option->type, option->name, option->defval, option->docstr, NULL);
-                                }
-                                iterator_close(&subit);
-                            }
-                        }
-                        iterator_close(&it);
-                    }
-#else
                     formatter_implementation_each(print_formatter_cb, NULL);
-#endif
                     puts("\nAvailable themes are:");
                     theme_each(print_theme_cb, NULL);
                     return EXIT_SUCCESS;
@@ -376,9 +370,16 @@ int main(int argc, char **argv)
                 } else {
                     Lexer *lexer;
 
-                    if (!hashtable_direct_get(&lexers, limp, &lexer)) {
-                        lexer = lexer_create(limp);
-                        hashtable_direct_put(&lexers, 0, limp, lexer, NULL);
+                    // TODO: forbids secondary option with chaining?
+                    if (cFlag) {
+                        group_append(&g, lexer = lexer_create(limp));
+                    } else {
+                        if (!hashtable_direct_get(&lexers, limp, &g)) {
+                            g = group_new(lexer = lexer_create(limp));
+                            hashtable_direct_put(&lexers, 0, limp, g, NULL);
+                        } else {
+                            lexer = g->lexers[0];
+                        }
                     }
                     // apply options (-o) which appears before this lexer (-l)
                     for (i = 0; i < options[LEXER].options_len; i++) {
@@ -389,6 +390,7 @@ int main(int argc, char **argv)
                     // then clear these options for the next one (if any other lexer)
                     options_clear(&options[LEXER]);
                 }
+                cFlag = false;
                 break;
             }
             case 'f':
@@ -417,6 +419,23 @@ int main(int argc, char **argv)
                 break;
             case 'v':
                 vFlag = true;
+                break;
+            /**
+             * Chain/stack lexers directly, this feature replaces the -o secondary=<name>
+             * The user can preset its own stack.
+             *
+             * TODO: this really works if the top/first lexer matches with the filename.
+             * Eg: -l php -cl erb -cl html implies an .php extension (not .erb) and vice
+             * versa (-l erb -cl php -cl html with .erb, not .php)
+             *
+             * This "behavior" is the result of the current implementation of procfile
+             * where we try first to find a lexer based on the filename (with a call to
+             * lexer_implementation_for_filename)
+             *
+             * A workaround is to pipe the output of cat (cat file | shall).
+             */
+            case 'c':
+                cFlag = true;
                 break;
             default:
                 usage();
@@ -461,11 +480,7 @@ int main(int argc, char **argv)
                 }
             }
         }
-#if defined(__FreeBSD__) && __FreeBSD__ >= 9
-        if (0 != cap_enter() && ENOSYS != errno) {
-            perror("cap_enter");
-        }
-#endif /* FreeBSD >= 9.0 */
+        CAP_ENTER();
         if (0 == argc) {
             procfile("-", fp[0], fmt);
         } else {
