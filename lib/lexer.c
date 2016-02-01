@@ -626,7 +626,6 @@ SHALL_API Lexer *lexer_create(const LexerImplementation *imp)
 #endif /* TEST */
     }
 
-printf("[SHALL] %s: %s/%p\n", __func__, imp->name, lexer);
     return lexer;
 }
 
