@@ -10,9 +10,11 @@ http://pygments.org/docs/tokens/
 
 // internal use
 TOKEN(EOS, -1, "end of stream", " ")
+// public
 TOKEN(IGNORABLE, -1, "ignorable like spaces", " ")
 TOKEN(TEXT, -1, "regular text", " ")
-// public
+TOKEN(ERROR, -1, "an invalid part", "er")
+
 TOKEN(OPERATOR, -1, "operator", "o")
 TOKEN(PUNCTUATION, -1, "syntax element like ';' in C", "p")
 

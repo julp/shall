@@ -52,109 +52,111 @@ module Shall
         IGNORABLE = 1
         # regular text
         TEXT = 2
+        # an invalid part
+        ERROR = 3
         # operator
-        OPERATOR = 3
+        OPERATOR = 4
         # syntax element like ';' in C
-        PUNCTUATION = 4
+        PUNCTUATION = 5
         # tag PI
-        TAG_PREPROC = 5
+        TAG_PREPROC = 6
         # uncategorized name type
-        NAME = 6
+        NAME = 7
         # builtin names; names that are available in the global namespace
-        NAME_BUILTIN = 7
+        NAME_BUILTIN = 8
         # builtin names that are implicit (`self` in Ruby, `this` in Java)
-        NAME_BUILTIN_PSEUDO = 8
+        NAME_BUILTIN_PSEUDO = 9
         # tag name
-        NAME_TAG = 9
+        NAME_TAG = 10
         # HTML/XML name entity
-        NAME_ENTITY = 10
+        NAME_ENTITY = 11
         # tag attribute's name
-        NAME_ATTRIBUTE = 11
+        NAME_ATTRIBUTE = 12
         # a function name
-        NAME_FUNCTION = 12
+        NAME_FUNCTION = 13
         # a class name
-        NAME_CLASS = 13
+        NAME_CLASS = 14
         # a namespace name
-        NAME_NAMESPACE = 14
+        NAME_NAMESPACE = 15
         # variable name
-        NAME_VARIABLE = 15
+        NAME_VARIABLE = 16
         # name of a class variable
-        NAME_VARIABLE_CLASS = 16
+        NAME_VARIABLE_CLASS = 17
         # name of a variable instance
-        NAME_VARIABLE_INSTANCE = 17
+        NAME_VARIABLE_INSTANCE = 18
         # name of a global variable
-        NAME_VARIABLE_GLOBAL = 18
+        NAME_VARIABLE_GLOBAL = 19
         # uncategorized keyword type
-        KEYWORD = 19
+        KEYWORD = 20
         # 
-        KEYWORD_DEFAULT = 20
+        KEYWORD_DEFAULT = 21
         # 
-        KEYWORD_BUILTIN = 21
+        KEYWORD_BUILTIN = 22
         # a keyword that is constant
-        KEYWORD_CONSTANT = 22
+        KEYWORD_CONSTANT = 23
         # a keyword used for variable declaration (`var` or `let` in Javascript)
-        KEYWORD_DECLARATION = 23
+        KEYWORD_DECLARATION = 24
         # a keyword used for namespace declaration (`namespace` in PHP, `package` in Java
-        KEYWORD_NAMESPACE = 24
+        KEYWORD_NAMESPACE = 25
         # a keyword that is't really a keyword
-        KEYWORD_PSEUDO = 25
+        KEYWORD_PSEUDO = 26
         # a reserved keyword
-        KEYWORD_RESERVED = 26
+        KEYWORD_RESERVED = 27
         # a builtin type (`char`, `int`, ... in C)
-        KEYWORD_TYPE = 27
+        KEYWORD_TYPE = 28
         # uncategorized number type
-        NUMBER = 28
+        NUMBER = 29
         # float number
-        NUMBER_FLOAT = 29
+        NUMBER_FLOAT = 30
         # decimal number
-        NUMBER_DECIMAL = 30
+        NUMBER_DECIMAL = 31
         # binary number
-        NUMBER_BINARY = 31
+        NUMBER_BINARY = 32
         # octal number
-        NUMBER_OCTAL = 32
+        NUMBER_OCTAL = 33
         # hexadecimal number
-        NUMBER_HEXADECIMAL = 33
+        NUMBER_HEXADECIMAL = 34
         # uncategorized comment type
-        COMMENT = 34
+        COMMENT = 35
         # comment which ends at the end of the line
-        COMMENT_SINGLE = 35
+        COMMENT_SINGLE = 36
         # multiline comment
-        COMMENT_MULTILINE = 36
+        COMMENT_MULTILINE = 37
         # comment with documentation value
-        COMMENT_DOCUMENTATION = 37
+        COMMENT_DOCUMENTATION = 38
         # uncategorized string type
-        STRING = 38
+        STRING = 39
         # single quoted string
-        STRING_SINGLE = 39
+        STRING_SINGLE = 40
         # double quoted string
-        STRING_DOUBLE = 40
+        STRING_DOUBLE = 41
         # string enclosed in backticks
-        STRING_BACKTICK = 41
+        STRING_BACKTICK = 42
         # regular expression
-        STRING_REGEX = 42
+        STRING_REGEX = 43
         # interned string
-        STRING_INTERNED = 43
+        STRING_INTERNED = 44
         # escaped sequence in string like \n, \x32, \u1234, etc
-        SEQUENCE_ESCAPED = 44
+        SEQUENCE_ESCAPED = 45
         # sequence in string for interpolated variables
-        SEQUENCE_INTERPOLATED = 45
+        SEQUENCE_INTERPOLATED = 46
         # uncategorized literal type
-        LITERAL = 46
+        LITERAL = 47
         # size literals (eg: 3ko)
-        LITERAL_SIZE = 47
+        LITERAL_SIZE = 48
         # duration literals (eg: 23s)
-        LITERAL_DURATION = 48
+        LITERAL_DURATION = 49
         # 
-        GENERIC = 49
+        GENERIC = 50
         # the token value as bold
-        GENERIC_STRONG = 50
+        GENERIC_STRONG = 51
         # the token value is a headline
-        GENERIC_HEADING = 51
+        GENERIC_HEADING = 52
         # the token value is a subheadline
-        GENERIC_SUBHEADING = 52
+        GENERIC_SUBHEADING = 53
         # marks the token value as deleted
-        GENERIC_DELETED = 53
+        GENERIC_DELETED = 54
         # marks the token value as inserted
-        GENERIC_INSERTED = 54
+        GENERIC_INSERTED = 55
     end
 end

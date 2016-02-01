@@ -16,6 +16,7 @@
 const SHALL_API Theme molokai = {
     "Molokai",
     {
+        [ ERROR ]                  = { FG(white), BG(grey) },
 #define COMMON_STYLE FG(dark_blue), .italic = true
         [ COMMENT_SINGLE ]         = { COMMON_STYLE },
         [ COMMENT_MULTILINE ]      = { COMMON_STYLE },

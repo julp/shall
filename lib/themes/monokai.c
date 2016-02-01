@@ -3,10 +3,12 @@
 #define grey         { 0x99, 0x99, 0x99 }
 #define white        { 0xFF, 0xFF, 0xFF }
 #define dimred       { 0x49, 0x31, 0x31 }
+#define carmine      { 0x96, 0x00, 0x50 }
 #define whitish      { 0xF8, 0xF8, 0xF2 }
 #define dimgrey      { 0x75, 0x71, 0x5E }
 #define dimgreen     { 0x32, 0x49, 0x32 }
 #define soft_cyan    { 0x66, 0xd9, 0xef }
+#define very_dark    { 0x1E, 0x00, 0x10 }
 #define light_grey   { 0xAA, 0xAA, 0xAA }
 #define soft_yellow  { 0xE6, 0xDB, 0x74 }
 #define bright_pink  { 0xF9, 0x26, 0x72 }
@@ -18,6 +20,7 @@
 const SHALL_API Theme monokai = {
     "Monokai",
     {
+        [ ERROR ]                  = { FG(carmine), BG(very_dark) },
 #define COMMON_STYLE FG(dimgrey), .italic = true
         [ COMMENT_SINGLE ]         = { COMMON_STYLE },
         [ COMMENT_MULTILINE ]      = { COMMON_STYLE },
