@@ -41,7 +41,7 @@ static int bbcode_start_document(String *out, FormatterData *data)
     for (i = 0; i < _TOKEN_COUNT; i++) {
         mydata->sequences[i].prefix_len = mydata->sequences[i].suffix_len = 0;
         mydata->sequences[i].prefix = mydata->sequences[i].suffix = NULL;
-        if (theme->styles[i].flags) { // TODO: exclude bg_set bit
+        if (theme->styles[i].flags & ~ATTR_MASK(BG_BIT)) {
             enum { OPENING_TAG, CLOSING_TAG, _TAG_COUNT };
             string_builder_t sb[_TAG_COUNT];
 
