@@ -82,6 +82,8 @@ enum {
 #define NEWLINE(type) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->token_value = 0; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -92,6 +94,19 @@ enum {
 #define TOKEN(type) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
+        rv->token_value = 0; \
+        rv->child_limit = NULL; \
+        rv->token_default_type = type; \
+        return TOKEN; \
+    } while (0);
+
+#define TOKEN_OUTSRC(type, start, end) \
+    do { \
+        TRACK_ORIGIN; \
+        rv->yystart = start; \
+        rv->yyend = end; \
         rv->token_value = 0; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -101,6 +116,8 @@ enum {
 #define DONE_AFTER_TOKEN(type) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->token_value = 0; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -110,6 +127,8 @@ enum {
 #define VALUED_TOKEN(type, value) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->token_value = value; \
         rv->child_limit = NULL; \
         rv->token_default_type = type; \
@@ -119,6 +138,8 @@ enum {
 #define DELEGATE_UNTIL(fallback) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->token_value = 0; \
         rv->child_limit = YYCURSOR; \
         rv->token_default_type = 0; \
@@ -130,6 +151,8 @@ enum {
     do { \
         TRACK_ORIGIN; \
         rv->token_value = 0; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->child_limit = limit; \
         rv->token_default_type = type; \
         rv->delegation_fallback = fallback; \
@@ -139,6 +162,8 @@ enum {
 #define DELEGATE_FULL(fallback) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->token_value = 0; \
         rv->child_limit = YYCURSOR; \
         rv->token_default_type = 0; \
@@ -149,6 +174,8 @@ enum {
 #define DELEGATE_FULL_AFTER_TOKEN(limit, fallback, type) \
     do { \
         TRACK_ORIGIN; \
+        rv->yystart = YYTEXT; \
+        rv->yyend = YYCURSOR; \
         rv->token_value = 0; \
         rv->child_limit = limit; \
         rv->token_default_type = type; \
@@ -326,7 +353,10 @@ struct Lexer {
     OptionValue optvals[];
 };
 
+// TODO: rename as YYSTYPE
 struct LexerReturnValue {
+    const YYCTYPE *yystart;
+    const YYCTYPE *yyend;
     int token_value; // TOKEN
     int token_default_type; // TOKEN
     YYCTYPE *child_limit; // DELEGATE_*

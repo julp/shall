@@ -534,9 +534,13 @@ SHALL_API int highlight_string(Lexer *lexer, Formatter *fmt, const char *src, si
             int yyleng;
 
 retry_as_token:
+            assert(rv.yystart != NULL);
+            assert(rv.yyend != NULL);
+            assert(rv.yyend >= rv.yystart);
+
             token = rv.token_default_type;
-            yyleng = YYCURSOR - YYTEXT;
-// debug("[TOKEN] %s: >%.*s< (%s %s)", current_lexer->imp->name, yyleng, YYTEXT, tokens[token].name, -1 == prev ? "\xe2\x88\x85" /* U+2205 */ : tokens[prev].name);
+            yyleng = rv.yyend - rv.yystart;
+// debug("[TOKEN] %s: >%.*s< (%s %s)", current_lexer->imp->name, yyleng, rv.yystart, tokens[token].name, -1 == prev ? "\xe2\x88\x85" /* U+2205 */ : tokens[prev].name);
             if (prev != token) {
                 if (prev != -1/* && prev != IGNORABLE*/) {
                     fmt->imp->end_token(prev, buffer, &fmt->optvals);
@@ -545,7 +549,7 @@ retry_as_token:
                     fmt->imp->start_token(token, buffer, &fmt->optvals);
 //                         }
             }
-            fmt->imp->write_token(buffer, (char *) YYTEXT, yyleng, &fmt->optvals);
+            fmt->imp->write_token(buffer, (const char *) rv.yystart, yyleng, &fmt->optvals);
             prev = token;
         }
         switch ((what & ~TOKEN)) {
