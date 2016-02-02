@@ -1,11 +1,9 @@
 #pragma once
 
 #include <ruby.h>
-#include <shall/cpp.h>
-#include <shall/formatter.h>
 #include <shall/shall.h>
+#include <shall/formatter.h>
 #include <shall/tokens.h>
-#include <shall/types.h>
 
 #define DEBUG
 #define WITH_TYPED_DATA 1

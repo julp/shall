@@ -6,11 +6,9 @@
 
 #include "php.h"
 #include "php_ini.h"
-#include <shall/cpp.h>
-#include <shall/formatter.h>
 #include <shall/shall.h>
+#include <shall/formatter.h>
 #include <shall/tokens.h>
-#include <shall/types.h>
 #undef S
 
 #ifdef DEBUG

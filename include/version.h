@@ -1,9 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-
-// TODO
-#define SHALL_API
+#include "machine.h"
 
 #define VERSION_LENGTH 3
 #define VERSION_DELIMITER '.'

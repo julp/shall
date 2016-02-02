@@ -1,9 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
-
-// TODO
-#define SHALL_API
+#include "machine.h"
 
 typedef void (*iterator_first_t)(const void *, void **);
 typedef void (*iterator_last_t)(const void *, void **);

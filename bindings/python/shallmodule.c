@@ -1,10 +1,8 @@
 #include <Python.h>
 
-#include <shall/cpp.h>
-#include "../../formatter.h" // TODO: temporary
 #include <shall/shall.h>
+#include <shall/formatter.h>
 #include <shall/tokens.h>
-#include <shall/option.h>
 
 #if 0
 PyObject* PyImport_AddModuleObject(PyObject *name);

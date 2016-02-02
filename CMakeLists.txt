@@ -140,7 +140,7 @@ configure_file(
 )
 
 add_library(common OBJECT EXCLUDE_FROM_ALL shared/utils.c)
-set_target_properties(common PROPERTIES COMPILE_FLAGS "-fPIC")
+set_target_properties(common PROPERTIES COMPILE_FLAGS "-fPIC" INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES}")
 
 add_library(common_cli OBJECT EXCLUDE_FROM_ALL cli/shared/optparse.c cli/shared/lexer_group.c)
 set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC" INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/cli/shared/;${COMMON_INCLUDE_DIRECTORIES}")
@@ -174,7 +174,7 @@ set(SHALL_PUBLIC_HEADERS
     ${PROJECT_SOURCE_DIR}/include/types.h
     ${PROJECT_SOURCE_DIR}/include/options.h
     ${PROJECT_SOURCE_DIR}/include/iterator.h
-    ${PROJECT_SOURCE_DIR}/shared/cpp.h
+    ${PROJECT_SOURCE_DIR}/include/machine.h
 )
 
 set_target_properties(shall_lib PROPERTIES

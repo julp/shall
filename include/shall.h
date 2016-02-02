@@ -1,9 +1,8 @@
 #pragma once
 
-#define SHALL_API
-
 #include <stdbool.h>
 
+#include "machine.h"
 #include "types.h"
 #include "options.h"
 #include "iterator.h"
