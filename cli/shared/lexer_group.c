@@ -1,3 +1,8 @@
+/**
+ * @file cli/shared/lexer_group.c
+ * @brief helpers to group lexers
+ */
+
 #include <stdlib.h>
 
 #include "lexer_group.h"

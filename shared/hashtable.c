@@ -1,3 +1,8 @@
+/**
+ * @file shared/hashtable.c
+ * @brief an hashtable implementation
+ */
+
 #include <string.h>
 #include <stdlib.h>
 

@@ -1,10 +1,8 @@
-#ifndef DARRAY_H
+#pragma once
 
-# define DARRAY_H
-
-# include <stdbool.h>
-# include <stddef.h> /* size_t */
-# include <stdint.h> /* uint\d+_t */
+#include <stdbool.h>
+#include <stddef.h> /* size_t */
+#include <stdint.h> /* uint\d+_t */
 
 typedef struct {
     uint8_t *data;
@@ -13,22 +11,22 @@ typedef struct {
     size_t element_size;
 } DArray;
 
-# define darray_prepend(/*DArray **/ da, ptr) \
+#define darray_prepend(/*DArray **/ da, ptr) \
     darray_prepend((da), (ptr), 1)
 
-# define darray_push(/*DArray **/ da, ptr) \
+#define darray_push(/*DArray **/ da, ptr) \
     darray_append((da), (ptr))
 
-# define darray_append(/*DArray **/ da, ptr) \
+#define darray_append(/*DArray **/ da, ptr) \
     darray_append_all((da), (ptr), 1)
 
-# define darray_insert(/*DArray **/ da, /*unsigned int*/ offset, ptr) \
+#define darray_insert(/*DArray **/ da, /*unsigned int*/ offset, ptr) \
     darray_insert((da), (offset), (ptr), 1)
 
-# define darray_at_unsafe(/*DArray **/ da, /*unsigned int*/ offset, T) \
+#define darray_at_unsafe(/*DArray **/ da, /*unsigned int*/ offset, T) \
     ((T *) ((void *) (da)->data))[(offset)]
 
-# define darray_top_unsafe(/*DArray **/ da, T) \
+#define darray_top_unsafe(/*DArray **/ da, T) \
     darray_at_unsafe(da, (da)->length - 1, T)
 
 void darray_append_all(DArray *, const void * const, size_t);
@@ -45,5 +43,3 @@ void darray_remove_range(DArray *, unsigned int, unsigned int);
 void darray_set_size(DArray *, size_t);
 bool darray_shift(DArray *, void *);
 void darray_swap(DArray *, unsigned int, unsigned int);
-
-#endif /* !DARRAY_H */

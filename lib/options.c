@@ -1,3 +1,8 @@
+/**
+ * @file lib/options.c
+ * @brief common functions to handle lexers and formatters options
+ */
+
 #include <stdlib.h>
 #include <string.h>
 

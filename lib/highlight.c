@@ -1,3 +1,8 @@
+/**
+ * @file lib/highlight.c
+ * @brief the place where all processing is done
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>

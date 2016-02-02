@@ -223,10 +223,15 @@ add_custom_target(
     DEPENDS ${PROJECT_SOURCE_DIR}/bindings/ruby/doc/shall.rb
 )
 
-# find_package(Doxygen QUIET)
-# if(DOXYGEN_FOUND)
-#     add_custom_target(api_doc ALL doxygen ${PROJECT_SOURCE_DIR}/doxygen.conf DEPENDS ${PROJECT_SOURCE_DIR}/lib/shall.c ${PROJECT_SOURCE_DIR}/doc.h)
-# endif(DOXYGEN_FOUND)
+find_package(Doxygen QUIET)
+if(DOXYGEN_FOUND)
+    configure_file(
+        "${PROJECT_SOURCE_DIR}/doxygen.conf.in"
+        "${PROJECT_BINARY_DIR}/doxygen.conf"
+        @ONLY
+    )
+    add_custom_target(api_doc ALL doxygen ${PROJECT_BINARY_DIR}/doxygen.conf DEPENDS ${PROJECT_SOURCE_DIR}/doc.h)
+endif(DOXYGEN_FOUND)
 
 install(
     TARGETS shall_lib shall_bin

@@ -1,10 +1,8 @@
-#ifndef HASHTABLE_H
+#pragma once
 
-# define HASHTABLE_H
-
-# include <stddef.h> /* uintptr_t */
-# include <stdint.h> /* uint32_t */
-# include <stdbool.h>
+#include <stddef.h> /* uintptr_t */
+#include <stdint.h> /* uint32_t */
+#include <stdbool.h>
 
 typedef struct _HashTable HashTable;
 
@@ -12,10 +10,10 @@ typedef uintptr_t ht_key_t; // key_t is defined for ftok
 typedef uintptr_t ht_hash_t;
 typedef ht_hash_t (*HashFunc)(ht_key_t);
 
-# ifndef DTOR_FUNC
-#  define DTOR_FUNC
+#ifndef DTOR_FUNC
+# define DTOR_FUNC
 typedef void (*DtorFunc)(void *);
-# endif /* !DOTR_FUNC */
+#endif /* !DOTR_FUNC */
 typedef void *(*DupFunc)(const void *);
 typedef bool (*EqualFunc)(ht_key_t, ht_key_t);
 // typedef int (*CmpFunc)(const void *, const void *);
@@ -50,8 +48,8 @@ typedef struct {
     size_t string_len;
 } pre_computed_string_t;
 
-# define HT_PUT_ON_DUP_KEY_PRESERVE (1<<1)
-/*# define HT_PUT_ON_DUP_KEY_NO_DTOR  (1<<2)*/
+#define HT_PUT_ON_DUP_KEY_PRESERVE (1<<1)
+/*#define HT_PUT_ON_DUP_KEY_NO_DTOR  (1<<2)*/
 
 bool _hashtable_contains(HashTable *, ht_key_t);
 bool _hashtable_delete(HashTable *, ht_key_t, bool);
@@ -120,5 +118,3 @@ void *hashtable_last(HashTable *);
 
 #define hashtable_quick_delete(ht, h, k, dtor) \
     _hashtable_quick_delete(ht, h, (ht_key_t) k, dtor)
-
-#endif /* !HASHTABLE_H */

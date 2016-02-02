@@ -1,3 +1,8 @@
+/**
+ * @file lib/lexer.c
+ * @brief interface with lexers
+ */
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>

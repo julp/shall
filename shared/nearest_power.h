@@ -1,10 +1,8 @@
-#ifndef NEAREST_POWER_H
+#pragma once
 
-# define NEAREST_POWER_H
+#include <limits.h>
 
-# include <limits.h>
-
-# define HALF_SIZE (1UL << (sizeof(size_t) * CHAR_BIT - 1))
+#define HALF_SIZE (1UL << (sizeof(size_t) * CHAR_BIT - 1))
 
 static inline size_t nearest_power(size_t requested_length, size_t minimal)
 {
@@ -20,5 +18,3 @@ static inline size_t nearest_power(size_t requested_length, size_t minimal)
         return (1UL << i);
     }
 }
-
-#endif /* !NEAREST_POWER_H */

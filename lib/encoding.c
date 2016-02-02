@@ -1,3 +1,8 @@
+/**
+ * @file lib/encoding.c
+ * @brief charset detection and encoding conversions
+ */
+
 #include <unistd.h>
 #include <locale.h>
 #include <stdlib.h>

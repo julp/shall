@@ -1,3 +1,8 @@
+/**
+ * @file shared/xtring.c
+ * @brief extensible string object
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>

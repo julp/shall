@@ -22,6 +22,7 @@ typedef struct {
 void option_parse(const char *, Option *);
 
 void options_store_init(OptionsStore *);
+
 void options_store_add(OptionsStore *, const char *);
 void options_store_free(OptionsStore *);
 void options_store_clear(OptionsStore *);

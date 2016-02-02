@@ -1,3 +1,8 @@
+/**
+ * @file lib/dlist.c
+ * @brief double linked list
+ */
+
 #include <stdlib.h>
 
 #include "dlist.h"

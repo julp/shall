@@ -1,3 +1,8 @@
+/**
+ * @file lib/version.c
+ * @brief version utility functions
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>

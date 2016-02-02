@@ -1,3 +1,8 @@
+/**
+ * @file lib/formatter.c
+ * @brief interface with formatters
+ */
+
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>

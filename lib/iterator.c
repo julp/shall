@@ -1,16 +1,9 @@
-#include <stddef.h>
-#include <stdlib.h>
-
-#include "cpp.h"
-#include "iterator.h"
-
 /**
- * Iterator
- *
- * An iterator is an abstraction layer to easily traverse a collection of (read only) items.
+ * @file lib/iterator.c
+ * @brief An iterator is an abstraction layer to easily traverse a collection of (read only) items.
  *
  * This is simple as this:
- *
+ * \code
  *   Iterator it;
  *
  *   // initialize the iterator
@@ -24,9 +17,10 @@
  *   }
  *   // we're done, "close" the iterator
  *   iterator_close(&it);
+ * \endcode
  *
  * You can even known if your collection is empty by writing:
- *
+ * \code
  *   Iterator it;
  *
  *   // initialize the iterator
@@ -45,7 +39,14 @@
  *       // collection is empty
  *   }
  *   iterator_close(&it);
+ * \endcode
  */
+
+#include <stddef.h>
+#include <stdlib.h>
+
+#include "cpp.h"
+#include "iterator.h"
 
 static const Iterator NULL_ITERATOR = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 

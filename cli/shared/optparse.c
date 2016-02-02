@@ -1,3 +1,8 @@
+/**
+ * @file cli/shared/optparse.c
+ * @brief helpers for options storing
+ */
+
 #include <stdlib.h>
 #include <string.h>
 

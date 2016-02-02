@@ -1,3 +1,8 @@
+/**
+ * @file lib/themes.c
+ * @brief interface with themes
+ */
+
 #include <string.h>
 
 #include "cpp.h"

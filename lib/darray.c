@@ -1,3 +1,8 @@
+/**
+ * @file lib/darray.c
+ * @brief dynamic array of elements
+ */
+
 #include <stdlib.h>
 #include <string.h>
 

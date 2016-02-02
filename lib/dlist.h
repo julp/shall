@@ -1,14 +1,12 @@
-#ifndef DLIST_H
+#pragma once
 
-# define DLIST_H
+#include <stddef.h>
+#include <stdbool.h>
 
-# include <stddef.h>
-# include <stdbool.h>
-
-# ifndef DTOR_FUNC
-#  define DTOR_FUNC
+#ifndef DTOR_FUNC
+# define DTOR_FUNC
 typedef void (*DtorFunc)(void *);
-# endif /* !DOTR_FUNC */
+#endif /* !DOTR_FUNC */
 typedef int (*CmpFunc)(const void *, const void *);
 
 typedef struct DListElement
@@ -39,5 +37,3 @@ bool dlist_prepend(DList *, void *);
 void dlist_remove_head(DList *);
 void dlist_remove_link(DList *, DListElement *);
 void dlist_remove_tail(DList *);
-
-#endif /* !DLIST_H */

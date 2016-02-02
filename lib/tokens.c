@@ -1,3 +1,8 @@
+/**
+ * @file lib/tokens.c
+ * @brief functions relative to token types
+ */
+
 #include "cpp.h"
 #include "tokens.h"
 
