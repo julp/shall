@@ -15,14 +15,15 @@ static int start_document(String *out, FormatterData *data)
 
     return 0;
 }
+#endif
 
 static int end_document(String *out, FormatterData *UNUSED(data))
 {
-    STRING_APPEND_STRING(out, "--EOS--");
+//     STRING_APPEND_STRING(out, "--EOS--");
+    string_chomp(out);
 
     return 0;
 }
-#endif
 
 static int start_token(int token, String *out, FormatterData *UNUSED(data))
 {
@@ -81,7 +82,7 @@ static const FormatterImplementation _plainfmt = {
     formatter_implementation_default_get_option_ptr,
 #endif
     NULL,
-    NULL,
+    end_document,
     start_token,
     end_token,
     write_token,

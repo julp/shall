@@ -58,10 +58,10 @@ static void usage(void)
     exit(EUSAGE);
 }
 
-static int string_fgets(String *str, FILE *fp)
+static bool string_fgets(String *str, FILE *fp)
 {
     if (feof(fp)) {
-        return 0;
+        return false;
     } else {
         while (1) {
             size_t buffer_len;
@@ -76,7 +76,7 @@ static int string_fgets(String *str, FILE *fp)
                 break;
             }
         }
-        return 1;
+        return true;
     }
 }
 
@@ -346,10 +346,6 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
                 STERR("open %s failed: %s", ppath[i], strerror(errno));
                 goto end;
             }
-        }
-        // ugly hack for now to match the trailing '\n' added by the plain formatter
-        if (plainfmt == fimp) {
-            string_append_char(ctxt->expect, '\n');
         }
         if (-1 == write(fd[FD_EXPECT], ctxt->expect->ptr, ctxt->expect->len)) {
             STERR("write failed: %s", strerror(errno));
