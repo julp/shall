@@ -83,7 +83,6 @@ static void phpinit(const OptionValue *options, LexerData *data, void *ctxt)
     }
     secondary = LEXER_UNWRAP(myoptions->secondary);
     if (NULL != secondary) {
-printf("[SHALL] IMP = %s %p/%p\n", secondary->imp->name, secondary, OPT_LEXPTR(myoptions->secondary));
         append_lexer(ctxt, secondary);
     }
 }
