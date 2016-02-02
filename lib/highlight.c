@@ -6,7 +6,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <stdio.h> // TODO: temporary?
 
 #include "lexer.h"
 #include "formatter.h"
@@ -450,14 +449,16 @@ static const named_element_t eol[] = {
 };
 
 /**
- * Highlight string according to given lexer and formatter
+ * Highlight a string according to given lexer(s) and formatter
  *
  * @param src the input string
  * @param src_len its length
  * @param dst the output string
  * @param dst_len its length if not null
  * @param fmt the formatter to generate output from tokens
- * @param lexer the lexer to tokenize the input string
+ * @param lexerc the number of lexers in lexerv (have to >= 1)
+ * @param lexerv an array of lexers to tokenize the input string
+ * (the top lexer have to be at index 0)
  *
  * @return zero if successfull
  */
@@ -663,4 +664,42 @@ abandon_or_done:
     }
 
     return 0;
+}
+
+/**
+ * Generate a sample of highlighting for the given formatter
+ *
+ * @param dst the output string
+ * @param dst_len its length if not null
+ * @param fmt the formatter to generate output from tokens
+ */
+SHALL_API void highlight_sample(char **dst, size_t *dst_len, Formatter *fmt)
+{
+    String *buffer;
+    size_t i, buffer_len;
+
+    buffer = string_new();
+    if (NULL != fmt->imp->start_document) {
+        fmt->imp->start_document(buffer, &fmt->optvals);
+    }
+    for (i = 0; i < _TOKEN_COUNT; i++) {
+        fmt->imp->start_token(i, buffer, &fmt->optvals);
+        fmt->imp->write_token(buffer, tokens[i].name, tokens[i].name_len, &fmt->optvals);
+        fmt->imp->write_token(buffer, S(": "), &fmt->optvals);
+        fmt->imp->write_token(buffer, tokens[i].description, strlen(tokens[i].description), &fmt->optvals);
+        fmt->imp->end_token(i, buffer, &fmt->optvals);
+
+        fmt->imp->start_token(IGNORABLE, buffer, &fmt->optvals);
+        fmt->imp->write_token(buffer, S("\n"), &fmt->optvals);
+        fmt->imp->end_token(IGNORABLE, buffer, &fmt->optvals);
+    }
+    if (NULL != fmt->imp->end_document) {
+        fmt->imp->end_document(buffer, &fmt->optvals);
+    }
+    // set result string
+    buffer_len = buffer->len;
+    *dst = string_orphan(buffer);
+    if (NULL != dst_len) {
+        *dst_len = buffer_len;
+    }
 }

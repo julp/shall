@@ -57,16 +57,18 @@ static bool vFlag;
 static HashTable lexers;
 static const char *outputenc;
 static OptionsStore options[COUNT];
-static char optstr[] = "cf:l:o:t:vLO:";
+static char optstr[] = "cef:l:o:t:vLO:";
 
 static struct option long_options[] = {
     { "chain",            no_argument,       NULL, 'c' },
+    { "example",          no_argument,       NULL, 'e' },
     { "list",             required_argument, NULL, 'L' },
     { "lexer",            required_argument, NULL, 'l' },
     { "formatter",        required_argument, NULL, 'f' },
     { "lexer-option",     required_argument, NULL, 'o' },
     { "formatter-option", required_argument, NULL, 'O' },
     { "theme",            required_argument, NULL, 't' },
+    { "sample",           no_argument,       NULL, 'e' },
     { "scope",            required_argument, NULL, 's' }, // TODO: optional CSS scope to generate CSS rules for theme
     { "verbose",          no_argument,       NULL, 'v' },
     { NULL,               no_argument,       NULL, 0   }
@@ -301,9 +303,9 @@ int main(int argc, char **argv)
 {
     int o;
     size_t i;
-    bool cFlag;
     LexerGroup *g;
     Formatter *fmt;
+    bool cFlag, eFlag;
     const FormatterImplementation *fimp;
 
     {
@@ -317,7 +319,7 @@ int main(int argc, char **argv)
     g = NULL;
     fmt = NULL;
     fimp = termfmt;
-    cFlag = vFlag = false;
+    eFlag = cFlag = vFlag = false;
     for (o = 0; o < COUNT; o++) {
         options_store_init(&options[o]);
     }
@@ -437,6 +439,9 @@ int main(int argc, char **argv)
             case 'c':
                 cFlag = true;
                 break;
+            case 'e':
+                eFlag = true;
+                break;
             default:
                 usage();
         }
@@ -481,13 +486,21 @@ int main(int argc, char **argv)
             }
         }
         CAP_ENTER();
-        if (0 == argc) {
-            procfile("-", fp[0], fmt);
-        } else {
-            char **p;
+        if (eFlag) {
+            char *result;
 
-            for (p = argv; 0 != argc--; ++p) {
-                procfile(*p, fp[p - argv], fmt);
+            highlight_sample(&result, NULL, fmt);
+            fputs(result, stdout);
+            free(result);
+        } else {
+            if (0 == argc) {
+                procfile("-", fp[0], fmt);
+            } else {
+                char **p;
+
+                for (p = argv; 0 != argc--; ++p) {
+                    procfile(*p, fp[p - argv], fmt);
+                }
             }
         }
     }
