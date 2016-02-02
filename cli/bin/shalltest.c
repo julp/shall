@@ -145,7 +145,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
     bool guess_limp;
     int oldpart, part;
     size_t result_len;
-    Options options[COUNT];
+    OptionsStore options[COUNT];
     int ret, status, fd[FD_COUNT] = { -1, -1 };
     const LexerImplementation *limp;
     const FormatterImplementation *fimp;
@@ -161,7 +161,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
     oldpart = part = PART_NONE;
     ctxt_flush(ctxt);
     for (i = 0; i < COUNT; i++) {
-        options_init(&options[i]);
+        options_store_init(&options[i]);
     }
     if (NULL == (fp = fopen(filename, "r"))) {
         return 0;
@@ -238,7 +238,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
                     } else {
                         if (guess_limp && NULL == g->lexers[0]) {
                             // we don't known yet the top lexer, so memorize its options
-                            options_add(&options[LEXER], ctxt->line->ptr);
+                            options_store_add(&options[LEXER], ctxt->line->ptr);
                         } else {
                             if (NULL == lexer) {
                                 // NOP? (no active lexer)
@@ -249,7 +249,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
                                 if (0 != lexer_set_option_as_string(lexer, opt.name, opt.value, opt.value_len)) {
                                     STWARN("option '%s' rejected by %s lexer", opt.name, lexer_implementation_name(lexer_implementation(lexer)));
                                 }
-                                free((void *) opt.name);
+                                free(opt.name);
                             }
                         }
                     }
@@ -257,7 +257,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
                     if (!has_equal) {
                         fimp = formatter_implementation_by_name(ctxt->line->ptr);
                     } else {
-                        options_add(&options[FORMATTER], ctxt->line->ptr);
+                        options_store_add(&options[FORMATTER], ctxt->line->ptr);
                     }
                 }
             } else {
@@ -305,7 +305,7 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
     group_destroy(g);
     formatter_destroy(fmt);
     for (i = 0; i < COUNT; i++) {
-        options_free(&options[i]);
+        options_store_free(&options[i]);
     }
     {
         pid_t pid;

@@ -7,21 +7,21 @@ enum {
 };
 
 typedef struct {
-    const char *name; // TODO: remove const as we own it and it mey be convenient to allow modification
+    char *name;
     size_t name_len;
-    const char *value; // TODO: same, remove const
+    char *value;
     size_t value_len;
 } Option;
 
 typedef struct {
     size_t options_len;
     size_t options_size;
-    Option *options; // TODO: options[]?
-} Options;
+    Option *options;
+} OptionsStore;
 
 void option_parse(const char *, Option *);
 
-void options_init(Options *);
-void options_add(Options *, const char *);
-void options_free(Options *);
-void options_clear(Options *);
+void options_store_init(OptionsStore *);
+void options_store_add(OptionsStore *, const char *);
+void options_store_free(OptionsStore *);
+void options_store_clear(OptionsStore *);

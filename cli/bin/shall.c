@@ -56,7 +56,7 @@ extern char *__progname;
 static bool vFlag;
 static HashTable lexers;
 static const char *outputenc;
-static Options options[COUNT];
+static OptionsStore options[COUNT];
 static char optstr[] = "cf:l:o:t:vLO:";
 
 static struct option long_options[] = {
@@ -292,7 +292,7 @@ static void on_exit_cb(void)
     int o;
 
     for (o = 0; o < COUNT; o++) {
-        options_free(&options[o]);
+        options_store_free(&options[o]);
     }
     hashtable_destroy(&lexers);
 }
@@ -319,7 +319,7 @@ int main(int argc, char **argv)
     fimp = termfmt;
     cFlag = vFlag = false;
     for (o = 0; o < COUNT; o++) {
-        options_init(&options[o]);
+        options_store_init(&options[o]);
     }
     outputenc = encoding_stdout_get();
     hashtable_ascii_cs_init(&lexers, NULL, NULL, group_destroy);
@@ -388,7 +388,7 @@ int main(int argc, char **argv)
                         }
                     }
                     // then clear these options for the next one (if any other lexer)
-                    options_clear(&options[LEXER]);
+                    options_store_clear(&options[LEXER]);
                 }
                 cFlag = false;
                 break;
@@ -412,10 +412,10 @@ int main(int argc, char **argv)
              * - foo and bar, any other lexer
              */
             case 'o':
-                options_add(&options[LEXER], optarg);
+                options_store_add(&options[LEXER], optarg);
                 break;
             case 'O':
-                options_add(&options[FORMATTER], optarg);
+                options_store_add(&options[FORMATTER], optarg);
                 break;
             case 'v':
                 vFlag = true;

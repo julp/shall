@@ -4,17 +4,6 @@
 #include "optparse.h"
 
 /**
- * Initialiaze a store of string pairs (key/value)
- *
- * @param opt the container
- */
-void options_init(Options *opt)
-{
-    opt->options = NULL;
-    opt->options_len = opt->options_size = 0;
-}
-
-/**
  * TODO:
  *
  * caller have to free(option->name)
@@ -25,7 +14,7 @@ void option_parse(const char *optarg, Option *option)
 
     option->name = strdup(optarg);
     if (NULL == (p = strchr(option->name, '='))) {
-        option->value = "";
+        option->value = (char *) "";
         option->value_len = 0;
         option->name_len = strlen(optarg);
     } else {
@@ -37,6 +26,17 @@ void option_parse(const char *optarg, Option *option)
 }
 
 /**
+ * Initialiaze a store of string pairs (key/value)
+ *
+ * @param opt the container
+ */
+void options_store_init(OptionsStore *opt)
+{
+    opt->options = NULL;
+    opt->options_len = opt->options_size = 0;
+}
+
+/**
  * Parse a raw value in the form "key=value" or "key" (empty string
  * will be assigned as value in the later case)
  *
@@ -45,7 +45,7 @@ void option_parse(const char *optarg, Option *option)
  * original string is copied so if it was allocated, it can be
  * safely freed when you don't need it.
  */
-void options_add(Options *opt, const char *optarg/*, const char **name, const char **value*/)
+void options_store_add(OptionsStore *opt, const char *optarg/*, const char **name, const char **value*/)
 {
     if (opt->options_len >= opt->options_size) {
         opt->options_size = 0 == opt->options_size ? 8 : opt->options_size << 1;
@@ -68,12 +68,12 @@ void options_add(Options *opt, const char *optarg/*, const char **name, const ch
  *
  * @param opt the store to clear
  */
-void options_clear(Options *opt)
+void options_store_clear(OptionsStore *opt)
 {
     size_t o;
 
     for (o = 0; o < opt->options_len; o++) {
-        free((void *) opt->options[o].name); // quiet on const qualifier
+        free(opt->options[o].name);
     }
     opt->options_len = 0;
 }
@@ -83,7 +83,7 @@ void options_clear(Options *opt)
  *
  * @param opt the store to destroy
  */
-void options_free(Options *opt)
+void options_store_free(OptionsStore *opt)
 {
     size_t o;
 
