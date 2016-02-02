@@ -448,6 +448,8 @@ static const named_element_t eol[] = {
     [ CR_LF ] = { S("\r\n") },
 };
 
+#define WITH_LEXING 1
+
 /**
  * Highlight a string according to given lexer(s) and formatter
  *
@@ -575,10 +577,15 @@ debug("[DONE] %s", current_lexer->imp->name);
                     fmt->imp->end_token(token, buffer, &fmt->optvals);
                     prev = IGNORABLE;
                 }
+#if WITH_LEXING
                 if (NULL != fmt->imp->end_lexing) {
                     fmt->imp->end_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
+                    /**
+                     * TODO: see note below
+                     */
                     prev = IGNORABLE;
                 }
+#endif
 //                 if (YYCURSOR < YYLIMIT) {
 // debug("ctxt.current_lexer_offset = %d, ctxt.lexer_stack_offset = %d", ctxt.current_lexer_offset, ctxt.lexer_stack_offset);
 //                     if (ctxt.lexer_stack.head != ctxt.lexer_stack.tail) {
@@ -591,10 +598,15 @@ debug("[DONE] %s", current_lexer->imp->name);
                         current_lexer = lle->lexer;
                         ldata = lle->data;
 debug("POP LEXER (%s => %s)", imp_before_pop->name, current_lexer->imp->name);
+#if WITH_LEXING
                         if (NULL != fmt->imp->start_lexing) {
                             fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
+                            /**
+                             * TODO: see note below
+                             */
                             prev = IGNORABLE;
                         }
+#endif
                         YYCTYPE *yylimit_before_pop = YYLIMIT;
                         delegation_pop(&ds, yy, &ctxt, ldata);
 debug("POP YYLIMIT (%zu => %zu)", SIZE_T(((const char *) yylimit_before_pop) - src), SIZE_T(((const char *) YYLIMIT) - src));
@@ -616,10 +628,19 @@ debug("POP YYLIMIT (%zu => %zu)", SIZE_T(((const char *) yylimit_before_pop) - s
                     current_lexer = lle->lexer;
                     ldata = lle->data;
 debug("PUSH LEXER (%s => %s) (%s:%s:%d)", imp_before_push->name, current_lexer->imp->name, rv.return_file, rv.return_func, rv.return_line);
+#if WITH_LEXING
                     if (NULL != fmt->imp->start_lexing) {
                         fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
+                        /**
+                         * TODO: we should ask to the formatter if it needs us to force the reinitialization of the previous token
+                         * ie if, for him, two successive tokens of the same type but for two different lexers have to be merged or
+                         * not.
+                         *
+                         * Use the return value of the callback to do so?
+                         */
                         prev = IGNORABLE;
                     }
+#endif
                     delegation_push(&ds, yy, current_lexer->imp, what & ~TOKEN, -1);
                     if (DELEGATE_UNTIL == (what & ~TOKEN)) {
                         if (!HAS_FLAG(what, TOKEN)) {
