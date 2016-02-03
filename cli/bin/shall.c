@@ -499,7 +499,9 @@ int main(int argc, char **argv)
                 char **p;
 
                 for (p = argv; 0 != argc--; ++p) {
-                    procfile(*p, fp[p - argv], fmt);
+                    if (NULL != fp[p - argv]) {
+                        procfile(*p, fp[p - argv], fmt);
+                    }
                 }
             }
         }
