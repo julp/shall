@@ -21,6 +21,15 @@
    +----------------------------------------------------------------------+
 */
 
+/**
+ * Spec/language reference:
+ * - https://github.com/php/php-langspec/blob/master/spec/00-specification-for-php.md
+ *
+ * PHP implementation:
+ * - lexer: https://raw.githubusercontent.com/php/php-src/master/Zend/zend_language_scanner.l
+ * - grammar: https://raw.githubusercontent.com/php/php-src/master/Zend/zend_language_parser.y
+ */
+
 #include <stddef.h> /* offsetof */
 #include <stdlib.h>
 #include <string.h>
