@@ -46,6 +46,10 @@ Filename(s): *.diff, *.patch
 
 MIME type(s): text/x-diff, text/x-patch
 
+| Option | Type | Default value | Description |
+| ------ | ---- | ------------- | ----------- |
+| secondary | lexer | null/none | Lexer to highlight non diff lines (if none, these parts will not be highlighted) |
+
 ## DTD
 
 A lexer for DTDs (Document Type Definitions)

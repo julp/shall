@@ -5,6 +5,22 @@
 #include "tokens.h"
 #include "lexer.h"
 
+typedef struct {
+    OptionValue secondary ALIGNED(sizeof(OptionValue));
+} DiffLexerOption;
+
+static void diffinit(const OptionValue *options, LexerData *data, void *ctxt)
+{
+    Lexer *secondary;
+    const DiffLexerOption *myoptions;
+
+    myoptions = (const DiffLexerOption *) options;
+    secondary = LEXER_UNWRAP(myoptions->secondary);
+    if (NULL != secondary) {
+        append_lexer(ctxt, secondary);
+    }
+}
+
 static int diffanalyse(const char *src, size_t src_len)
 {
     if (src_len >= STR_LEN("Index: ") && 0 == memcmp(src, "Index: ", STR_LEN("Index: "))) {
@@ -59,7 +75,7 @@ static int difflex(YYLEX_ARGS)
                     break;
             }
         }
-        TOKEN(IGNORABLE);
+        DELEGATE_UNTIL(IGNORABLE);
     }
     DONE();
 }
@@ -72,10 +88,13 @@ LexerImplementation diff_lexer = {
     (const char * const []) { "text/x-diff", "text/x-patch", NULL },
     NULL, // interpreters
     diffanalyse,
-    NULL, // init
+    diffinit, // init
     difflex,
-    NULL, // finalyze
+    NULL, // finalize
     sizeof(LexerData),
-    NULL, // options
+    (/*const*/ LexerOption /*const*/ []) {
+        { S("secondary"), OPT_TYPE_LEXER, offsetof(DiffLexerOption, secondary), OPT_DEF_LEXER, "Lexer to highlight non diff lines (if none, these parts will not be highlighted)" },
+        END_OF_OPTIONS
+    },
     NULL // dependencies
 };
