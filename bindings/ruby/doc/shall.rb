@@ -26,6 +26,8 @@ module Shall
         class PHP < Base ; end
         # Lexer for the PostgreSQL dialect of SQL
         class PostgreSQL < Base ; end
+        # For the Python programming language (python.org)
+        class Python < Base ; end
         # For Ruby source code
         class Ruby < Base ; end
         # A "dummy" lexer that doesn't highlight anything

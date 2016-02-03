@@ -96,7 +96,7 @@ set(SOURCES #
 set(THEMES monokai molokai)
 set(FORMATTERS bbcode html plain rtf terminal)
 set(C_LEXERS cpp diff text) # annotations
-set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php ruby varnish xml)
+set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php python ruby varnish xml)
 set(BISON_GRAMMARS )
 
 foreach(lexer ${C_LEXERS})
@@ -223,7 +223,7 @@ add_custom_target(
     DEPENDS ${PROJECT_SOURCE_DIR}/bindings/ruby/doc/shall.rb
 )
 
-find_package(Doxygen QUIET)
+# find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
     configure_file(
         "${PROJECT_SOURCE_DIR}/doxygen.conf.in"

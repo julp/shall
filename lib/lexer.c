@@ -28,6 +28,7 @@ extern const LexerImplementation json_lexer;
 extern const LexerImplementation nginx_lexer;
 extern const LexerImplementation php_lexer;
 extern const LexerImplementation postgresql_lexer;
+extern const LexerImplementation python_lexer;
 extern const LexerImplementation ruby_lexer;
 extern const LexerImplementation text_lexer;
 extern const LexerImplementation varnish_lexer;
@@ -49,6 +50,7 @@ static const LexerImplementation *available_lexers[] = {
     &nginx_lexer,
     &php_lexer,
     &postgresql_lexer,
+    &python_lexer,
     &ruby_lexer,
     &text_lexer, // may be a good idea to keep it last?
     &varnish_lexer,

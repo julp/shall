@@ -133,6 +133,14 @@ MIME type(s): text/x-postgresql
 | uppercase_keywords | boolean | false | when true, PostgreSQL keywords are uppercased |
 | standard_conforming_strings | boolean | true | To treat backslashes literally in ordinary string literals (`'...'`) or not |
 
+## Python
+
+For the Python programming language (python.org)
+
+Filename(s): *.py
+
+MIME type(s): text/x-python, application/x-python
+
 ## Ruby
 
 For Ruby source code
