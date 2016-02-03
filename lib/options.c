@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpp.h"
 #include "utils.h"
 #include "options.h"
 #include "shall.h"

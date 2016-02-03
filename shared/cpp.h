@@ -2,12 +2,6 @@
 
 #include "machine.h"
 
-#if GCC_VERSION || __has_attribute(unused)
-# define UNUSED(x) UNUSED_ ## x __attribute__((unused))
-#else
-# define UNUSED(x) x
-#endif /* UNUSED */
-
 #if GCC_VERSION >= 4003 || __has_attribute(hot)
 # define HOT __attribute__((hot))
 #else
@@ -25,10 +19,6 @@
 # define EXPECTED(condition)   (condition)
 # define UNEXPECTED(condition) (condition)
 #endif /* __builtin_expect */
-
-#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
-#define STR_LEN(str)      (ARRAY_SIZE(str) - 1)
-#define STR_SIZE(str)     (ARRAY_SIZE(str))
 
 #define mem_new(type)           malloc((sizeof(type)))
 #define mem_new_n(type, n)      malloc((sizeof(type) * (n)))

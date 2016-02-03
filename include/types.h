@@ -3,7 +3,7 @@
 #include <stddef.h> /* size_t */
 #include <stdint.h> /* uint\d+_t */
 
-#include "cpp.h"
+#include "machine.h"
 
 typedef struct LexerImplementation LexerImplementation;
 typedef struct Lexer Lexer;

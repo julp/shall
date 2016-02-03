@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cpp.h"
 #include "tokens.h"
 #include "lexer.h"
 
@@ -9,7 +8,7 @@ typedef struct {
     OptionValue secondary ALIGNED(sizeof(OptionValue));
 } DiffLexerOption;
 
-static void diffinit(const OptionValue *options, LexerData *data, void *ctxt)
+static void diffinit(const OptionValue *options, LexerData *UNUSED(data), void *ctxt)
 {
     Lexer *secondary;
     const DiffLexerOption *myoptions;

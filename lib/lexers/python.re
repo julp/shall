@@ -4,7 +4,6 @@
  * - https://docs.python.org/3/reference/lexical_analysis.html
  */
 
-#include "cpp.h"
 #include "utils.h"
 #include "tokens.h"
 #include "lexer.h"
@@ -93,8 +92,8 @@ imagnumber = (floatnumber | DIGIT+) 'j';
 }
 
 <INITIAL> ('b' 'r'? | 'r' 'b'? | 'u')? ("'" "''"? | '"' '""'?) {
+    int type;
     YYCTYPE *quote;
-    int type, state;
 
     type = STRING_DOUBLE;
     mydata->string_type = 0;

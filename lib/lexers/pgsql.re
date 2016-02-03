@@ -10,7 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cpp.h"
 #include "utils.h"
 #include "tokens.h"
 #include "lexer.h"

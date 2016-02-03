@@ -45,3 +45,14 @@
 #ifndef SHALL_API
 # define SHALL_API
 #endif /* !SHALL_API */
+
+// not really a good idea to make these public but they are so indispensable...
+#if GCC_VERSION || __has_attribute(unused)
+# define UNUSED(x) UNUSED_ ## x __attribute__((unused))
+#else
+# define UNUSED(x) x
+#endif /* UNUSED */
+
+#define ARRAY_SIZE(array) (sizeof(array) / sizeof((array)[0]))
+#define STR_LEN(str)      (ARRAY_SIZE(str) - 1)
+#define STR_SIZE(str)     (ARRAY_SIZE(str))

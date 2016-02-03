@@ -10,6 +10,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
+#include "cpp.h"
 #include "xtring.h"
 #include "nearest_power.h"
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cpp.h"
 #include "types.h"
 #include "options.h"
 #include "darray.h"

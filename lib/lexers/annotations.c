@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cpp.h"
 #include "tokens.h"
 #include "lexer.h"
 

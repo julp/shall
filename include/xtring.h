@@ -18,7 +18,7 @@ typedef struct {
     size_t allocated;
 } String;
 
-#include "cpp.h"
+#include "machine.h"
 #include <inttypes.h>
 
 #define STRING_APPEND_COLOR(string, prefix, color, suffix) \
