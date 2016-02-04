@@ -50,6 +50,7 @@ const SHALL_API Theme monokai = {
         [ NUMBER_DECIMAL ]         = { COMMON_STYLE },
         [ NUMBER_BINARY ]          = { COMMON_STYLE },
         [ NUMBER_OCTAL ]           = { COMMON_STYLE },
+        [ NUMBER_IMAGINARY ]       = { COMMON_STYLE },
         [ NUMBER_HEXADECIMAL ]     = { COMMON_STYLE },
         [ STRING_SINGLE ]          = { COMMON_STYLE },
 #undef COMMON_STYLE

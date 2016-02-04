@@ -46,6 +46,7 @@ const SHALL_API Theme molokai = {
         [ NUMBER_DECIMAL ]         = { COMMON_STYLE },
         [ NUMBER_BINARY ]          = { COMMON_STYLE },
         [ NUMBER_OCTAL ]           = { COMMON_STYLE },
+        [ NUMBER_IMAGINARY ]       = { COMMON_STYLE },
         [ NUMBER_HEXADECIMAL ]     = { COMMON_STYLE },
         [ SEQUENCE_ESCAPED ]       = { COMMON_STYLE },
 #undef COMMON_STYLE

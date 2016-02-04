@@ -208,8 +208,7 @@ imagnumber = (floatnumber | DIGIT+) 'j';
 }
 
 <INITIAL> imagnumber {
-    TOKEN(NUMBER);
-    //TOKEN(NUMBER_IMAGINARY);
+    TOKEN(NUMBER_IMAGINARY);
 }
 
 <*> [^] {
