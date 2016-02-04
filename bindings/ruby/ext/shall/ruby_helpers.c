@@ -1,5 +1,6 @@
 #include "ruby_shall.h"
 #include "ruby_lexer.h"
+#include "ruby_theme.h"
 #include "ruby_formatter.h"
 
 void ary_push_string_cb(const char *string, void *data)
@@ -21,6 +22,9 @@ VALUE rb_get_option(int type, OptionValue *optvalptr)
             break;
         case OPT_TYPE_STRING:
             ret = rb_str_new(OPT_STRVAL(*optvalptr), OPT_STRLEN(*optvalptr));
+            break;
+        case OPT_TYPE_THEME:
+            // TODO (without doing a copy would be nice)
             break;
         case OPT_TYPE_LEXER:
             if (NULL != OPT_LEXPTR(*optvalptr)) {
@@ -86,6 +90,18 @@ int rb_set_option(VALUE key, VALUE val, VALUE wl)
                     type = OPT_TYPE_INT;
                     OPT_SET_BOOL(optval, Qtrue == val);
                     break;
+                case T_CLASS:
+                    if (!islexer) { // only a formatter can set a theme
+                        if (Qtrue == rb_class_inherited_p(val, cBaseTheme)) {
+                            Theme *theme;
+
+                            theme = fetch_theme_instance(val);
+                            type = OPT_TYPE_THEME;
+                            OPT_THEMPTR(optval) = theme;
+                            break;
+                        }
+                    }
+                    /* no break if false */ // TODO: a little bit ugly here
                 case T_DATA:
                     if (islexer) { // only a lexer can set a sublexer
                         if (Qtrue == rb_class_inherited_p(CLASS_OF(val), cBaseLexer)) {
@@ -96,8 +112,8 @@ int rb_set_option(VALUE key, VALUE val, VALUE wl)
 //                             OPT_LEXPTR(optval) = l;
                             OPT_LEXPTR(optval) = (void *) val;
                             OPT_LEXUWF(optval) = ruby_lexer_unwrap;
+                            break;
                         }
-                        break;
                     }
                     /* no break if false */
                 default:

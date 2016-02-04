@@ -84,10 +84,10 @@ module Shall
         NAME_VARIABLE = 16
         # name of a class variable
         NAME_VARIABLE_CLASS = 17
-        # name of a variable instance
-        NAME_VARIABLE_INSTANCE = 18
         # name of a global variable
-        NAME_VARIABLE_GLOBAL = 19
+        NAME_VARIABLE_GLOBAL = 18
+        # name of a variable instance
+        NAME_VARIABLE_INSTANCE = 19
         # uncategorized keyword type
         KEYWORD = 20
         # 
@@ -112,53 +112,55 @@ module Shall
         NUMBER_FLOAT = 30
         # decimal number
         NUMBER_DECIMAL = 31
+        # imaginary number
+        NUMBER_IMAGINARY = 32
         # binary number
-        NUMBER_BINARY = 32
+        NUMBER_BINARY = 33
         # octal number
-        NUMBER_OCTAL = 33
+        NUMBER_OCTAL = 34
         # hexadecimal number
-        NUMBER_HEXADECIMAL = 34
+        NUMBER_HEXADECIMAL = 35
         # uncategorized comment type
-        COMMENT = 35
+        COMMENT = 36
         # comment which ends at the end of the line
-        COMMENT_SINGLE = 36
+        COMMENT_SINGLE = 37
         # multiline comment
-        COMMENT_MULTILINE = 37
+        COMMENT_MULTILINE = 38
         # comment with documentation value
-        COMMENT_DOCUMENTATION = 38
+        COMMENT_DOCUMENTATION = 39
         # uncategorized string type
-        STRING = 39
+        STRING = 40
         # single quoted string
-        STRING_SINGLE = 40
+        STRING_SINGLE = 41
         # double quoted string
-        STRING_DOUBLE = 41
+        STRING_DOUBLE = 42
         # string enclosed in backticks
-        STRING_BACKTICK = 42
+        STRING_BACKTICK = 43
         # regular expression
-        STRING_REGEX = 43
+        STRING_REGEX = 44
         # interned string
-        STRING_INTERNED = 44
+        STRING_INTERNED = 45
         # escaped sequence in string like \n, \x32, \u1234, etc
-        SEQUENCE_ESCAPED = 45
+        SEQUENCE_ESCAPED = 46
         # sequence in string for interpolated variables
-        SEQUENCE_INTERPOLATED = 46
+        SEQUENCE_INTERPOLATED = 47
         # uncategorized literal type
-        LITERAL = 47
+        LITERAL = 48
         # size literals (eg: 3ko)
-        LITERAL_SIZE = 48
+        LITERAL_SIZE = 49
         # duration literals (eg: 23s)
-        LITERAL_DURATION = 49
+        LITERAL_DURATION = 50
         # 
-        GENERIC = 50
+        GENERIC = 51
         # the token value as bold
-        GENERIC_STRONG = 51
+        GENERIC_STRONG = 52
         # the token value is a headline
-        GENERIC_HEADING = 52
+        GENERIC_HEADING = 53
         # the token value is a subheadline
-        GENERIC_SUBHEADING = 53
+        GENERIC_SUBHEADING = 54
         # marks the token value as deleted
-        GENERIC_DELETED = 54
+        GENERIC_DELETED = 55
         # marks the token value as inserted
-        GENERIC_INSERTED = 55
+        GENERIC_INSERTED = 56
     end
 end

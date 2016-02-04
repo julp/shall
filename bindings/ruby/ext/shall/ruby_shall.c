@@ -1,4 +1,6 @@
 #include "ruby_shall.h"
+#include "ruby_color.h"
+#include "ruby_style.h"
 #include "ruby_theme.h"
 #include "ruby_lexer.h"
 #include "ruby_formatter.h"
@@ -35,6 +37,27 @@ static VALUE rb_shall_highlight(VALUE module, VALUE string, VALUE lexer, VALUE f
     return rb_utf8_str_new(dest, dest_len);
 }
 
+/*
+ * call-seq:
+ *   Shall::sample(formatter) -> string
+ *
+ * Generates a sample output for +formatter+ (a Shall::Formatter::Base object)
+ */
+static VALUE rb_shall_sample(VALUE module, VALUE formatter)
+{
+    char *dest;
+    size_t dest_len;
+    rb_formatter_object *f;
+
+    if (Qtrue != rb_obj_is_kind_of(formatter, cBaseFormatter)) {
+        return Qnil;
+    }
+    UNWRAP_FORMATTER(formatter, f);
+    highlight_sample(&dest, &dest_len, f->formatter);
+
+    return rb_utf8_str_new(dest, dest_len);
+}
+
 /* ========== Initialisation ========== */
 
 /*
@@ -51,6 +74,7 @@ void Init_shall(void)
 #undef TOKEN
 
     // Shall module functions
+    rb_define_module_function(mShall, "sample", rb_shall_sample, 1);
     rb_define_module_function(mShall, "highlight", rb_shall_highlight, 3);
 
     {
@@ -66,4 +90,6 @@ void Init_shall(void)
     rb_shall_init_lexer();
     rb_shall_init_formatter();
     rb_shall_init_theme();
+    rb_shall_init_style();
+    rb_shall_init_color();
 }

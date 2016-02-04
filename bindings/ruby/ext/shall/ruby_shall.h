@@ -8,6 +8,15 @@
 #define DEBUG
 #define WITH_TYPED_DATA 1
 
+#ifdef DEBUG
+# include <stdio.h>
+# define debug(format, ...) \
+    fprintf(stderr, format "\n", ## __VA_ARGS__)
+#else
+# define debug(format, ...) \
+    /* NOP */
+#endif /* DEBUG */
+
 VALUE mShall;
 
 // ruby_helpers.c
