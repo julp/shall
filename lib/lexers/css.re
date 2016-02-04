@@ -5,7 +5,14 @@
 #include "lexer.h"
 #include "utils.h"
 
-// http://www.w3.org/TR/CSS2/grammar.html
+/**
+ * Spec/language reference:
+ * - 2.1
+ *   + http://www.w3.org/TR/CSS2/grammar.html
+ * - 3
+ *   + http://www.w3.org/TR/css-syntax-3/
+ *   + http://www.w3.org/TR/2003/WD-css3-syntax-20030813/
+ */
 
 enum {
     STATE(INITIAL),
