@@ -20,7 +20,7 @@ See README.md in lib/formatters/
 * cmake (>= 2.8.8)
 * a C(99) compiler
 * re2c (>= 0.13.7)
-* doxygen (optionnal) (currently disabled)
+* doxygen (optionnal)
 * ICU or iconv (optionnal, for conversions in CLI)
 
 # Installation
@@ -51,7 +51,7 @@ shall include a command line tool with the same name to highlight directely docu
 Examples:
 
 * `shall -L`: list lexers (and their options)
-* `shall -f html -o secondary=vcl -l erb ~/cindy/varnish.vcl`: highlight in HTML the file ~/cindy/varnish.vcl as an ERB template + varnish configuration file
+* `shall -f html -o secondary=vcl -l erb ~/cindy/varnish.vcl` or `shall -f html -l erb -cl varnish ~/cindy/varnish.vcl`: highlight in HTML the file ~/cindy/varnish.vcl as an ERB template + varnish configuration file
 
 # Credits
 

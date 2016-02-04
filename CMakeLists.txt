@@ -17,6 +17,8 @@ include(CheckFunctionExists)
 include(CheckLibraryExists)
 include(CheckCSourceCompiles)
 
+option(DOC "Enable/disable searching doxygen to build doc if found" OFF)
+
 check_include_files("inttypes.h" HAVE_INTTYPES_H)
 check_include_files("stdint.h" HAVE_STDINT_H)
 check_include_files("stdbool.h" HAVE_STDBOOL_H)
@@ -223,15 +225,18 @@ add_custom_target(
     DEPENDS ${PROJECT_SOURCE_DIR}/bindings/ruby/doc/shall.rb
 )
 
-# find_package(Doxygen QUIET)
-if(DOXYGEN_FOUND)
-    configure_file(
-        "${PROJECT_SOURCE_DIR}/doxygen.conf.in"
-        "${PROJECT_BINARY_DIR}/doxygen.conf"
-        @ONLY
-    )
-    add_custom_target(api_doc ALL doxygen ${PROJECT_BINARY_DIR}/doxygen.conf DEPENDS ${PROJECT_SOURCE_DIR}/doc.h)
-endif(DOXYGEN_FOUND)
+if(DOC)
+    find_package(Doxygen QUIET)
+    if(DOXYGEN_FOUND)
+        configure_file(
+            "${PROJECT_SOURCE_DIR}/doxygen.conf.in"
+            "${PROJECT_BINARY_DIR}/doxygen.conf"
+            @ONLY
+        )
+        # TODO: mettre les sources en DEPENDS pour ne pas que CMake relance doxygen inutilement
+        add_custom_target(api_doc ALL doxygen ${PROJECT_BINARY_DIR}/doxygen.conf DEPENDS ${PROJECT_SOURCE_DIR}/doc.h)
+    endif(DOXYGEN_FOUND)
+endif(DOC)
 
 install(
     TARGETS shall_lib shall_bin
