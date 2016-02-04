@@ -18,21 +18,41 @@ static VALUE mToken;
  */
 static VALUE rb_shall_highlight(VALUE module, VALUE string, VALUE lexer, VALUE formatter)
 {
+    long i;
     char *dest;
     size_t dest_len;
-    rb_lexer_object *l;
     rb_formatter_object *f;
 
     Check_Type(string, T_STRING);
-    if (Qtrue != rb_obj_is_kind_of(lexer, cBaseLexer)) {
-        return Qnil;
+    if (T_ARRAY == TYPE(lexer)) {
+
+        for (i = 0; i < RARRAY_LEN(lexer); i++) {
+            if (Qtrue != rb_obj_is_kind_of(RARRAY_AREF(lexer, i), cBaseLexer)) {
+                return Qnil;
+            }
+        }
+    } else {
+        if (Qtrue != rb_obj_is_kind_of(lexer, cBaseLexer)) {
+            return Qnil;
+        } else {
+            lexer = rb_ary_new4(1, &lexer);
+        }
     }
     if (Qtrue != rb_obj_is_kind_of(formatter, cBaseFormatter)) {
         return Qnil;
     }
-    UNWRAP_LEXER(lexer, l);
-    UNWRAP_FORMATTER(formatter, f);
-    highlight_string(StringValueCStr(string), RSTRING_LEN(string), &dest, &dest_len, f->formatter, 1, &l->lexer);
+    {
+        Lexer *lexers[RARRAY_LEN(lexer)];
+
+        for (i = 0; i < RARRAY_LEN(lexer); i++) {
+            rb_lexer_object *l;
+
+            UNWRAP_LEXER(RARRAY_AREF(lexer, i), l);
+            lexers[i] = l->lexer;
+        }
+        UNWRAP_FORMATTER(formatter, f);
+        highlight_string(StringValueCStr(string), RSTRING_LEN(string), &dest, &dest_len, f->formatter, (size_t) RARRAY_LEN(lexer), lexers);
+    }
 
     return rb_utf8_str_new(dest, dest_len);
 }
