@@ -238,6 +238,14 @@ static VALUE w_formatter_start_document(VALUE self)
 }
 #endif
 
+#ifdef TEST
+static VALUE rb_formatter_attr_writer(VALUE self, VALUE value)
+{
+    // avoir l'ID ou le nom de l'attribut
+    // rb_current_receiver?
+}
+#endif /* TEST */
+
 /* :nodoc: */
 static void create_formatter_class_cb(const FormatterImplementation *imp, void *data)
 {
@@ -256,6 +264,28 @@ static void create_formatter_class_cb(const FormatterImplementation *imp, void *
     rb_define_method(cXFormatter, "write_token", w_formatter_write_token, 1);
 #endif
     rb_ary_push((VALUE) data, cXFormatter);
+
+#ifdef TEST
+    {
+        Iterator it;
+
+        formatter_implementation_options_to_iterator(&it, imp);
+        for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
+            char *p, buffer[1024];
+            const FormatterOption *option;
+
+            *buffer = '\0';
+            option = (const FormatterOption *) iterator_current(&it);
+            assert(option->name_len < ARRAY_SIZE(buffer));
+            p = stpcpy(buffer, option->name);
+            *p++ = '=';
+            *p++ = '\0';
+            rb_define_method(cXFormatter, buffer, rb_formatter_attr_writer, 1);
+            rb_define_method_id(cXFormatter, rb_intern(buffer), rb_formatter_attr_writer, 1);
+        }
+        iterator_close(&it);
+    }
+#endif /* TEST */
 }
 
 /* ========== instance methods ========== */

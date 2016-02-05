@@ -5,7 +5,7 @@
 static VALUE cColor;
 
 typedef struct {
-    Color color; // TODO: should be a pointer?
+    Color *color;
 } rb_color_object;
 
 #ifdef WITH_TYPED_DATA
@@ -54,8 +54,8 @@ const struct rb_data_type_struct color_type = {
 };
 #endif /* WITH_TYPED_DATA */
 
-#define UINT8_TO_FIXNUM(v) v
-#define FIXNUM_TO_UINT8(v) v
+#define UINT8_TO_FIXNUM(v) (UINT2NUM((unsigned int) v))
+#define FIXNUM_TO_UINT8(v) ((uint8_t) NUM2UINT(v))
 
 #define GET_COLOR(name, member) \
     static VALUE rb_color_##name(VALUE self) \
@@ -64,40 +64,51 @@ const struct rb_data_type_struct color_type = {
  \
         UNWRAP_COLOR(self, o); \
  \
-        return UINT8_TO_FIXNUM(o->color.member); \
+        return UINT8_TO_FIXNUM(o->color->member); \
     }
 
 GET_COLOR(red, r);
 GET_COLOR(green, g);
 GET_COLOR(blue, b);
 
-VALUE rb_color_from_color(Color *color)
+#ifdef WITH_TYPED_DATA
+# define BUILD_COLOR_OBJ(/*VALUE*/ o, /*rb_color_object **/c) \
+    o = TypedData_Make_Struct(cColor, rb_color_object, &color_type, c)
+#else
+# define BUILD_COLOR_OBJ(/*VALUE*/ o, /*rb_color_object **/c) \
+    o = Data_Make_Struct(cColor, rb_color_object, rb_color_mark, rb_color_free, c);
+#endif /* WITH_TYPED_DATA */
+
+VALUE ruby_color_from_color(Color *color)
 {
     VALUE o;
     rb_color_object *c;
 
-#ifdef WITH_TYPED_DATA
-    o = TypedData_Make_Struct(cColor, rb_color_object, &color_type, c);
-#else
-    o = Data_Make_Struct(cColor, rb_color_object, rb_color_mark, rb_color_free, c);
-#endif /* WITH_TYPED_DATA */
-    memcpy(&c->color, color, sizeof(*color));
+    BUILD_COLOR_OBJ(o, c);
+//     memcpy(&c->color, color, sizeof(*color));
+    c->color = color;
 
     return o;
 }
 
-VALUE rb_color_create_from_rgb(VALUE r, VALUE g, VALUE b)
+#if 0
+VALUE ruby_color_create_from_rgb(uint8_t r, uint8_t g, uint8_t b)
 {
     VALUE o;
+    rb_color_object *c;
 
-    o = Qnil;
+    BUILD_COLOR_OBJ(o, c);
+    c->color = malloc(sizeof(Color));
+    *c->color = { r, g, b };
 
     return o;
 }
+#endif
 
-VALUE rb_color_create_from_hexstring(VALUE UNUSED(klass), VALUE string)
+VALUE ruby_color_create_from_hexstring(VALUE string)
 {
     VALUE o;
+    rb_color_object *c;
 
     o = Qnil;
 
@@ -108,11 +119,12 @@ void rb_shall_init_color(void)
 {
     // Shall::Color
     cColor = rb_define_class_under(mShall, "Color", rb_cObject);
+//     rb_undef_method(CLASS_OF(cColor), "new");
 
     rb_define_method(cColor, "red", rb_color_red, 0);
     rb_define_method(cColor, "green", rb_color_green, 0);
     rb_define_method(cColor, "blue", rb_color_blue, 0);
 
-    rb_define_singleton_method(cColor, "from_rgb", rb_color_create_from_rgb, 3);
-    rb_define_singleton_method(cColor, "from_hexstring", rb_color_create_from_hexstring, 1);
+//     rb_define_singleton_method(cColor, "from_rgb", rb_color_create_from_rgb, 3);
+//     rb_define_singleton_method(cColor, "from_hexstring", rb_color_create_from_hexstring, 1);
 }

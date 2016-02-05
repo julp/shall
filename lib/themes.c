@@ -84,6 +84,65 @@ SHALL_API const Theme *theme_by_name(const char *name)
     return NULL;
 }
 
+static bool parse_hexchar(char c, uint8_t *v)
+{
+    if (c >= '0' && c <= '9') {
+        *v = c - '0';
+        return true;
+    }
+    if (c >= 'A' && c <= 'F') {
+        *v = 10 + c - 'A';
+        return true;
+    }
+    if (c >= 'a' && c <= 'f') {
+        *v = 10 + c - 'a';
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Parse a color in hexadecimal format (#RGB or #RRGGBB)
+ *
+ * @param string the string to parse
+ * @param string_len its length
+ * @param color the color to set
+ *
+ * @return true if parsing was successfull
+ */
+SHALL_API bool color_parse_hexstring(const char *string, size_t string_len, Color *color)
+{
+    if (NULL != string && '#' == *string && (STR_LEN("#RGB") == string_len || STR_LEN("#RRGGBB") == string_len)) {
+        size_t i;
+        uint8_t *comp;
+        bool on3digits;
+
+        comp = (uint8_t *) color;
+        bzero(color, sizeof(*color));
+        on3digits = STR_LEN("#RGB") == string_len;
+        for (i = 1; i < string_len; i++) {
+            if (!parse_hexchar(string[i], comp)) {
+                return false;
+            }
+            if (on3digits) {
+                *comp |= *comp << 4;
+            } else {
+                uint8_t v;
+
+                if (!parse_hexchar(string[++i], &v)) {
+                    return false;
+                }
+                *comp <<= 4;
+                *comp |= v;
+            }
+            comp++;
+        }
+    }
+
+    return true;
+}
+
 #define IDENT_STRING "  "
 
 #define STRING_APPEND_IDENT(string) \

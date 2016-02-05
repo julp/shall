@@ -62,3 +62,5 @@ SHALL_API void themes_to_iterator(Iterator *);
 SHALL_API const Theme *theme_by_name(const char *);
 
 SHALL_API char *theme_export_as_css(const Theme *, const char *, bool);
+
+SHALL_API bool color_parse_hexstring(const char *, size_t, Color *);

@@ -12,6 +12,7 @@ enum {
 
 typedef struct {
     int value;
+    int parent;
     const char *name;
     size_t name_len;
     const char *description;

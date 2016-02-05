@@ -213,10 +213,9 @@ static VALUE rb_theme_set_name(VALUE klass, VALUE name)
 {
     Theme *theme;
 
-debug("%s", __func__);
     theme = fetch_theme_instance(klass);
     if (NULL != theme->name) {
-        free(theme->name);
+        free((void *) theme->name);
     }
     theme->name = strdup(StringValueCStr(name));
 
@@ -240,7 +239,7 @@ static VALUE rb_theme_set_style(int argc, VALUE *argv, VALUE klass)
 {
     size_t i;
     Theme *theme;
-    Style style = { 0 };
+    Style style/* = { 0 }*/;
     VALUE types, attributes;
     ID keywords[ARRAY_SIZE(defined_attributes.attrs)];
     VALUE values[ARRAY_SIZE(defined_attributes.attrs)];
@@ -253,16 +252,18 @@ static VALUE rb_theme_set_style(int argc, VALUE *argv, VALUE klass)
     }
     // NOTE: rb_get_kwargs internally initializes each item of values to Qundef
     rb_get_kwargs(attributes, keywords, 0, ARRAY_SIZE(values), values);
-//     bzero(&style, sizeof(style));
+    bzero(&style, sizeof(style));
     for (i = 0; i < ARRAY_SIZE(defined_attributes.attrs); i++) {
         if (Qundef != values[i]/* && !NIL_P(values[i])*/) {
             // TODO: arguments checking?
             if (defined_attributes.attrs[i].id == defined_attributes.fg.id) {
                 style.fg_set = true;
-//                 style.fg = ???;
+                Check_Type(values[i], T_STRING);
+                color_parse_hexstring(StringValueCStr(values[i]), RSTRING_LEN(values[i]), &style.fg); // TODO: check
             } else if (defined_attributes.attrs[i].id == defined_attributes.bg.id) {
                 style.bg_set = true;
-//                 style.bg = ???;
+                Check_Type(values[i], T_STRING);
+                color_parse_hexstring(StringValueCStr(values[i]), RSTRING_LEN(values[i]), &style.bg); // TODO: check
             } else if (defined_attributes.attrs[i].id == defined_attributes.bold.id) {
                 style.bold = true;
             } else if (defined_attributes.attrs[i].id == defined_attributes.italic.id) {

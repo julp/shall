@@ -1,4 +1,5 @@
 #include "ruby_shall.h"
+#include "ruby_color.h"
 
 #include <shall/themes.h>
 
@@ -54,16 +55,6 @@ const struct rb_data_type_struct style_type = {
 };
 #endif /* WITH_TYPED_DATA */
 
-static VALUE rb_style_fg(VALUE self)
-{
-    return Qnil;
-}
-
-static VALUE rb_style_bg(VALUE self)
-{
-    return Qnil;
-}
-
 #define HAS_ATTRIBUTE(name) \
     static VALUE rb_style_##name##_p(VALUE self) \
     { \
@@ -79,6 +70,50 @@ HAS_ATTRIBUTE(fg_set);
 HAS_ATTRIBUTE(bold);
 HAS_ATTRIBUTE(italic);
 HAS_ATTRIBUTE(underline);
+
+#define COLOR_ATTRIBUTE(attr) \
+    static VALUE rb_style_##attr##_get(VALUE self) \
+    { \
+        rb_style_object *s; \
+ \
+        UNWRAP_STYLE(self, s); \
+ \
+        return ruby_color_from_color(&s->style->attr); \
+    } \
+ \
+    static VALUE rb_style_##attr##_set(VALUE self, VALUE value) \
+    { \
+        rb_style_object *s; \
+ \
+        UNWRAP_STYLE(self, s); \
+        if (NIL_P(value)) { \
+            s->style->attr##_set = false; \
+            /* bzero ? */ \
+        } else { \
+            Check_Type(value, T_STRING); \
+            color_parse_hexstring(StringValueCStr(value), RSTRING_LEN(value), &s->style->attr); \
+        } \
+ \
+        return Qnil; \
+    }
+
+COLOR_ATTRIBUTE(fg);
+COLOR_ATTRIBUTE(bg);
+
+#define SET_BOOL_ATTRIBUTE(name) \
+    static VALUE rb_style_##name##_set(VALUE self, VALUE value) \
+    { \
+        rb_style_object *s; \
+ \
+        UNWRAP_STYLE(self, s); \
+        s->style->name = RTEST(value); \
+ \
+        return Qnil; \
+    }
+
+SET_BOOL_ATTRIBUTE(bold);
+SET_BOOL_ATTRIBUTE(italic);
+SET_BOOL_ATTRIBUTE(underline);
 
 VALUE ruby_create_style(Style *style)
 {
@@ -102,7 +137,15 @@ void rb_shall_init_style(void)
     cStyle = rb_define_class_under(mShall, "Style", rb_cObject);
     rb_undef_method(CLASS_OF(cStyle), "new");
 
-    // fg, bg, fg=, bg=, bold=, italic=, underline=
+    rb_define_method(cStyle, "bg", rb_style_bg_get, 0);
+    rb_define_method(cStyle, "fg", rb_style_fg_get, 0);
+
+    rb_define_method(cStyle, "bg=", rb_style_bg_set, 1);
+    rb_define_method(cStyle, "fg=", rb_style_fg_set, 1);
+    rb_define_method(cStyle, "bold=", rb_style_bold_set, 1);
+    rb_define_method(cStyle, "italic=", rb_style_italic_set, 1);
+    rb_define_method(cStyle, "underline=", rb_style_underline_set, 1);
+
     rb_define_method(cStyle, "bg?", rb_style_bg_set_p, 0);
     rb_define_method(cStyle, "fg?", rb_style_fg_set_p, 0);
     rb_define_method(cStyle, "bold?", rb_style_bold_p, 0);
