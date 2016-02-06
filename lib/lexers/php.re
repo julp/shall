@@ -58,12 +58,26 @@ typedef struct {
 
 static int phpanalyse(const char *src, size_t src_len)
 {
+    int score;
+
+    score = 0;
+#if 1
     // TODO: look anywhere into the string?
     if (src_len >= STR_LEN("<?XXX") && (0 == ascii_memcasecmp(src, "<?php", STR_LEN("<?php")) || (0 == memcmp(src, "<?", STR_LEN("<?")) && 0 != memcmp(src, "<?xml", STR_LEN("<?xml"))))) {
-        return 999;
+        score = 999;
     }
+#else
+    char *found;
+    void *kmp_ctxt;
 
-    return 0;
+    kmp_ctxt = kmp_init("<?php", STR_LEN("<?php"), KMP_INSENSITIVE);
+    if (NULL != (found = kmp_search_first(src, src_len, kmp_ctxt))) {
+        score = 999;
+    }
+    kmp_finalize(kmp_ctxt);
+#endif
+
+    return score;
 }
 
 enum {

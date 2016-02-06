@@ -1,4 +1,8 @@
-#include <stddef.h>
+/**
+ * @file shared/utils.c
+ * @brief string utility (search and comparaisons) functions
+ */
+
 #include <string.h>
 
 #include "cpp.h"
@@ -213,4 +217,106 @@ char *memstr(const char *haystack, const char *needle, size_t needle_len, const 
     }
 
     return NULL;
+}
+
+#include <stdlib.h>
+
+#undef TOUPPER
+#define TOUPPER(c) \
+    (char) ascii_toupper((unsigned char) c)
+
+typedef struct {
+    size_t i, q;
+    unsigned int flags;
+    size_t pattern_len;
+    size_t *prefix_table;
+    char pattern[0];
+    // simulates:
+/*
+    union {
+        char variable_splace[sizeof(*ctxt->prefix_table) * pattern_len + sizeof(*ctxt->pattern) * (pattern_len + 1)];
+        struct {
+            char pattern[pattern_len + 1];
+            size_t prefix_table[pattern_len];
+        };
+    };
+*/
+} kmp_ctxt;
+
+void *kmp_init(const char *pattern, size_t pattern_len, unsigned int flags)
+{
+    size_t k, q;
+    kmp_ctxt *ctxt;
+
+    ctxt = malloc(sizeof(*ctxt) + sizeof(*ctxt->prefix_table) * pattern_len + sizeof(*ctxt->pattern) * (pattern_len + 1)); // +1 for \0, even if we don't use or rely it
+    ctxt->flags = flags;
+    ctxt->i = ctxt->q = 0;
+//     ctxt->pattern = HAS_FLAG(ctxt->flags, KMP_PATTERN_DUP) ? strdup(pattern) : pattern;
+    memcpy(ctxt->pattern, pattern, pattern_len);
+    ctxt->pattern[pattern_len] = '\0';
+    ctxt->pattern_len = pattern_len;
+    ctxt->prefix_table = (size_t *) (ctxt->pattern + ctxt->pattern_len + 1); // + 1: after the \0
+    ctxt->prefix_table[0] = 0;
+    k = 0;
+    if (HAS_FLAG(ctxt->flags, KMP_INSENSITIVE)) {
+        for (q = 0; q < pattern_len; q++) {
+            ctxt->pattern[q] = TOUPPER(ctxt->pattern[q]);
+        }
+    }
+    for (q = 1; q < ctxt->pattern_len; q++) {
+        while (k > 0 && (ctxt->pattern[k]) != (HAS_FLAG(ctxt->flags, KMP_INSENSITIVE) ? TOUPPER(ctxt->pattern[q]) : ctxt->pattern[q])) {
+            k = ctxt->prefix_table[k - 1];
+        }
+        if ((ctxt->pattern[k]) == (HAS_FLAG(ctxt->flags, KMP_INSENSITIVE) ? TOUPPER(ctxt->pattern[q]) : ctxt->pattern[q])) {
+            k++;
+        }
+        ctxt->prefix_table[q] = k;
+    }
+
+    return (void *) ctxt;
+}
+
+char *kmp_search_first(const char *string, size_t string_len, void *rawctxt)
+{
+    kmp_ctxt *ctxt;
+
+    ctxt = (kmp_ctxt *) rawctxt;
+    ctxt->i = ctxt->q = 0;
+
+    return kmp_search_next(string, string_len, rawctxt);
+}
+
+char *kmp_search_next(const char *string, size_t string_len, void *rawctxt)
+{
+    char *match;
+    kmp_ctxt *ctxt;
+
+    match = NULL;
+    ctxt = (kmp_ctxt *) rawctxt;
+    if (EXPECTED(string_len > ctxt->pattern_len)) {
+        for (/* NOP */; NULL == match && ctxt->i < string_len; ctxt->i++) {
+            while (ctxt->q > 0 && ctxt->pattern[ctxt->q] != (HAS_FLAG(ctxt->flags, KMP_INSENSITIVE) ? TOUPPER(string[ctxt->i]) : string[ctxt->i])) {
+                ctxt->q = ctxt->prefix_table[ctxt->q - 1];
+            }
+            if (ctxt->pattern[ctxt->q] == (HAS_FLAG(ctxt->flags, KMP_INSENSITIVE) ? TOUPPER(string[ctxt->i]) : string[ctxt->i])) {
+                ctxt->q++;
+            }
+            if (ctxt->q == ctxt->pattern_len) {
+                match = (char *) string + ctxt->i - ctxt->pattern_len + 1;
+            }
+        }
+    }
+
+    return match;
+}
+
+void kmp_finalize(void *rawctxt)
+{
+    kmp_ctxt *ctxt;
+
+    ctxt = (kmp_ctxt *) rawctxt;
+//     if (HAS_FLAG(ctxt->flags, KMP_PATTERN_DUP)) {
+//         free((void *) ctxt->pattern);
+//     }
+    free(rawctxt);
 }
