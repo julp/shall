@@ -12,6 +12,14 @@ enum {
 };
 
 /**
+ * Spec/language reference:
+ * - none
+ *
+ * Nginx implementation:
+ * - https://raw.githubusercontent.com/nginx/nginx/master/src/core/ngx_conf_file.c
+ */
+
+/**
  * TODO:
  * - gérer les LITERAL_DURATION et LITERAL_SIZE (cf http://nginx.org/en/docs/syntax.html)
  * - une variable ne sera pas interpolée dans une expression régulière
@@ -103,11 +111,15 @@ SPACE = [ \n\r\t];
     TOKEN(STRING_SINGLE);
 }
 
-<IN_DOUBLE_STRING> '\\'[\\"] {
+<IN_DOUBLE_STRING,IN_SINGLE_STRING> "\\" [trn] {
     TOKEN(ESCAPED_CHAR);
 }
 
-<IN_SINGLE_STRING> '\\'[\\'] {
+<IN_DOUBLE_STRING> "\\" [\\"] {
+    TOKEN(ESCAPED_CHAR);
+}
+
+<IN_SINGLE_STRING> "\\" [\\'] {
     TOKEN(ESCAPED_CHAR);
 }
 

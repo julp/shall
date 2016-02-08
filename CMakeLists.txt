@@ -34,7 +34,7 @@ set(COMMON_INCLUDE_DIRECTORIES #
 )
 set(SHALL_LIB_INCLUDE_DIRS ${COMMON_INCLUDE_DIRECTORIES})
 
-find_package(BISON REQUIRED)
+find_package(BISON 3 REQUIRED)
 
 set(WITH_ICU false)
 set(WITH_ICONV false)
@@ -109,14 +109,14 @@ foreach(theme ${THEMES})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/themes/${theme}.c")
 endforeach(theme)
 
-set(RE2C_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/genlexers/")
+set(RE2C_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/genlexers")
 file(MAKE_DIRECTORY "${RE2C_OUTPUT_DIRECTORY}")
 foreach(lexer ${RE2C_LEXERS})
     list(APPEND SOURCES "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c")
     RE2C_TARGET(NAME "${lexer}" INPUT "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "${PROJECT_SOURCE_DIR}/lib/lexer.h")
 endforeach(lexer)
 
-set(BISON_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/gengrammars/")
+set(BISON_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/gengrammars")
 file(MAKE_DIRECTORY "${BISON_OUTPUT_DIRECTORY}")
 foreach(grammar ${BISON_GRAMMARS})
     list(APPEND SOURCES "${BISON_OUTPUT_DIRECTORY}/${grammar}.c")

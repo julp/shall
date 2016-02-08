@@ -51,13 +51,50 @@
 #define SIZE_T(v) ((size_t) (v))
 
 enum {
+    /**
+     * Regular token encoutered
+     */
     TOKEN = 1,
+    /**
+     * The current lexer finished its task. There are 2 cases:
+     * - the end of the document was reached (YYCURSOR > YYLIMIT)
+     * - or a child lexer has parsed the substring we entrust it
+     *
+     * In the last case, we continue the tokenization with its parent
+     * lexer.
+     */
     DONE = 2,
 //     DONE_AFTER_TOKEN = 3,
+    /**
+     * Found a CR and/or LF (match must be greedy: if you find a CR, you
+     * have to check if a LF follows). Indicates a newline to shall and
+     * rewrite newline characters if asked by the user.
+     */
 //     NEWLINE = 4,
+    /**
+     * @nodoc a flag to recognize DELEGATE_FULL or DELEGATE_UNTIL
+     */
     _DELEGATE = 8,
+    /**
+     * Fully delegates tokenization to the next lexer in the stack (if any).
+     * A full delegation means that the parent lexer is not able to know
+     * where the child should stop its tokenization. The child lexer decide
+     * by itself where to stop.
+     *
+     * Example: switching to the DTD lexer, only it can stop on "]" space* "]>"
+     */
     DELEGATE_FULL = 10,
 //     DELEGATE_FULL_AFTER_TOKEN = 11
+    /**
+     * The opposite of full delegation: we delegate to a child lexer the
+     * tokenization until some point in the string. This "point" is fixed
+     * by the current lexer, the child lexer have not to go beyond.
+     *
+     * Examples:
+     * - switching from ERB: you set the location of the next <% as limit
+     * - for PHP, it is the next <?
+     * - for the C preprocessor the next newline if not preceded by a backslash
+     */
     DELEGATE_UNTIL = 12
 //     DELEGATE_UNTIL_AFTER_TOKEN = 13,
 };
