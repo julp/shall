@@ -73,6 +73,8 @@ typedef size_t zend_strlen_t;
 
 typedef int zend_strlen_t;
 
+# define ZEND_HASH_FOREACH_END()
+    /* NOP */
 # define ZVAL_UNDEF(z) \
     (z) = NULL
 # define Z_ISUNDEF(z) \

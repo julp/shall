@@ -63,24 +63,97 @@ PHP_FUNCTION(Shall_lexer_for_filename)
     }
 }
 
+#define ARRAY_OF_LEXERS
 PHP_FUNCTION(Shall_highlight)
 {
     char *dest;
+    zval *lexers;
+    size_t lexerc;
     size_t dest_len;
     zval *lexer = NULL;
     zval *formatter = NULL;
-    zend_strlen_t source_len = 0;
     char *source = NULL;
+    zend_strlen_t source_len = 0;
     Shall_Lexer_object *l = NULL;
     Shall_Formatter_object *f = NULL;
 
+#ifdef ARRAY_OF_LEXERS
+    if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sAO", &source, &source_len, &lexers, &formatter, Shall_Formatter_ce_ptr)) {
+#else
     if (FAILURE == zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sOO", &source, &source_len, &lexer, Shall_Lexer_ce_ptr, &formatter, Shall_Formatter_ce_ptr)) {
+#endif
         RETURN_FALSE;
     }
+#ifdef ARRAY_OF_LEXERS
+    switch (Z_TYPE_P(lexers)) {
+        case IS_OBJECT:
+            if (instanceof_function(Z_OBJCE_P(lexers), Shall_Lexer_ce_ptr TSRMLS_CC)) {
+                // ok
+                lexerc = 1;
+            } else {
+                php_error_docref(NULL TSRMLS_CC, E_WARNING, "Argument must be a Shall\\Lexer object");
+                RETURN_FALSE;
+            }
+            break;
+        case IS_ARRAY:
+        {
+            if (0 == (lexerc = zend_hash_num_elements(Z_ARRVAL_P(lexers)))) {
+                php_error_docref(NULL TSRMLS_CC, E_WARNING, "Empty array found");
+                RETURN_FALSE;
+            }
+            break;
+        }
+        default:
+            php_error_docref(NULL TSRMLS_CC, E_WARNING, "Argument must be a Shall\\Lexer object or an array of Shall\\Lexer");
+            RETURN_FALSE;
+    }
+    {
+        Lexer *lexerv[lexerc];
+
+        if (IS_OBJECT == Z_TYPE_P(lexers)) {
+            SHALL_FETCH_LEXER(l, lexer, true);
+            lexerv[0] = l->lexer;
+        } else {
+            int i;
+            zval *ZVALPX(value);
+
+            // parcours des valeurs de ht
+            i = 0;
+#if PHP_MAJOR_VERSION >= 7
+            ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(lexers), value) {
+#else
+            int key_type;
+            ulong key_num;
+            char *key_name;
+            HashPosition pos;
+            uint key_name_len;
+
+            for (
+                zend_hash_internal_pointer_reset_ex(Z_ARRVAL_P(lexers), &pos);
+                SUCCESS == zend_hash_get_current_data_ex(Z_ARRVAL_P(lexers), (void **) &value, &pos);
+                zend_hash_move_forward_ex(Z_ARRVAL_P(lexers), &pos)
+            ) {
+#endif /* PHP >= 7 */
+                if (IS_OBJECT == Z_TYPE_P(ZVALPX(value)) && instanceof_function(Z_OBJCE_P(ZVALPX(value)), Shall_Lexer_ce_ptr TSRMLS_CC)) {
+                    SHALL_FETCH_LEXER(l, ZVALPX(value), true);
+                    lexerv[i++] = l->lexer;
+                } else {
+                    php_error_docref(NULL TSRMLS_CC, E_WARNING, "Argument must be a Shall\\Lexer object");
+                    RETURN_FALSE;
+                }
+            } ZEND_HASH_FOREACH_END();
+        }
+#else
     SHALL_FETCH_LEXER(l, lexer, true);
+#endif
     SHALL_FETCH_FORMATTER(f, formatter, true);
 debug("HL WITH IMP = %s/%p/%p/%p", lexer_implementation_name(lexer_implementation(l->lexer)), l->lexer, lexer, Z_OBJ_P(lexer));
+#ifdef ARRAY_OF_LEXERS
+        highlight_string(source, source_len, &dest, &dest_len, f->formatter, lexerc, lexerv);
+    }
+#else
     highlight_string(source, source_len, &dest, &dest_len, f->formatter, 1, &l->lexer);
+#endif
 
     RETURN_STRINGL_COPY(dest, dest_len);
 }
