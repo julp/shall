@@ -11,7 +11,7 @@ try:
 #!/usr/bin/env php54
 
 echo 'Hello world';
-?><html>\
+?><html><style>background: <?= $foo ?>;\
 """
 
     print shall.lexer_guess(code, { 'start_inline': True })
@@ -25,7 +25,7 @@ echo 'Hello world';
     print shall.PHP.aliases, lexer.aliases, lexer.get_aliases()
     print shall.PHP.mimetypes, lexer.mimetypes, lexer.get_mimetypes()
 
-    print shall.highlight(code, lexer, shall.Terminal())
+    print shall.highlight(code, [ lexer ], shall.TerminalFormatter())
 
     class MyFormatter(shall.BaseFormatter):
         def start_document(self):
@@ -43,7 +43,7 @@ echo 'Hello world';
         def write_token(self, token):
             return token
 
-    class MyInheritedFormatter(shall.HTML):
+    class MyInheritedFormatter(shall.HTMLFormatter):
         def __init__(self):
             #super(MyInheritedFormatter, self).__init__()
             pass
@@ -52,7 +52,7 @@ echo 'Hello world';
             super(MyInheritedFormatter, self).start_document()
             return 'XXX'
 
-    print shall.highlight(code, shall.PHP(), MyFormatter()) # plante
+    print shall.highlight(code, [ shall.PHP() ], MyFormatter()) # plante
 
     print '=' * 20
 
@@ -60,15 +60,15 @@ echo 'Hello world';
     print php.set_option('secondary', shall.XML())
     print php.get_option('secondary')
 
-    print shall.highlight(code, php, shall.Terminal())
+    print shall.highlight(code, [ php ], shall.TerminalFormatter())
 
     print '=' * 20
 
-    print shall.highlight(code, shall.PHP(), MyInheritedFormatter()) # plante
+    print shall.highlight(code, [ shall.PHP() ], MyInheritedFormatter()) # plante
 
     print '=' * 20
 
-    print shall.highlight(code, shall.lexer_guess(code, { 'start_inline': True }), shall.Terminal())
+    print shall.highlight(code, [ shall.lexer_guess(code, { 'start_inline': True }) ], shall.TerminalFormatter())
 
     gc.collect()
 

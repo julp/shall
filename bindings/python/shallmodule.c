@@ -81,6 +81,7 @@ static PyObject *shall_highlight(PyObject *self, PyObject *args)
     PyObject *ret, *lexer, *fmt;
 
     ret = Py_None;
+#if 0
     if (PyArg_ParseTuple(args, "s#O!O!", &string, &string_len, &ShallLexerBaseType, &lexer, &ShallFormatterBaseType, &fmt)/* && 1 == PyObject_IsInstance(lexer, (PyObject *) &ShallLexerBaseType)*/) {
         char *dest;
         size_t dest_len;
@@ -90,7 +91,36 @@ static PyObject *shall_highlight(PyObject *self, PyObject *args)
         highlight_string(string, (size_t) string_len, &dest, &dest_len, ((ShallFormatterObject *) fmt)->fmt, 1, &((ShallLexerObject *) lexer)->lexer);
         ret = PyUnicode_FromStringAndSize(dest, dest_len);
     }
-    Py_INCREF(ret);
+#else
+    if (PyArg_ParseTuple(args, "s#O!O!", &string, &string_len, &PyList_Type, &lexer, &ShallFormatterBaseType, &fmt)) {
+        bool ok;
+        char *dest;
+        size_t dest_len;
+        /*Py_s*/size_t i, lexerc;
+
+        lexerc = (size_t) PyList_Size(lexer);
+        ok = lexerc > 0;
+        Lexer *lexerv[lexerc];
+        for (i = 0; ok && i < lexerc; i++) {
+            PyObject *item;
+
+            item = PyList_GET_ITEM(lexer, i);
+            ok &= /*NULL != item && */1 == PyObject_IsInstance(item, (PyObject *) &ShallLexerBaseType);
+//             ok &= 1 == PyObject_TypeCheck(item, &ShallLexerBaseType);
+            if (ok) {
+                lexerv[i] = ((ShallLexerObject *) item)->lexer;
+            }
+        }
+        if (ok) {
+            highlight_string(string, (size_t) string_len, &dest, &dest_len, ((ShallFormatterObject *) fmt)->fmt, lexerc, lexerv);
+            ret = PyUnicode_FromStringAndSize(dest, dest_len);
+        } else {
+            ret = NULL;
+            PyErr_SetString(PyExc_TypeError, "lexers");
+        }
+    }
+#endif
+    Py_XINCREF(ret);
 
     return ret;
 }

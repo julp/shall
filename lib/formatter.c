@@ -225,6 +225,7 @@ SHALL_API Formatter *formatter_create_inherited(const FormatterImplementation *s
 
     if (NULL != (fmt = malloc(sizeof(*fmt) + super->data_size/* - sizeof(fmt->data)*/))) {
         fmt->imp = super;
+        bzero(fmt->optvals, super->data_size);
 #ifdef TEST
         hashtable_ascii_cs_init(&fmt->optmap, NULL, NULL, NULL); // we need to strdup keys to make sure that they still exists after?
 #endif
