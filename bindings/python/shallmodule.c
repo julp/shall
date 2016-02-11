@@ -1,8 +1,9 @@
-#include <Python.h>
-
-#include <shall/shall.h>
 #include <shall/formatter.h>
 #include <shall/tokens.h>
+
+#include "common.h"
+#include "options.h"
+#include "lexer_class.h"
 
 #if 0
 PyObject* PyImport_AddModuleObject(PyObject *name);
@@ -13,388 +14,12 @@ https://docs.python.org/2/c-api/dict.html
 https://docs.python.org/2/c-api/string.html
 #endif
 
-#define DEBUG
-
-#ifdef DEBUG
-# include <stdio.h>
-# include <stdarg.h>
-# define debug(format, ...) \
-    fprintf(stderr, format "\n", ## __VA_ARGS__)
-#else
-# define debug(format, ...)
-#endif
-
-static PyObject *lexers, *formatters;
-
-typedef struct {
-    PyObject_HEAD
-//     Lexer *lexer;
-} ShallLexerBaseObject;
-
-typedef struct {
-    ShallLexerBaseObject base;
-    Lexer *lexer;
-} ShallLexerObject;
+static PyObject *formatters;
 
 typedef struct {
     PyObject_HEAD
     Formatter *fmt;
 } ShallFormatterObject;
-
-static PyObject *Shall_Lexer_new(PyTypeObject *, PyObject *, PyObject *);
-static void shall_lexer_base_dealloc(ShallLexerBaseObject *);
-static int shall_lexer_base_init(ShallLexerBaseObject *, PyObject *, PyObject *);
-static PyObject *shall_lexer_get_option(PyObject *, PyObject *);
-static PyObject *shall_lexer_set_option(PyObject *, PyObject *);
-static PyObject *shall_lexer_get_name(PyObject *);
-static PyObject *shall_lexer_get_aliases(PyObject *);
-static PyObject *shall_lexer_get_mimetypes(PyObject *);
-
-static PyMethodDef Shall_Lexer_Methods[] = {
-    { "get_option",    (PyCFunction) shall_lexer_get_option,    METH_VARARGS, "TODO" },
-    { "set_option",    (PyCFunction) shall_lexer_set_option,    METH_VARARGS, "TODO" },
-    { "get_name",      (PyCFunction) shall_lexer_get_name,      METH_CLASS | METH_NOARGS, "TODO" },
-    { "get_aliases",   (PyCFunction) shall_lexer_get_aliases,   METH_CLASS | METH_NOARGS, "TODO" },
-    { "get_mimetypes", (PyCFunction) shall_lexer_get_mimetypes, METH_CLASS | METH_NOARGS, "TODO" },
-    { NULL, NULL, 0, NULL }
-};
-
-static PyTypeObject ShallLexerBaseType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "shall.BaseLexer",              /* tp_name */
-    sizeof(ShallLexerBaseObject), /* tp_basicsize */
-    0,                          /* tp_itemsize */
-    (destructor) shall_lexer_base_dealloc, /* tp_dealloc */
-    0,                          /* tp_print */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
-    0,                          /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    0,                          /* tp_as_mapping */
-    0,                          /* tp_hash  */
-    0,                          /* tp_call */
-    0,                          /* tp_str */
-    0,                          /* tp_getattro */
-    0,                          /* tp_setattro */
-    0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Shall Lexer Base objects", /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    Shall_Lexer_Methods,        /* tp_methods */
-    0,                          /* tp_members */
-    0,                          /* tp_getset */
-    0,                          /* tp_base */
-    0,                          /* tp_dict */
-    0,                          /* tp_descr_get */
-    0,                          /* tp_descr_set */
-    0,                          /* tp_dictoffset */
-    (initproc) shall_lexer_base_init, /* tp_init */
-    0,                          /* tp_alloc */
-    Shall_Lexer_new,            /* tp_new */
-};
-
-/* ========== helpers ========== */
-
-static void list_append_string_cb(const char *string, void *data)
-{
-    PyList_Append((PyObject *) data, PyUnicode_FromString(string));
-}
-
-static void python_get_option(int type, OptionValue *optvalptr, PyObject **ret)
-{
-    switch (type) {
-        case OPT_TYPE_BOOL:
-            *ret = OPT_GET_BOOL(*optvalptr) ? Py_True : Py_False;
-            break;
-        case OPT_TYPE_INT:
-            *ret = PyLong_FromLong(OPT_GET_INT(*optvalptr));
-            break;
-        case OPT_TYPE_STRING:
-            *ret = PyUnicode_FromStringAndSize(OPT_STRVAL(*optvalptr), OPT_STRLEN(*optvalptr));
-            break;
-        case OPT_TYPE_LEXER:
-            if (NULL != OPT_LEXPTR(*optvalptr)) {
-                *ret = (PyObject *) OPT_LEXPTR(*optvalptr);
-//                 Py_IncRef(*ret);
-            }
-            break;
-    }
-}
-
-static inline Lexer *python_lexer_unwrap(void *object)
-{
-    ShallLexerObject *o;
-
-    o = (ShallLexerObject *) object;
-
-    return o->lexer;
-}
-
-static int formatter_set_option_compat_cb(void *object, const char *name, OptionType type, OptionValue optval, void **UNUSED(ptr))
-{
-    return formatter_set_option((Formatter *) object, name, type, optval);
-}
-
-static int python_set_option(void *object, const char *name, PyObject *value, int reject_lexer, int (*cb)(void *, const char *, OptionType, OptionValue, void **))
-{
-    int type;
-    PyObject *ptr;
-    OptionValue optval;
-
-    ptr = NULL;
-    /*if (Py_None == value) {
-        // TODO: NULL to "remove" sublexers
-    } else*/ if (PyBool_Check(value)) {
-        type = OPT_TYPE_BOOL;
-        OPT_SET_BOOL(optval, ((Py_True) == value));
-    } else if (PyLong_Check(value)) {
-        type = OPT_TYPE_INT;
-        OPT_SET_INT(optval, PyLong_AsLong(value));
-    } else if (PyUnicode_Check(value)) {
-        type = OPT_TYPE_STRING;
-        OPT_STRVAL(optval) = PyUnicode_AS_DATA(value);
-        OPT_STRLEN(optval) = PyUnicode_GET_SIZE(value);
-    } else if (PyObject_IsInstance(value, (PyObject *) &ShallLexerBaseType)) {
-        type = OPT_TYPE_LEXER;
-        Py_IncRef(value);
-        OPT_LEXPTR(optval) = value;
-        OPT_LEXUWF(optval) = python_lexer_unwrap;
-    } else {
-        return 0;
-    }
-    cb(object, name, type, optval, (void **) &ptr);
-    if (NULL != ptr) {
-        Py_DecRef(ptr);
-    }
-
-    return 1;
-}
-
-typedef int (*set_option_t)(void *, const char *, OptionType, OptionValue, void **);
-
-static void python_set_options(void *lexer_or_formatter, PyObject *options, int reject_lexer, set_option_t cb)
-{
-    Py_ssize_t pos = 0;
-    PyObject *key, *value;
-
-    while (PyDict_Next(options, &pos, &key, &value)) {
-#if 0
-        PyObject *utf8_as_bytes;
-
-        if (NULL != (utf8_as_bytes = PyUnicode_AsUTF8String(key))) {
-            python_set_option(lexer_or_formatter, PyBytes_AS_STRING(utf8_as_bytes), value, reject_lexer, cb);
-        }
-#else
-        python_set_option(lexer_or_formatter, PyBytes_AS_STRING(key), value, reject_lexer, cb);
-#endif
-    }
-}
-
-/* ========== lexers ========== */
-
-/* helpers */
-
-static void _create_lexer(const LexerImplementation *imp, PyObject *options, PyObject **ret)
-{
-    PyObject *klass;
-    ShallLexerObject *l;
-
-//     l = (ShallLexerObject *) Py_TYPE(klass)->tp_alloc(Py_TYPE(klass), 0);
-    klass = PyDict_GetItemString(lexers, lexer_implementation_name(imp));
-//     l = PyObject_New(ShallLexerObject, &ShallLexerBaseType);
-    l = PyObject_New(ShallLexerObject, (PyTypeObject *) klass);
-    l->lexer = lexer_create(imp);
-    if (NULL != options) {
-        python_set_options((void *) l->lexer, options, 0, (set_option_t) lexer_set_option);
-    }
-    *ret = (PyObject *) l;
-}
-
-/* class methods */
-
-static PyObject *shall_lexer_get_name(PyObject *cls)
-{
-    PyObject *ret;
-    const LexerImplementation *imp;
-
-    imp = lexer_implementation_by_name(((PyTypeObject *) cls)->tp_name);
-    ret = PyUnicode_FromString(lexer_implementation_name(imp));
-    Py_INCREF(ret);
-
-    return ret;
-}
-
-static PyObject *shall_lexer_get_aliases(PyObject *cls)
-{
-    PyObject *ret;
-    const LexerImplementation *imp;
-
-    imp = lexer_implementation_by_name(((PyTypeObject *) cls)->tp_name);
-    ret = PyList_New(0);
-    lexer_implementation_each_alias(imp, list_append_string_cb, (void *) ret);
-    Py_INCREF(ret);
-
-    return ret;
-}
-
-static PyObject *shall_lexer_get_mimetypes(PyObject *cls)
-{
-    PyObject *ret;
-    const LexerImplementation *imp;
-
-    imp = lexer_implementation_by_name(((PyTypeObject *) cls)->tp_name);
-    ret = PyList_New(0);
-    lexer_implementation_each_mimetype(imp, list_append_string_cb, (void *) ret);
-    Py_INCREF(ret);
-
-    return ret;
-}
-
-/* instance methods */
-
-static PyObject *shall_lexer_get_option(PyObject *self, PyObject *args)
-{
-    PyObject *ret;
-    const char *name;
-    OptionType type;
-    OptionValue *optvalptr;
-
-    ret = Py_None;
-    if (PyArg_ParseTuple(args, "s", &name)) {
-        type = lexer_get_option(((ShallLexerObject *) self)->lexer, name, &optvalptr);
-        python_get_option(type, optvalptr, &ret);
-    }
-    Py_INCREF(ret);
-
-    return ret;
-}
-
-static PyObject *shall_lexer_set_option(PyObject *self, PyObject *args)
-{
-    const char *name;
-    PyObject *ret, *value;
-
-    ret = Py_None;
-    if (PyArg_ParseTuple(args, "sO", &name, &value)) {
-        ret = python_set_option(((ShallLexerObject *) self)->lexer, name, value, 0, (set_option_t) lexer_set_option) ? Py_True : Py_False;
-    }
-    Py_INCREF(ret);
-
-    return ret;
-}
-
-/* python internals */
-
-/* ... base lexer class */
-
-static PyObject *Shall_Lexer_new(PyTypeObject *type, PyObject *args, PyObject *UNUSED(kwds))
-{
-//     PyObject *options;
-    ShallLexerObject *self;
-
-//     options = NULL;
-    self = (ShallLexerObject *) type->tp_alloc(type, 0);
-    if (self != NULL) {
-        //
-    }
-//     PyArg_ParseTuple(args, "|O!", &PyDict_Type, &options);
-//     if (NULL != options) {
-//         python_set_options((void *) self->lexer, options, 0, (set_option_t) lexer_set_option);
-//     }
-
-    return (PyObject *) self;
-}
-
-static void shall_lexer_base_dealloc(ShallLexerBaseObject *self)
-{
-    Py_TYPE(self)->tp_free((PyObject *) self);
-}
-
-static int shall_lexer_base_init(ShallLexerBaseObject *self, PyObject *args, PyObject *UNUSED(kwds))
-{
-    return 0;
-}
-
-/* ... lexer class */
-
-static void Shall_Lexer_dealloc(ShallLexerObject *self)
-{
-    lexer_destroy(self->lexer, (on_lexer_destroy_cb_t) Py_DecRef);
-#if PY_MAJOR_VERSION >= 3
-    Py_TYPE((PyObject *) &self->base)
-#else
-    self->base.ob_type
-#endif /* PY_MAJOR_VERSION >= 3 */
-    ->tp_free((PyObject *) self);
-}
-
-static int Shall_Lexer_init(ShallLexerObject *lo, PyObject *args, PyObject *kwds)
-{
-    PyObject *self, *options;
-    const LexerImplementation *imp;
-
-    options = NULL;
-    self = (PyObject *) lo;
-    if (ShallLexerBaseType.tp_init(self, args, kwds) < 0) {
-        return -1;
-    }
-    PyArg_ParseTuple(args, "|O!", &PyDict_Type, &options);
-    imp = lexer_implementation_by_name(Py_TYPE(self)->tp_name);
-    lo->lexer = lexer_create(imp);
-    if (NULL != options) {
-        python_set_options((void *) lo->lexer, options, 0, (set_option_t) lexer_set_option);
-    }
-
-    return 0;
-}
-
-static PyTypeObject ShallLexerXType = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "shall.lexer",               /* tp_name */
-    sizeof(ShallLexerObject),    /* tp_basicsize */
-    0,                           /* tp_itemsize */
-    (destructor) Shall_Lexer_dealloc, /* tp_dealloc */
-    0,                           /* tp_print */
-    0,                           /* tp_getattr */
-    0,                           /* tp_setattr */
-    0,                           /* tp_reserved */
-    0,                           /* tp_repr */
-    0,                           /* tp_as_number */
-    0,                           /* tp_as_sequence */
-    0,                           /* tp_as_mapping */
-    0,                           /* tp_hash  */
-    0,                           /* tp_call */
-    0,                           /* tp_str */
-    0,                           /* tp_getattro */
-    0,                           /* tp_setattro */
-    0,                           /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
-    "Shall Lexer objects",       /* tp_doc */
-    0,                           /* tp_traverse */
-    0,                           /* tp_clear */
-    0,                           /* tp_richcompare */
-    0,                           /* tp_weaklistoffset */
-    0,                           /* tp_iter */
-    0,                           /* tp_iternext */
-    0,                           /* tp_methods */
-    0,                           /* tp_members */
-    0,                           /* tp_getset */
-    &ShallLexerBaseType,         /* tp_base */
-    0,                           /* tp_dict */
-    0,                           /* tp_descr_get */
-    0,                           /* tp_descr_set */
-    0,                           /* tp_dictoffset */
-    (initproc) Shall_Lexer_init, /* tp_init */
-    0,                           /* tp_alloc */
-    0,                           /* tp_new */
-};
 
 /* ========== formatters ========== */
 
@@ -591,6 +216,7 @@ static const FormatterImplementation pythonfmt = {
     python_write_token,
     python_start_lexing,
     python_end_lexing,
+    NULL,
     sizeof(PythonFormatterData),
     NULL
 };
@@ -816,7 +442,24 @@ static PyObject *shall_highlight(PyObject *self, PyObject *args)
 
 // print issubclass(shall.PHP, shall.Base)
 // printf("PyObject_IsInstance = %d\n", PyObject_IsInstance(lexer, (PyObject *) &ShallLexerBaseType));
-        highlight_string(string, string_len, &dest, &dest_len, ((ShallFormatterObject *) fmt)->fmt, 1, &((ShallLexerObject *) lexer)->lexer);
+        highlight_string(string, (size_t) string_len, &dest, &dest_len, ((ShallFormatterObject *) fmt)->fmt, 1, &((ShallLexerObject *) lexer)->lexer);
+        ret = PyUnicode_FromStringAndSize(dest, dest_len);
+    }
+    Py_INCREF(ret);
+
+    return ret;
+}
+
+static PyObject *shall_sample(PyObject *self, PyObject *args)
+{
+    PyObject *ret, *fmt;
+
+    ret = Py_None;
+    if (PyArg_ParseTuple(args, "O!", &ShallFormatterBaseType, &fmt)) {
+        char *dest;
+        size_t dest_len;
+
+        highlight_sample(&dest, &dest_len, ((ShallFormatterObject *) fmt)->fmt);
         ret = PyUnicode_FromStringAndSize(dest, dest_len);
     }
     Py_INCREF(ret);
@@ -825,6 +468,7 @@ static PyObject *shall_highlight(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef ShallMethods[] = {
+    { "sample",             (PyCFunction) shall_sample,             METH_VARARGS, "TODO" },
     { "highlight",          (PyCFunction) shall_highlight,          METH_VARARGS, "TODO" },
     { "lexer_guess",        (PyCFunction) shall_lexer_guess,        METH_VARARGS, "TODO" },
     { "lexer_by_name",      (PyCFunction) shall_lexer_by_name,      METH_VARARGS, "TODO" },
@@ -855,56 +499,6 @@ static struct PyModuleDef shallmodule = {
 
 static PyObject *shallmodulep;
 
-static void create_lexer_class_cb(const LexerImplementation *imp, void *UNUSED(data))
-{
-    PyTypeObject *type;
-//     char *tp_name;
-    const char *imp_name;
-
-    imp_name = lexer_implementation_name(imp);
-//     asprintf(&tp_name, "shall.%s", imp_name);
-    type = PyMem_Malloc(sizeof(*type));
-    memcpy(type, &ShallLexerXType, sizeof(*type));
-    type->tp_name = /*tp_name*/imp_name;
-//     type->tp_flags = Py_TPFLAGS_DEFAULT;
-    type->tp_base = &ShallLexerBaseType;
-//     type->tp_init = (initproc) Shall_Lexer_init;
-    PyType_Ready(type);
-    Py_INCREF(type);
-    PyModule_AddObject(shallmodulep, imp_name, (PyObject *) type);
-//     PyDict_SetItem(lexers, PyUnicode_FromString(imp_name), (PyObject *) type);
-    PyDict_SetItemString(lexers, imp_name, (PyObject *) type);
-#if 1
-    {
-        PyObject *dict;
-
-        dict = PyDict_New();
-        PyDict_SetItemString(dict, "name", PyUnicode_FromString(imp_name));
-//         PyObject_SetAttrString((PyObject *) type, "name", PyUnicode_FromString(imp_name));
-        {
-            PyObject *list;
-
-            list = PyList_New(0);
-            lexer_implementation_each_mimetype(imp, list_append_string_cb, (void *) list);
-//             Py_INCREF(list);
-            PyDict_SetItemString(dict, "mimetypes", list);
-//             PyObject_SetAttrString((PyObject *) type, "mimetypes", list);
-        }
-        {
-            PyObject *list;
-
-            list = PyList_New(0);
-            lexer_implementation_each_alias(imp, list_append_string_cb, (void *) list);
-//             Py_INCREF(list);
-            PyDict_SetItemString(dict, "aliases", list);
-//             PyObject_SetAttrString((PyObject *) type, "aliases", list);
-        }
-        Py_INCREF(dict);
-        type->tp_dict = dict;
-    }
-#endif
-}
-
 static void create_formatter_class_cb(const FormatterImplementation *imp, void *UNUSED(data))
 {
     PyTypeObject *type;
@@ -927,11 +521,11 @@ void init_shall_token(void)
     PyModule_AddObject(shallmodulep, "token", shalltokenmodulep);
 
     debug("init_shall_token called\n");
-#define TOKEN(constant, parent, description, cssclass) \
+# define TOKEN(constant, parent, description, cssclass) \
     PyModule_AddIntConstant(shalltokenmodulep, #constant, constant);
 //     PyDict_SetItemString(tokens, #constant, PyLong_FromLong(constant));
-#include <shall/keywords.h>
-#undef TOKEN
+# include <shall/keywords.h>
+# undef TOKEN
 }
 #endif /* PY_MAJOR_VERSION < 3 */
 
@@ -976,13 +570,7 @@ initshall
 # endif
 #endif /* PY_MAJOR_VERSION >= 3 */
 
-    Py_INCREF(&ShallLexerBaseType);
-    PyModule_AddObject(shallmodulep, "BaseLexer", (PyObject *) &ShallLexerBaseType);
-
-    lexers = PyDict_New();
-    Py_INCREF(lexers);
-
-    lexer_implementation_each(create_lexer_class_cb, NULL);
+    register_lexer_class(shallmodulep);
 
     formatters = PyDict_New();
     Py_INCREF(formatters);
