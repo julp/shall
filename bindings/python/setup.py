@@ -2,7 +2,7 @@ from distutils.core import setup, Extension
 
 module1 = Extension(
     'shall',
-    sources = ['shallmodule.c', 'lexer_class.c', 'lexer_methods.c', 'helpers.c', 'options.c'],
+    sources = ['shallmodule.c', 'lexer_class.c', 'lexer_methods.c', 'formatter_class.c', 'formatter_methods.c', 'helpers.c', 'options.c'],
     include_dirs = ['/home/julp/shall/include'],
     library_dirs = ['/home/julp/shall/lib'],
     libraries = ['shall']
