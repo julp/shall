@@ -272,10 +272,21 @@ static void create_formatter_class_cb(const FormatterImplementation *imp, void *
     imp_name = formatter_implementation_name(imp);
     type = PyMem_Malloc(sizeof(*type));
     memcpy(type, &ShallFormatterXType, sizeof(*type));
+// #if 1
     type->tp_name = imp_name;
+// #else
+    char *p;
+    size_t imp_name_len;
+
+    imp_name_len = strlen(imp_name);
+    p = PyMem_New(char, imp_name_len + STR_SIZE("Formatter"));
+    memcpy(p, imp_name, imp_name_len);
+    memcpy(p + imp_name_len, "Formatter", STR_SIZE("Formatter"));
+//     type->tp_name = p;
+// #endif
     PyType_Ready(type);
     Py_INCREF(type);
-    PyModule_AddObject((PyObject *) data, imp_name, (PyObject *) type);
+    PyModule_AddObject((PyObject *) data, p, (PyObject *) type);
     PyDict_SetItemString(formatters, imp_name, (PyObject *) type);
 }
 
