@@ -14,6 +14,8 @@ module Shall
         class DTD < Base ; end
         # For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.
         class ERB < Base ; end
+        # For the Google Go programming language (golang.org)
+        class Go < Base ; end
         # XXX
         class HTML < Base ; end
         # TODO

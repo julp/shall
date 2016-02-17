@@ -98,7 +98,7 @@ set(SOURCES #
 set(THEMES monokai molokai)
 set(FORMATTERS bbcode html plain rtf terminal)
 set(C_LEXERS cpp diff text) # annotations
-set(RE2C_LEXERS apache c cmake css dtd js json nginx pgsql php python ruby varnish xml)
+set(RE2C_LEXERS apache c cmake css dtd go js json nginx pgsql php python ruby varnish xml)
 set(BISON_GRAMMARS )
 
 foreach(lexer ${C_LEXERS})

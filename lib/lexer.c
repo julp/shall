@@ -22,6 +22,7 @@ extern const LexerImplementation css_lexer;
 extern const LexerImplementation diff_lexer;
 extern const LexerImplementation dtd_lexer;
 extern const LexerImplementation erb_lexer; // provided by ruby lexer
+extern const LexerImplementation go_lexer;
 extern const LexerImplementation html_lexer; // provided by xml lexer
 extern const LexerImplementation js_lexer;
 extern const LexerImplementation json_lexer;
@@ -44,6 +45,7 @@ static const LexerImplementation *available_lexers[] = {
     &diff_lexer,
     &dtd_lexer,
     &erb_lexer,
+    &go_lexer,
     &html_lexer,
     &js_lexer,
     &json_lexer,

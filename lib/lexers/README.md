@@ -70,6 +70,14 @@ MIME type(s): application/x-ruby-templating
 | ------ | ---- | ------------- | ----------- |
 | secondary | lexer | null/none | Lexer to highlight content outside of ERB tags (if none, these parts will not be highlighted) |
 
+## Go
+
+For the Google Go programming language (golang.org)
+
+Filename(s): *.go
+
+MIME type(s): text/x-gosrc
+
 ## HTML
 
 XXX
