@@ -330,7 +330,8 @@ static uint8_t closest_color_for_256_mode(const Color *original)
 
 STRING_BUILDER_DECL(STR_SIZE(LONGEST_ANSI_ESCAPE_SEQUENCE));
 
-static int terminal_start_document(String *UNUSED(out), FormatterData *data)
+// TODO: build "cache" only the first time and rebuild it only if theme has changed between 2 start_document calls
+static void rebuild_cache(TerminalFormatterData *data)
 {
     size_t i;
     const Theme *theme;
@@ -341,7 +342,6 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
     if (NULL == (theme = mydata->theme)) {
         theme = theme_by_name("molokai");
     }
-    // TODO: build "cache" only the first time and rebuild it only if theme has changed between 2 start_document calls
     for (i = 0; i < _TOKEN_COUNT; i++) {
         mydata->sequences[i].value_len = 0;
         mydata->sequences[i].value = NULL;
@@ -377,6 +377,14 @@ static int terminal_start_document(String *UNUSED(out), FormatterData *data)
             STRING_BUILDER_DUP_INTO(sb, mydata->sequences[i].value);
         }
     }
+}
+
+static int terminal_start_document(String *UNUSED(out), FormatterData *data)
+{
+    TerminalFormatterData *mydata;
+
+    mydata = (TerminalFormatterData *) data;
+    rebuild_cache(mydata);
 
     return 0;
 }
