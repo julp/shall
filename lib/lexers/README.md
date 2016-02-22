@@ -86,6 +86,14 @@ Filename(s): *.html
 
 MIME type(s): text/html
 
+## Lua
+
+For the Lua programming language (lua.org)
+
+Filename(s): *.lua
+
+MIME type(s): text/x-lua, application/x-lua
+
 ## Javascript
 
 TODO

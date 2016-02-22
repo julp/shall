@@ -18,6 +18,8 @@ module Shall
         class Go < Base ; end
         # XXX
         class HTML < Base ; end
+        # For the Lua programming language (lua.org)
+        class Lua < Base ; end
         # TODO
         class Javascript < Base ; end
         # For JSON data structures

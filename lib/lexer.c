@@ -26,6 +26,7 @@ extern const LexerImplementation go_lexer;
 extern const LexerImplementation html_lexer; // provided by xml lexer
 extern const LexerImplementation js_lexer;
 extern const LexerImplementation json_lexer;
+extern const LexerImplementation lua_lexer;
 extern const LexerImplementation nginx_lexer;
 extern const LexerImplementation php_lexer;
 extern const LexerImplementation postgresql_lexer;
@@ -47,6 +48,7 @@ static const LexerImplementation *available_lexers[] = {
     &erb_lexer,
     &go_lexer,
     &html_lexer,
+    &lua_lexer,
     &js_lexer,
     &json_lexer,
     &nginx_lexer,
