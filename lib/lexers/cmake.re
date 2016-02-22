@@ -1,3 +1,8 @@
+/**
+ * Spec/language reference:
+ * - https://cmake.org/cmake/help/v3.5/manual/cmake-language.7.html
+ */
+
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,11 +24,11 @@ enum {
 };
 
 static int default_token_type[] = {
-    IGNORABLE,
-    STRING_DOUBLE,
-    STRING_DOUBLE,
-    COMMENT_MULTILINE,
-    NAME_VARIABLE,
+    [ STATE(INITIAL) ] = IGNORABLE,
+    [ STATE(IN_QUOTED_ARGUMENT) ] = STRING_DOUBLE,
+    [ STATE(IN_BRACKET_STRING) ] = STRING_DOUBLE,
+    [ STATE(IN_BRACKET_COMMENT) ] = COMMENT_MULTILINE,
+    [ STATE(IN_VARIABLE_REFERENCE) ] = NAME_VARIABLE,
 };
 
 static const named_element_t builtin_commands[] = {
@@ -130,7 +135,6 @@ static const named_element_t builtin_commands[] = {
 };
 
 /**
- * Syntax: http://www.cmake.org/cmake/help/v3.0/manual/cmake-language.7.html
  * Variable names are case-sensitive and may consist of almost any text, but we recommend sticking to names consisting only of alphanumeric characters plus _ and -.
  * Command names are case-insensitive
  *
