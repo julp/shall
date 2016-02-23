@@ -72,8 +72,8 @@ bracket_close = "]" "="* "]";
 
 <INITIAL> "--"? bracket_open {
     bool comment;
-    size_t bracket_len;
     YYCTYPE *end;
+    size_t bracket_len;
     char bracket_close[YYLENG];
 
     comment = '-' == *YYTEXT;

@@ -33,6 +33,7 @@ extern const LexerImplementation postgresql_lexer;
 extern const LexerImplementation python_lexer;
 extern const LexerImplementation ruby_lexer;
 extern const LexerImplementation text_lexer;
+extern const LexerImplementation twig_lexer;
 extern const LexerImplementation varnish_lexer;
 extern const LexerImplementation xml_lexer;
 #endif /* !DOXYGEN */
@@ -57,6 +58,7 @@ static const LexerImplementation *available_lexers[] = {
     &python_lexer,
     &ruby_lexer,
     &text_lexer, // may be a good idea to keep it last?
+    &twig_lexer,
     &varnish_lexer,
     &xml_lexer,
     NULL

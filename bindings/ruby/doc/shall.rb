@@ -36,6 +36,8 @@ module Shall
         class Ruby < Base ; end
         # A "dummy" lexer that doesn't highlight anything
         class Text < Base ; end
+        # Twig template engine
+        class Twig < Base ; end
         # A lexer for Varnish configuration language
         class Varnish < Base ; end
         # Generic lexer for XML (eXtensible Markup Language)

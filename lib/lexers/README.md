@@ -179,6 +179,18 @@ Filename(s): *.txt
 
 MIME type(s): text/plain
 
+## Twig
+
+Twig template engine
+
+Filename(s): *.twig
+
+MIME type(s): application/x-twig, text/html+twig
+
+| Option | Type | Default value | Description |
+| ------ | ---- | ------------- | ----------- |
+| secondary | lexer | null/none | Lexer to highlight content outside of Twig blocks (if none, these parts will not be highlighted) |
+
 ## Varnish
 
 A lexer for Varnish configuration language
