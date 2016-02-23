@@ -19,7 +19,6 @@ enum {
     STATE(INITIAL),
     STATE(IN_QUOTED_ARGUMENT),
     STATE(IN_BRACKET_STRING),
-    STATE(IN_BRACKET_COMMENT),
     STATE(IN_VARIABLE_REFERENCE),
 };
 
@@ -27,7 +26,6 @@ static int default_token_type[] = {
     [ STATE(INITIAL) ] = IGNORABLE,
     [ STATE(IN_QUOTED_ARGUMENT) ] = STRING_DOUBLE,
     [ STATE(IN_BRACKET_STRING) ] = STRING_DOUBLE,
-    [ STATE(IN_BRACKET_COMMENT) ] = COMMENT_MULTILINE,
     [ STATE(IN_VARIABLE_REFERENCE) ] = NAME_VARIABLE,
 };
 
@@ -161,62 +159,27 @@ bracket_close = "]" "="* "]";
 identifier = [A-Za-z_][A-Za-z0-9_]*;
 
 <INITIAL>"#" bracket_open {
-#if 1
-    mydata->bracket_len = YYLENG - STR_LEN("#");
-    BEGIN(IN_BRACKET_COMMENT);
-#else
-    int eqnumber;
+    YYCTYPE *end;
+    size_t bracket_len = YYLENG - 1;
+    char bracket_close[bracket_len];
 
-    eqnumber = YYLENG - STR_LEN("#[[");
-    while (YYCURSOR < YYLIMIT) {
-restart_comment_bracket:
-        if (']' == *YYCURSOR++ && YYLIMIT - YYCURSOR >/*=*/ eqnumber/* + 1*/) {
-            int i;
-
-            for (i = eqnumber; i > 0; i--) {
-                if ('=' != *YYCURSOR++) {
-                    goto restart_comment_bracket;
-                }
-            }
-            if (']' == *YYCURSOR++) {
-                TOKEN(COMMENT_MULTILINE);
-            }
-        }
+    memcpy(bracket_close, YYTEXT + STR_LEN("#"), bracket_len);
+    bracket_close[0] = bracket_close[bracket_len - 1] = ']';
+    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, bracket_close, bracket_len, (const char *) YYLIMIT))) {
+        YYCURSOR = YYLIMIT;
+    } else {
+        YYCURSOR = end + bracket_len;
     }
-    YYCURSOR = YYLIMIT; // if we reach this point, comment is unterminated
-#endif
     TOKEN(COMMENT_MULTILINE);
 }
 
-<INITIAL>bracket_open {
-#if 1
+<INITIAL> bracket_open {
     mydata->bracket_len = YYLENG;
     BEGIN(IN_BRACKET_STRING);
-#else
-    int eqnumber;
-
-    eqnumber = YYLENG - STR_LEN("[[");
-    while (YYCURSOR < YYLIMIT) {
-restart_string_bracket:
-        if (']' == *YYCURSOR++ && YYLIMIT - YYCURSOR >/*=*/ eqnumber/* + 1*/) {
-            int i;
-
-            for (i = eqnumber; i > 0; i--) {
-                if ('=' != *YYCURSOR++) {
-                    goto restart_string_bracket;
-                }
-            }
-            if (']' == *YYCURSOR++) {
-                TOKEN(STRING_DOUBLE);
-            }
-        }
-    }
-    YYCURSOR = YYLIMIT; // if we reach this point, comment is unterminated
-#endif
     TOKEN(STRING_DOUBLE);
 }
 
-<IN_BRACKET_STRING,IN_BRACKET_COMMENT>bracket_close {
+<IN_BRACKET_STRING>bracket_close {
     int old_state;
 
     old_state = YYSTATE;
