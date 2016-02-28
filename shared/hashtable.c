@@ -73,43 +73,54 @@ ht_hash_t ascii_hash_ci(ht_key_t k)
     return h;
 }
 
-static inline void hashtable_rehash(HashTable *this)
+static inline void hashtable_rehash(HashTable *ht)
 {
     HashNode *n;
     uint32_t index;
 
-    if (UNEXPECTED(this->count < 1)) {
+    if (UNEXPECTED(ht->count < 1)) {
         return;
     }
-    memset(this->nodes, 0, this->capacity * sizeof(*this->nodes));
-    n = this->gHead;
+    memset(ht->nodes, 0, ht->capacity * sizeof(*ht->nodes));
+    n = ht->gHead;
     while (NULL != n) {
-        index = n->hash & this->mask;
-        n->nNext = this->nodes[index];
+        index = n->hash & ht->mask;
+        n->nNext = ht->nodes[index];
         n->nPrev = NULL;
         if (NULL != n->nNext) {
             n->nNext->nPrev = n;
         }
-        this->nodes[index] = n;
+        ht->nodes[index] = n;
         n = n->gNext;
     }
 }
 
-static inline void hashtable_maybe_resize(HashTable *this)
+static inline void hashtable_maybe_resize(HashTable *ht)
 {
-    if (UNEXPECTED(this->count < this->capacity)) {
+    if (UNEXPECTED(ht->count < ht->capacity)) {
         return;
     }
-    if (EXPECTED(this->capacity << 1) > 0) {
-        this->nodes = mem_renew(this->nodes, *this->nodes, this->capacity << 1);
-        this->capacity <<= 1;
-        this->mask = this->capacity - 1;
-        hashtable_rehash(this);
+    if (EXPECTED(ht->capacity << 1) > 0) {
+        ht->nodes = mem_renew(ht->nodes, *ht->nodes, ht->capacity << 1);
+        ht->capacity <<= 1;
+        ht->mask = ht->capacity - 1;
+        hashtable_rehash(ht);
     }
 }
 
+/**
+ * Initialize a hashtable
+ *
+ * @param ht the hashtable to set
+ * @param capacity the initial capacity of the hashtable
+ * @param hf callback to hash keys
+ * @param ef callback to determine if two keys are equal, if NULL, it will be set to value_equal
+ * @param key_duper the keys duper (NULL to use them as is/without copying them)
+ * @param key_dtor the key destructor (NULL to not destroy them automatically)
+ * @param value_dtor the value destructor (NULL to not destroy them automatically)
+ */
 void hashtable_init(
-    HashTable *this,
+    HashTable *ht,
     size_t capacity,
     HashFunc hf,
     EqualFunc ef,
@@ -117,65 +128,109 @@ void hashtable_init(
     DtorFunc key_dtor,
     DtorFunc value_dtor
 ) {
-    this->count = 0;
-    this->gHead = NULL;
-    this->gTail = NULL;
-    this->capacity = nearest_power(capacity, HASHTABLE_MIN_SIZE);
-    this->mask = this->capacity - 1;
-    this->hf = hf;
+    ht->count = 0;
+    ht->gHead = NULL;
+    ht->gTail = NULL;
+    ht->capacity = nearest_power(capacity, HASHTABLE_MIN_SIZE);
+    ht->mask = ht->capacity - 1;
+    ht->hf = hf;
     if (NULL == ef) {
-        this->ef = value_equal;
+        ht->ef = value_equal;
     } else {
-        this->ef = ef;
+        ht->ef = ef;
     }
-    this->key_duper = key_duper;
-    this->key_dtor = key_dtor;
-    this->value_dtor = value_dtor;
-    this->nodes = mem_new_n(*this->nodes, this->capacity);
-    memset(this->nodes, 0, this->capacity * sizeof(*this->nodes));
+    ht->key_duper = key_duper;
+    ht->key_dtor = key_dtor;
+    ht->value_dtor = value_dtor;
+    ht->nodes = mem_new_n(*ht->nodes, ht->capacity);
+    memset(ht->nodes, 0, ht->capacity * sizeof(*ht->nodes));
 }
 
-void hashtable_ascii_cs_init(HashTable *this, DupFunc key_duper, DtorFunc key_dtor, DtorFunc value_dtor)
+/**
+ * Helper to initialize a hashtable for binary/case sensitive strings as keys
+ *
+ * @param ht the hashtable to set
+ * @param key_duper the keys duper (NULL to use them as is/without copying them)
+ * @param key_dtor the key destructor (NULL to not destroy them automatically)
+ * @param value_dtor the value destructor (NULL to not destroy them automatically)
+ */
+void hashtable_ascii_cs_init(HashTable *ht, DupFunc key_duper, DtorFunc key_dtor, DtorFunc value_dtor)
 {
-    hashtable_init(this, HASHTABLE_MIN_SIZE, ascii_hash_cs, ascii_equal_cs, key_duper, key_dtor, value_dtor);
+    hashtable_init(ht, HASHTABLE_MIN_SIZE, ascii_hash_cs, ascii_equal_cs, key_duper, key_dtor, value_dtor);
 }
 
-void hashtable_ascii_ci_init(HashTable *this, DupFunc key_duper, DtorFunc key_dtor, DtorFunc value_dtor)
+/**
+ * Helper to initialize a hashtable for (ASCII) case insensitive strings as keys
+ *
+ * @param ht the hashtable to set
+ * @param key_duper the keys duper (NULL to use them as is/without copying them)
+ * @param key_dtor the key destructor (NULL to not destroy them automatically)
+ * @param value_dtor the value destructor (NULL to not destroy them automatically)
+ */
+void hashtable_ascii_ci_init(HashTable *ht, DupFunc key_duper, DtorFunc key_dtor, DtorFunc value_dtor)
 {
-    hashtable_init(this, HASHTABLE_MIN_SIZE, ascii_hash_ci, ascii_equal_ci, key_duper, key_dtor, value_dtor);
+    hashtable_init(ht, HASHTABLE_MIN_SIZE, ascii_hash_ci, ascii_equal_ci, key_duper, key_dtor, value_dtor);
 }
 
-ht_hash_t _hashtable_hash(HashTable *this, ht_key_t key)
+/**
+ * Compute the hash for the given key
+ *
+ * @param ht the hashtable
+ * @param key the key to hash
+ *
+ * @return the computed hash for key
+ */
+ht_hash_t _hashtable_hash(HashTable *ht, ht_key_t key)
 {
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    return NULL == this->hf ? key : this->hf(key);
+    return NULL == ht->hf ? key : ht->hf(key);
 }
 
-size_t hashtable_size(HashTable *this)
+/**
+ * Get items count
+ *
+ * @param ht the hashtable
+ *
+ * @return the number of elements inside ht
+ */
+size_t hashtable_size(HashTable *ht)
 {
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    return this->count;
+    return ht->count;
 }
 
-static bool hashtable_put_real(HashTable *this, uint32_t flags, ht_hash_t h, ht_key_t key, void *value, void **oldvalue)
+/**
+ * Real work to insert a new item or to overwrite an existing one
+ *
+ * @param ht the hashtable
+ * @param flags a mask of the following options:
+ *   - HT_PUT_ON_DUP_KEY_PRESERVE: if the key already exists, do not overwrite its current value
+ * @param h the hash of the key
+ * @param key the key of the item to put
+ * @param value its associated value
+ * @param oldvalue if this pointer is not NULL, it will receive the previous value associated to the key
+ *
+ * @return false if the hashtable is unchanged (no insertion or modification)
+ */
+static bool hashtable_put_real(HashTable *ht, uint32_t flags, ht_hash_t h, ht_key_t key, void *value, void **oldvalue)
 {
     HashNode *n;
     uint32_t index;
 
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    index = h & this->mask;
-    n = this->nodes[index];
+    index = h & ht->mask;
+    n = ht->nodes[index];
     while (NULL != n) {
-        if (n->hash == h && this->ef(key, n->key)) {
+        if (n->hash == h && ht->ef(key, n->key)) {
             if (NULL != oldvalue) {
                 *oldvalue = n->data;
             }
             if (!HAS_FLAG(flags, HT_PUT_ON_DUP_KEY_PRESERVE)) {
-                if (NULL != this->value_dtor/* && !HAS_FLAG(flags, HT_PUT_ON_DUP_KEY_NO_DTOR)*/) {
-                    this->value_dtor(n->data);
+                if (NULL != ht->value_dtor/* && !HAS_FLAG(flags, HT_PUT_ON_DUP_KEY_NO_DTOR)*/) {
+                    ht->value_dtor(n->data);
                 }
                 n->data = value;
                 return true;
@@ -185,62 +240,108 @@ static bool hashtable_put_real(HashTable *this, uint32_t flags, ht_hash_t h, ht_
         n = n->nNext;
     }
     n = mem_new(*n);
-    if (NULL == this->key_duper) {
+    if (NULL == ht->key_duper) {
         n->key = key;
     } else {
-        n->key = (ht_key_t) this->key_duper((void *) key);
+        n->key = (ht_key_t) ht->key_duper((void *) key);
     }
     n->hash = h;
     n->data = value;
     // Bucket: prepend
-    n->nNext = this->nodes[index];
+    n->nNext = ht->nodes[index];
     n->nPrev = NULL;
     if (NULL != n->nNext) {
         n->nNext->nPrev = n;
     }
     // Global
-    n->gPrev = this->gTail;
-    this->gTail = n;
+    n->gPrev = ht->gTail;
+    ht->gTail = n;
     n->gNext = NULL;
     if (NULL != n->gPrev) {
         n->gPrev->gNext = n;
     }
-    if (NULL == this->gHead) {
-        this->gHead = n;
+    if (NULL == ht->gHead) {
+        ht->gHead = n;
     }
-    this->nodes[index] = n;
-    ++this->count;
-    hashtable_maybe_resize(this);
+    ht->nodes[index] = n;
+    ++ht->count;
+    hashtable_maybe_resize(ht);
 
     return true;
 }
 
-bool _hashtable_quick_put(HashTable *this, uint32_t flags, ht_hash_t h, ht_key_t key, void *value, void **oldvalue)
+/**
+ * Put a key/value when key's hash is already known
+ *
+ * @param ht the hashtable
+ * @param flags a mask of the following options:
+ *   - HT_PUT_ON_DUP_KEY_PRESERVE: if the key already exists, do not overwrite its current value
+ * @param h the hash of the key
+ * @param key the key of the item to put
+ * @param value its associated value
+ * @param oldvalue if this pointer is not NULL, it will receive the previous value associated to the key
+ *
+ * @return false if the hashtable is unchanged (no insertion or modification)
+ */
+bool _hashtable_quick_put(HashTable *ht, uint32_t flags, ht_hash_t h, ht_key_t key, void *value, void **oldvalue)
 {
-    return hashtable_put_real(this, flags, h, key, value, oldvalue);
+    return hashtable_put_real(ht, flags, h, key, value, oldvalue);
 }
 
-bool _hashtable_put(HashTable *this, uint32_t flags, ht_key_t key, void *value, void **oldvalue)
+/**
+ * Put a key/value (normal case)
+ *
+ * @param ht the hashtable
+ * @param flags a mask of the following options:
+ *   - HT_PUT_ON_DUP_KEY_PRESERVE: if the key already exists, do not overwrite its current value
+ * @param key the key of the item to put
+ * @param value its associated value
+ * @param oldvalue if this pointer is not NULL, it will receive the previous value associated to the key
+ *
+ * @return false if the hashtable is unchanged (no insertion or modification)
+ */
+bool _hashtable_put(HashTable *ht, uint32_t flags, ht_key_t key, void *value, void **oldvalue)
 {
-    return hashtable_put_real(this, flags, NULL == this->hf ? key : this->hf(key), key, value, oldvalue);
+    return hashtable_put_real(ht, flags, NULL == ht->hf ? key : ht->hf(key), key, value, oldvalue);
 }
 
-bool _hashtable_direct_put(HashTable *this, uint32_t flags, ht_hash_t h, void *value, void **oldvalue)
+/**
+ * Put a key/value when key is also the hash
+ *
+ * @param ht the hashtable
+ * @param flags a mask of the following options:
+ *   - HT_PUT_ON_DUP_KEY_PRESERVE: if the key already exists, do not overwrite its current value
+ * @param h the key and hash
+ * @param value its associated value
+ * @param oldvalue if this pointer is not NULL, it will receive the previous value associated to the key
+ *
+ * @return false if the hashtable is unchanged (no insertion or modification)
+ */
+bool _hashtable_direct_put(HashTable *ht, uint32_t flags, ht_hash_t h, void *value, void **oldvalue)
 {
-    return hashtable_put_real(this, flags, h, (ht_key_t) h, value, oldvalue);
+    return hashtable_put_real(ht, flags, h, (ht_key_t) h, value, oldvalue);
 }
 
-bool _hashtable_quick_contains(HashTable *this, ht_hash_t h, ht_key_t key)
+/**
+ * Test if a hashtable contains a key from the key and its hash
+ *
+ * @param ht the hashtable
+ * @param h the hash of the key
+ * @param key the key to lookup
+ *
+ * @return true if the key exists in ht
+ */
+bool _hashtable_quick_contains(HashTable *ht, ht_hash_t h, ht_key_t key)
 {
     HashNode *n;
     uint32_t index;
 
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    index = h & this->mask;
-    n = this->nodes[index];
+    index = h & ht->mask;
+    n = ht->nodes[index];
     while (NULL != n) {
-        if (n->hash == h && this->ef(key, n->key)) {
+        if (n->hash == h && ht->ef(key, n->key)) {
             return true;
         }
         n = n->nNext;
@@ -249,28 +350,55 @@ bool _hashtable_quick_contains(HashTable *this, ht_hash_t h, ht_key_t key)
     return false;
 }
 
-bool _hashtable_contains(HashTable *this, ht_key_t key)
+/**
+ * Test if a hashtable contains a key
+ *
+ * @param ht the hashtable
+ * @param key the key to lookup
+ *
+ * @return true if the key exists in ht
+ */
+bool _hashtable_contains(HashTable *ht, ht_key_t key)
 {
-    return _hashtable_quick_contains(this, NULL == this->hf ? key : this->hf(key), key);
+    return _hashtable_quick_contains(ht, NULL == ht->hf ? key : ht->hf(key), key);
 }
 
-bool _hashtable_direct_contains(HashTable *this, ht_hash_t h)
+/**
+ * Test if a hashtable contains a key which is also its hash (eg a number - with a type compatible with ht_key_t)
+ *
+ * @param ht the hashtable
+ * @param h the key and hash to lookup
+ *
+ * @return true if the key exists in ht
+ */
+bool _hashtable_direct_contains(HashTable *ht, ht_hash_t h)
 {
-    return _hashtable_quick_contains(this, h, (ht_key_t) h);
+    return _hashtable_quick_contains(ht, h, (ht_key_t) h);
 }
 
-bool _hashtable_quick_get(HashTable *this, ht_hash_t h, ht_key_t key, void **value)
+/**
+ * Get the value associated to a key from the key and its hash
+ *
+ * @param ht the hashtable
+ * @param h the hash of the key (if you don't know it or don't want to compute it yourselves,
+ * use hashtable_get instead)
+ * @param key the key to look for
+ * @param value a pointer to receive the current value associated to this key
+ *
+ * @return false if the key does not exist
+ */
+bool _hashtable_quick_get(HashTable *ht, ht_hash_t h, ht_key_t key, void **value)
 {
     HashNode *n;
     uint32_t index;
 
-    assert(NULL != this);
+    assert(NULL != ht);
     assert(NULL != value);
 
-    index = h & this->mask;
-    n = this->nodes[index];
+    index = h & ht->mask;
+    n = ht->nodes[index];
     while (NULL != n) {
-        if (n->hash == h && this->ef(key, n->key)) {
+        if (n->hash == h && ht->ef(key, n->key)) {
             *value = n->data;
             return true;
         }
@@ -280,29 +408,116 @@ bool _hashtable_quick_get(HashTable *this, ht_hash_t h, ht_key_t key, void **val
     return false;
 }
 
-bool _hashtable_get(HashTable *this, ht_key_t key, void **value)
+/**
+ * Get the value associated to a key
+ *
+ * @param ht the hashtable
+ * @param key the key to look for
+ * @param value a pointer to receive the current value associated to this key
+ *
+ * @return false if the key does not exist
+ */
+bool _hashtable_get(HashTable *ht, ht_key_t key, void **value)
 {
-    return _hashtable_quick_get(this, NULL == this->hf ? key : this->hf(key), key, value);
+    return _hashtable_quick_get(ht, NULL == ht->hf ? key : ht->hf(key), key, value);
 }
 
-bool _hashtable_direct_get(HashTable *this, ht_hash_t h, void **value)
+/**
+ * Get the value associated to a key which is also the hash
+ *
+ * @param ht the hashtable
+ * @param h the key and hash to look for
+ * @param value a pointer to receive the current value associated to this key
+ *
+ * @return false if the key does not exist
+ */
+bool _hashtable_direct_get(HashTable *ht, ht_hash_t h, void **value)
 {
-    return _hashtable_quick_get(this, h, h, value);
+    return _hashtable_quick_get(ht, h, h, value);
 }
 
-static bool hashtable_delete_real(HashTable *this, ht_hash_t h, ht_key_t key, bool call_dtor)
+/**
+ * Remove a node while traversing a hashtable (low level API)
+ *
+ * \code
+ *   HashNode *n;
+ *
+ *   n = g->terminals.gHead;
+ *   while (NULL != n) {
+ *       if (some condition) {
+ *           n = hashtable_delete_node(ht, n); // delete current node and move to next one
+ *       } else {
+ *           n = n->gNext; // normal case
+ *       }
+ *   }
+ * \endcode
+ *
+ * @param ht the hashtable
+ * @param n the node to remove
+ *
+ * @return the next node (may be NULL)
+ */
+HashNode *hashtable_delete_node(HashTable *ht, HashNode *n)
+{
+    HashNode *ret;
+
+    if (NULL != n->nPrev) {
+        n->nPrev->nNext = n->nNext;
+    } else {
+        uint32_t index;
+
+        index = n->hash & ht->mask;
+        ht->nodes[index] = n->nNext;
+    }
+    if (NULL != n->nNext) {
+        n->nNext->nPrev = n->nPrev;
+    }
+    if (NULL != n->gPrev) {
+        n->gPrev->gNext = n->gNext;
+    } else {
+        ht->gHead = n->gNext;
+    }
+    if (NULL != n->gNext) {
+        n->gNext->gPrev = n->gPrev;
+    } else {
+        ht->gTail = n->gPrev;
+    }
+    --ht->count;
+    if (NULL != ht->value_dtor) {
+        ht->value_dtor(n->data);
+    }
+    if (NULL != ht->key_dtor) {
+        ht->key_dtor((void *) n->key);
+    }
+    ret = n->gNext;
+    free(n);
+
+    return ret;
+}
+
+/**
+ * Real work for item deletion
+ *
+ * @param ht the hashtable
+ * @param h the hash of the item to remove
+ * @param key the key of the item to remove
+ * @param call_dtor false to not call value destructor
+ *
+ * @return true if an item has been deleted
+ */
+static bool hashtable_delete_real(HashTable *ht, ht_hash_t h, ht_key_t key, bool call_dtor)
 {
     HashNode *n;
     uint32_t index;
 
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    index = h & this->mask;
-    n = this->nodes[index];
+    index = h & ht->mask;
+    n = ht->nodes[index];
     while (NULL != n) {
-        if (n->hash == h && this->ef(key, n->key)) {
-            if (n == this->nodes[index]) {
-                this->nodes[index] = n->nNext;
+        if (n->hash == h && ht->ef(key, n->key)) {
+            if (n == ht->nodes[index]) {
+                ht->nodes[index] = n->nNext;
             } else {
                 n->nPrev->nNext = n->nNext;
             }
@@ -312,21 +527,21 @@ static bool hashtable_delete_real(HashTable *this, ht_hash_t h, ht_key_t key, bo
             if (NULL != n->gPrev) {
                 n->gPrev->gNext = n->gNext;
             } else {
-                this->gHead = n->gNext;
+                ht->gHead = n->gNext;
             }
             if (NULL != n->gNext) {
                 n->gNext->gPrev = n->gPrev;
             } else {
-                this->gTail = n->gPrev;
+                ht->gTail = n->gPrev;
             }
-            if (call_dtor && NULL != this->value_dtor) {
-                this->value_dtor(n->data);
+            if (call_dtor && NULL != ht->value_dtor) {
+                ht->value_dtor(n->data);
             }
-            if (call_dtor && NULL != this->key_dtor) {
-                this->key_dtor((void *) n->key);
+            if (call_dtor && NULL != ht->key_dtor) {
+                ht->key_dtor((void *) n->key);
             }
             free(n);
-            --this->count;
+            --ht->count;
             return true;
         }
         n = n->nNext;
@@ -335,75 +550,219 @@ static bool hashtable_delete_real(HashTable *this, ht_hash_t h, ht_key_t key, bo
     return false;
 }
 
-bool _hashtable_quick_delete(HashTable *this, ht_hash_t h, ht_key_t key, bool call_dtor)
+/**
+ * Delete an element from its key and hash
+ *
+ * Its purpose is to avoid an unnecessary internal call to the hash function if the hash
+ * of the element is already known.
+ *
+ * @param ht the hashtable
+ * @param h the hash of the item to remove
+ * @param key the key of the item to remove
+ * @param call_dtor false to not call value destructor
+ *
+ * @return true if an item has been deleted
+ */
+bool _hashtable_quick_delete(HashTable *ht, ht_hash_t h, ht_key_t key, bool call_dtor)
 {
-    return hashtable_delete_real(this, h, key, call_dtor);
+    return hashtable_delete_real(ht, h, key, call_dtor);
 }
 
-bool _hashtable_delete(HashTable *this, ht_key_t key, bool call_dtor)
+/**
+ * Delete an element from its key
+ *
+ * @param ht the hashtable
+ * @param key the key of the item to remove
+ * @param call_dtor false to not call value destructor
+ *
+ * @return true if an item has been deleted
+ */
+bool _hashtable_delete(HashTable *ht, ht_key_t key, bool call_dtor)
 {
-    return hashtable_delete_real(this, NULL == this->hf ? key : this->hf(key), key, call_dtor);
+    return hashtable_delete_real(ht, NULL == ht->hf ? key : ht->hf(key), key, call_dtor);
 }
 
-bool _hashtable_direct_delete(HashTable *this, ht_hash_t h, bool call_dtor)
+/**
+ * Delete an element from its key which is also its hash
+ *
+ * @param ht the hashtable
+ * @param h the key and hash of the item to remove
+ * @param call_dtor false to not call value destructor
+ *
+ * @return true if an item has been deleted
+ */
+bool _hashtable_direct_delete(HashTable *ht, ht_hash_t h, bool call_dtor)
 {
-    return hashtable_delete_real(this, h, h, call_dtor);
+    return hashtable_delete_real(ht, h, h, call_dtor);
 }
 
-static void hashtable_clear_real(HashTable *this)
+/**
+ * Common helper to clear/free memory internally used by a hashtable
+ *
+ * @param ht the hashtable to destroy or clear
+ */
+static void hashtable_clear_real(HashTable *ht)
 {
     HashNode *n, *tmp;
 
-    n = this->gHead;
-    this->count = 0;
-    this->gHead = NULL;
-    this->gTail = NULL;
+    n = ht->gHead;
+    ht->count = 0;
+    ht->gHead = NULL;
+    ht->gTail = NULL;
     while (NULL != n) {
         tmp = n;
         n = n->gNext;
-        if (NULL != this->value_dtor) {
-            this->value_dtor(tmp->data);
+        if (NULL != ht->value_dtor) {
+            ht->value_dtor(tmp->data);
         }
-        if (NULL != this->key_dtor) {
-            this->key_dtor((void *) tmp->key);
+        if (NULL != ht->key_dtor) {
+            ht->key_dtor((void *) tmp->key);
         }
         free(tmp);
     }
-    memset(this->nodes, 0, this->capacity * sizeof(*this->nodes));
+    memset(ht->nodes, 0, ht->capacity * sizeof(*ht->nodes));
 }
 
-void hashtable_clear(HashTable *this)
+/**
+ * Clear a hashtable to be reused
+ *
+ * @param ht the hashtable to clear
+ */
+void hashtable_clear(HashTable *ht)
 {
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    hashtable_clear_real(this);
+    hashtable_clear_real(ht);
 }
 
-void hashtable_destroy(HashTable *this)
+/**
+ * Destroy a hashtable
+ *
+ * @note if the hashtable was allocated on heap, you have to free(ht) after
+ *
+ * @param ht the hashtable to destroy
+ */
+void hashtable_destroy(HashTable *ht)
 {
-    assert(NULL != this);
+    assert(NULL != ht);
 
-    hashtable_clear_real(this);
-    free(this->nodes);
-    //free(this); // caller have to do this
+    hashtable_clear_real(ht);
+    free(ht->nodes);
+    //free(ht); // caller have to do this
 }
 
-
-void *hashtable_first(HashTable *this)
+/**
+ * Get the value of the first inserted (not modified) element
+ *
+ * @param ht the hashtable
+ *
+ * @return the value of the first inserted element (NULL if the hashtable is empty)
+ */
+void *hashtable_first(HashTable *ht)
 {
-    if (NULL == this->gHead) {
+    if (NULL == ht->gHead) {
         return NULL;
     } else {
-        return this->gHead->data;
+        return ht->gHead->data;
     }
 }
 
-
-void *hashtable_last(HashTable *this)
+/**
+ * Get the value of the last inserted (not modified) element
+ *
+ * @param ht the hashtable
+ *
+ * @return the value of the last inserted element (NULL if the hashtable is empty)
+ */
+void *hashtable_last(HashTable *ht)
 {
-    if (NULL == this->gTail) {
+    if (NULL == ht->gTail) {
         return NULL;
     } else {
-        return this->gTail->data;
+        return ht->gTail->data;
     }
+}
+
+/**
+ * Copy a hashtable
+ *
+ * @param dst the HashTable which receives the copy, NULL to create/allocate a new one
+ * @param src the HashTable to copy
+ * @param key_duper the callback used for the operation to copy the keys. Use NULL to not
+ * copy them and (void *) 1 to keep src callback.
+ * @param value_duper the callback used to copy values. Use NULL to share the pointers on
+ * data
+ *
+ * @return the copy
+ */
+HashTable *hashtable_copy(HashTable *dst, HashTable *src, DupFunc key_duper, DupFunc value_duper)
+{
+    HashNode *n;
+    HashTable *ret;
+    DupFunc orig_key_duper;
+
+    orig_key_duper = src->key_duper;
+    if (NULL == dst) {
+        ret = malloc(sizeof(*ret));
+        hashtable_init(ret, src->count, src->hf, src->ef, ((void *) 1) == key_duper ? src->key_duper : key_duper, src->key_dtor, src->value_dtor);
+    } else {
+        ret = dst;
+        hashtable_clear(dst);
+        dst->hf = src->hf;
+        dst->ef = src->ef;
+        dst->key_duper = ((void *) 1) == key_duper ? src->key_duper : key_duper;
+        dst->key_dtor = src->key_dtor;
+        dst->value_dtor = src->value_dtor;
+    }
+    for (n = src->gHead; NULL != n; n = n->gNext) {
+        hashtable_quick_put(ret, 0, n->hash, n->key, NULL == value_duper ? n->data : value_duper(n->data), NULL);
+    }
+    dst->key_duper = orig_key_duper;
+
+    return ret;
+}
+
+/**
+ * Merge two hashtables (dst = set1 | set2)
+ *
+ * Notes:
+ * - if set1 and set2 both have a same key, set1 has precedence: the key and value defined
+ * by set2 are ignored.
+ * - dst can be set1 or set2 (dst |= set2 if set1 == dst)
+ *
+ * @param dst the HashTable which receives the results, NULL to create/allocate a new one
+ * @param set1 one of the two hashtables to merge
+ * @param set2 the other hashtable to merge
+ * @param key_duper the callback used for the operation to copy the keys. Use NULL to not
+ * copy them and (void *) 1 to keep src callback.
+ * @param value_duper the callback used to copy values. Use NULL to share the pointers on
+ * data
+ *
+ * @return the resulting hashtable
+ */
+HashTable *hashtable_union(HashTable *dst, HashTable *set1, HashTable *set2, DupFunc key_duper, DupFunc value_duper)
+{
+    HashTable *ret;
+
+    ret = NULL;
+    if (set1->hf == set2->hf && set1->ef == set2->ef) {
+        HashNode *n;
+        DupFunc orig_key_duper;
+
+        if (NULL == dst || (dst != set1 && dst != set2)) {
+            ret = hashtable_copy(dst, set1, key_duper, value_duper);
+        } else {
+            ret = dst == set1 ? set1 : set2;
+        }
+        orig_key_duper = dst->key_duper;
+        dst->key_duper = ((void *) 1) == key_duper ? dst->key_duper : key_duper;
+        for (n = set2->gHead; NULL != n; n = n->gNext) {
+            if (!hashtable_quick_put(dst, HT_PUT_ON_DUP_KEY_PRESERVE, n->hash, n->key, n->data, NULL) && NULL != key_duper) {
+                hashtable_quick_put(dst, HT_PUT_ON_DUP_KEY_PRESERVE, n->hash, n->key, value_duper(n->data), NULL);
+            }
+        }
+        dst->key_duper = orig_key_duper;
+    }
+
+    return ret;
 }
