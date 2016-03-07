@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stddef.h> /* size_t */
 #include <stdint.h> /* uint\d+_t */
+#include "iterator.h"
 
 typedef struct {
     uint8_t *data;
@@ -10,6 +11,8 @@ typedef struct {
     size_t allocated;
     size_t element_size;
 } DArray;
+
+typedef int (*CmpFuncArg)(const void *, const void *, void *);
 
 #define darray_prepend(/*DArray **/ da, ptr) \
     darray_prepend((da), (ptr), 1)
@@ -43,3 +46,6 @@ void darray_remove_range(DArray *, unsigned int, unsigned int);
 void darray_set_size(DArray *, size_t);
 bool darray_shift(DArray *, void *);
 void darray_swap(DArray *, unsigned int, unsigned int);
+void darray_sort(DArray *, CmpFuncArg, void *);
+
+void darray_to_iterator(Iterator *, DArray *);

@@ -3,6 +3,7 @@
  * @brief dynamic array of elements
  */
 
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <string.h>
 
@@ -170,4 +171,98 @@ void darray_set_size(DArray *da, size_t length)
 size_t darray_length(DArray *da)
 {
     return da->length;
+}
+
+void darray_sort(DArray *da, CmpFuncArg cmpfn, void *arg)
+{
+    assert(NULL != da);
+    assert(NULL != cmpfn);
+
+    qsort_r(da->data, da->length, da->element_size,
+#ifdef BSD
+        arg, cmpfn
+#else
+        cmpfn, arg
+#endif
+    );
+}
+
+static void darray_iterator_first(const void *collection, void **state)
+{
+    DArray *ary;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    ary = (DArray *) collection;
+    *(uint8_t **) state = ary->data;
+}
+
+static void darray_iterator_last(const void *collection, void **state)
+{
+    DArray *ary;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    ary = (DArray *) collection;
+    *(uint8_t **) state = ary->data + LENGTH(ary, ary->length - 1);
+}
+
+static bool darray_iterator_is_valid(const void *collection, void **state)
+{
+    DArray *ary;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    ary = (DArray *) collection;
+
+    return *((uint8_t **) state) >= ary->data && *((uint8_t **) state) < (ary->data + LENGTH(ary, ary->length));
+}
+
+static void darray_iterator_current(const void *collection, void **state, void **value)
+{
+    DArray *ary;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+    assert(NULL != value);
+
+    ary = (DArray *) collection;
+    *value = *(uint8_t **) state;
+}
+
+static void darray_iterator_next(const void *collection, void **state)
+{
+    DArray *ary;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    ary = (DArray *) collection;
+    *((uint8_t **) state) += ary->element_size;
+}
+
+static void darray_iterator_previous(const void *collection, void **state)
+{
+    DArray *ary;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    ary = (DArray *) collection;
+    *((uint8_t **) state) -= ary->element_size;
+}
+
+void darray_to_iterator(Iterator *it, DArray *da)
+{
+    iterator_init(
+        it, da, NULL,
+        darray_iterator_first, darray_iterator_last,
+        darray_iterator_current,
+        darray_iterator_next, darray_iterator_previous,
+        darray_iterator_is_valid,
+        NULL
+    );
 }
