@@ -516,7 +516,7 @@ static bool hashtable_delete_real(HashTable *ht, ht_hash_t h, ht_key_t key, bool
     n = ht->nodes[index];
     while (NULL != n) {
         if (n->hash == h && ht->ef(key, n->key)) {
-            if (n == ht->nodes[index]) {
+            if (n == ht->nodes[index]) { // or NULL == n->nPrev
                 ht->nodes[index] = n->nNext;
             } else {
                 n->nPrev->nNext = n->nNext;
