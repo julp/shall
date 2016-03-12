@@ -1,0 +1,13 @@
+--TEST--
+Unicode: surrogate head followed by non surrogate
+--LEXER--
+json
+--SOURCE--
+["\uD835\u0022"]
+--EXPECT--
+PUNCTUATION: [
+STRING_DOUBLE: "
+ERROR: \uD835
+SEQUENCE_ESCAPED: \u0022
+STRING_DOUBLE: "
+PUNCTUATION: ]

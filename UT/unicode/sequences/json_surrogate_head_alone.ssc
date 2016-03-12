@@ -1,0 +1,12 @@
+--TEST--
+Unicode: head surrogate alone
+--LEXER--
+json
+--SOURCE--
+["\uD835"]
+--EXPECT--
+PUNCTUATION: [
+STRING_DOUBLE: "
+ERROR: \uD835
+STRING_DOUBLE: "
+PUNCTUATION: ]

@@ -1,0 +1,12 @@
+--TEST--
+Unicode: surrogate trail alone
+--LEXER--
+json
+--SOURCE--
+["\uDE3C"]
+--EXPECT--
+PUNCTUATION: [
+STRING_DOUBLE: "
+ERROR: \uDE3C
+STRING_DOUBLE: "
+PUNCTUATION: ]

@@ -1,0 +1,12 @@
+--TEST--
+Unicode: inverted surrogate pair
+--LEXER--
+json
+--SOURCE--
+["\uDE3C\uD835"]
+--EXPECT--
+PUNCTUATION: [
+STRING_DOUBLE: "
+ERROR: \uDE3C\uD835
+STRING_DOUBLE: "
+PUNCTUATION: ]

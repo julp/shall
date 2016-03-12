@@ -1,0 +1,12 @@
+--TEST--
+Unicode: valid surrogate pair
+--LEXER--
+json
+--SOURCE--
+["\uD835\uDE3C"]
+--EXPECT--
+PUNCTUATION: [
+STRING_DOUBLE: "
+SEQUENCE_ESCAPED: \uD835\uDE3C
+STRING_DOUBLE: "
+PUNCTUATION: ]
