@@ -396,7 +396,7 @@ void unappend_lexer(void *ctxt, const LexerImplementation *UNUSED(limp))
 typedef struct {
     int type; // DELEGATE_FULL or DELEGATE_UNTIL
     int state; // if != -1 state to set when DONE for the lexer who calls for a delegation
-    YYCTYPE *limits;
+    const YYCTYPE *limits;
     const LexerImplementation *imp;
 } delegation_stack_element;
 
@@ -474,7 +474,7 @@ SHALL_API int highlight_string(const char *src, size_t src_len, char **dst, size
     ProcessingContext ctxt;
     Lexer *current_lexer;
     int what, prev, token;
-    YYCTYPE *prev_yycursor;
+    const YYCTYPE *prev_yycursor;
     size_t buffer_len, yycursor_unchanged;
     const char * const src_end = src + src_len;
 
@@ -516,9 +516,9 @@ SHALL_API int highlight_string(const char *src, size_t src_len, char **dst, size
             src = lf;
         }
     }
-    YYSRC = src;
-    YYLIMIT = (YYCTYPE *) src + src_len;
-    prev_yycursor = YYCURSOR = (YYCTYPE *) src;
+    YYSRC = (const YYCTYPE *) src;
+    YYLIMIT = (const YYCTYPE *) src + src_len;
+    prev_yycursor = YYCURSOR = (const YYCTYPE *) src;
     if (NULL != fmt->imp->start_lexing) {
         fmt->imp->start_lexing(current_lexer->imp->name, buffer, &fmt->optvals);
     }
@@ -607,7 +607,7 @@ debug("POP LEXER (%s => %s)", imp_before_pop->name, current_lexer->imp->name);
                             prev = IGNORABLE;
                         }
 #endif
-                        YYCTYPE *yylimit_before_pop = YYLIMIT;
+                        const YYCTYPE *yylimit_before_pop = YYLIMIT;
                         delegation_pop(&ds, yy, &ctxt, ldata);
 debug("POP YYLIMIT (%zu => %zu)", SIZE_T(((const char *) yylimit_before_pop) - src), SIZE_T(((const char *) YYLIMIT) - src));
                         what = 1;

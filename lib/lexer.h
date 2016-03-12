@@ -280,24 +280,24 @@ struct LexerInput {
     /**
      * Beginning of the string
      */
-    YYCTYPE *src;
+    const YYCTYPE *src;
     /**
      * Current position
      */
-    YYCTYPE *cursor;
+    const YYCTYPE *cursor;
     /**
      * End of string
      */
-    YYCTYPE */* const*/ limit;
+    const YYCTYPE */* const*/ limit;
     /**
      * For internal use by re2c (its "marker")
      */
-    YYCTYPE *marker;
+    const YYCTYPE *marker;
 //     size_t yyleng;
     /**
      * Begin of current token
      */
-    YYCTYPE *yytext;
+    const YYCTYPE *yytext;
 //     size_t lineno;
 //     int bol;
 };
@@ -397,7 +397,7 @@ struct LexerReturnValue {
     const YYCTYPE *yyend;
     int token_value; // TOKEN
     int token_default_type; // TOKEN
-    YYCTYPE *child_limit; // DELEGATE_*
+    const YYCTYPE *child_limit; // DELEGATE_*
     int delegation_fallback; // DELEGATE_*
 #ifdef DEBUG
     int return_line;

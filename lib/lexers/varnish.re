@@ -342,9 +342,9 @@ SPACE = [ \f\n\r\t\v]+;
 #if 0
     TOKEN(NAME_TAG);
 #else
-    YYCTYPE *end;
+    const YYCTYPE *end;
 
-    if (NULL == (end = (YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
+    if (NULL == (end = (const YYCTYPE *) memstr((const char *) YYCURSOR, "}C", STR_LEN("}C"), (const char *) YYLIMIT))) {
         end = YYLIMIT;
     } else {
         end -= STR_LEN("}C");

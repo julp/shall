@@ -802,7 +802,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 
 // TODO: split "b"? "<<<" [ \t]* (["']?) LABEL \1 NEWLINE into separate tokens ?
 <ST_IN_SCRIPTING>"b"? "<<<" TABS_AND_SPACES (LABEL | (["] LABEL ["]) | ((['] LABEL [']))) NEWLINE {
-    YYCTYPE *p;
+    const YYCTYPE *p;
     int bprefix, quoted;
 
     quoted = 0;
@@ -857,7 +857,7 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     // beginning and end of the LABEL
     // - s is on the first character of the LABEL
     // - e is on the comma (';'), after the last character of the LABEL
-    YYCTYPE *s, *e;
+    const YYCTYPE *s, *e;
 
     s = YYTEXT;
     e = YYCURSOR;

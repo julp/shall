@@ -957,7 +957,7 @@ other = .;
 
     if (NULL != (match = bsearch(&key, keywords, ARRAY_SIZE(keywords), sizeof(keywords[0]), named_elements_casecmp))) {
         if (myoptions->uppercase_keywords/* && KEYWORD == match->type*/) {
-            TOKEN_OUTSRC(match->type, match->ne.name, match->ne.name + match->ne.name_len);
+            TOKEN_OUTSRC(match->type, (const YYCTYPE *) match->ne.name, (const YYCTYPE *) match->ne.name + match->ne.name_len);
         } else {
             TOKEN(match->type);
         }

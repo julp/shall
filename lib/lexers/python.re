@@ -93,7 +93,7 @@ imagnumber = (floatnumber | DIGIT+) 'j';
 
 <INITIAL> ('b' 'r'? | 'r' 'b'? | 'u')? ("'" "''"? | '"' '""'?) {
     int type;
-    YYCTYPE *quote;
+    const YYCTYPE *quote;
 
     type = STRING_DOUBLE;
     mydata->string_type = 0;
