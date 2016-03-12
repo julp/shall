@@ -51,6 +51,11 @@ EXPONENT_DNUM = ((LNUM|DNUM)[eE][+-]?LNUM);
 }
 
 <IN_STRING> "\\" ( [\\"/bfnrt] | "u" [a-zA-Z0-9]{4} ) {
+    if ('u' == YYTEXT[1]) {
+        if (!check_codepoint(YYTEXT, YYLIMIT, &YYCURSOR, "\\u", STR_LEN("\\u"), NULL, 0, 4, 4, 16)) {
+            TOKEN(ERROR);
+        }
+    }
     TOKEN(ESCAPED_CHAR);
 }
 

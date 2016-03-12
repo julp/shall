@@ -435,8 +435,9 @@ typedef struct {
     int type;
 } typed_named_element_t;
 
-int named_elements_cmp(const void *a, const void *b);
-int named_elements_casecmp(const void *a, const void *b);
+int named_elements_cmp(const void *, const void *);
+int named_elements_casecmp(const void *, const void *);
+bool check_codepoint(const YYCTYPE *, const YYCTYPE * const, const YYCTYPE **, const char *, size_t, const char *, size_t, size_t, size_t, uint8_t);
 
 void append_lexer(void *, Lexer *);
 void prepend_lexer(void *, Lexer *);
