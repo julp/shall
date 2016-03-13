@@ -151,18 +151,20 @@ static char *shall_basename(const char *path, char *bname, size_t bname_size)
  */
 SHALL_API const LexerImplementation *lexer_implementation_by_name(const char *name)
 {
-    const LexerImplementation **imp;
+    if ('\0' != *name) {
+        const LexerImplementation **imp;
 
-    for (imp = available_lexers; NULL != *imp; imp++) {
-        if (0 == ascii_strcasecmp(name, (*imp)->name)) {
-            return *imp;
-        }
-        if (NULL != (*imp)->aliases) {
-            const char * const *alias;
+        for (imp = available_lexers; NULL != *imp; imp++) {
+            if (0 == ascii_strcasecmp(name, (*imp)->name)) {
+                return *imp;
+            }
+            if (NULL != (*imp)->aliases) {
+                const char * const *alias;
 
-            for (alias = (*imp)->aliases; NULL != *alias; alias++) {
-                if (0 == ascii_strcasecmp(name, *alias)) {
-                    return *imp;
+                for (alias = (*imp)->aliases; NULL != *alias; alias++) {
+                    if (0 == ascii_strcasecmp(name, *alias)) {
+                        return *imp;
+                    }
                 }
             }
         }
