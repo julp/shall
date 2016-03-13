@@ -1,0 +1,11 @@
+--TEST--
+PHP: Unicode surrogate trail alone
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+"\u{DE3C}"
+--EXPECT--
+STRING_DOUBLE: "
+ERROR: \u{DE3C}
+STRING_DOUBLE: "

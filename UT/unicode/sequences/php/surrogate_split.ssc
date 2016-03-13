@@ -1,0 +1,13 @@
+--TEST--
+PHP: Unicode separated surrogate pair
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+"\u{D835};\u{DE3C}"
+--EXPECT--
+STRING_DOUBLE: "
+ERROR: \u{D835}
+STRING_DOUBLE: ;
+ERROR: \u{DE3C}
+STRING_DOUBLE: "

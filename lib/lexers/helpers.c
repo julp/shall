@@ -65,14 +65,25 @@ bool check_codepoint(const YYCTYPE *start, const YYCTYPE * const limit, const YY
     uint32_t cp;
     const YYCTYPE *p;
 
+#define PTR_DIFF(x) \
+    ((ptrdiff_t) (x))
+
+#define HANDLE_XDIGIT() \
+    do { \
+        cp *= 16; \
+        cp += ((*p >= '0' && *p <= '9') ? (*p - '0') : 10 + ((*p >= 'a' && *p <= 'f') ? (*p - 'a') : (*p - 'A'))); \
+        ++p; \
+    } while(0);
+
     cp = 0;
     ok = true;
     p = start + prefix_len;
     assert(0 == memcmp(prefix, start, prefix_len));
-    for (i = 0; IS_XDIGIT(*p) && i < max_len; i++) {
-        cp *= 16;
-        cp += ((*p >= '0' && *p <= '9') ? (*p - '0') : 10 + ((*p >= 'a' && *p <= 'f') ? (*p - 'a') : (*p - 'A')));
-        ++p;
+    for (i = 0; i < min_len; i++) {
+        HANDLE_XDIGIT();
+    }
+    for (/*NOP*/; IS_XDIGIT(*p) && i < max_len; i++) { \
+        HANDLE_XDIGIT();
     }
     if (0 != suffix_len) {
         assert(0 == memcmp(suffix, p, suffix_len));
@@ -82,15 +93,16 @@ bool check_codepoint(const YYCTYPE *start, const YYCTYPE * const limit, const YY
         if (!HAS_FLAG(flags, 16) || U_IS_SURROGATE_TRAIL(cp)) {
             ok = false;
         } else {
-            if ((limit - p) < (prefix_len + min_len) || 0 != memcmp(prefix, p, prefix_len)) {
+            if (PTR_DIFF(limit - p) < PTR_DIFF(prefix_len + min_len) || 0 != memcmp(prefix, p, prefix_len)) {
                 ok = false;
             } else {
                 cp = 0;
                 p += prefix_len;
-                for (i = 0; IS_XDIGIT(*p) && i < max_len; i++) {
-                    cp *= 16;
-                    cp += ((*p >= '0' && *p <= '9') ? (*p - '0') : 10 + ((*p >= 'a' && *p <= 'f') ? (*p - 'a') : (*p - 'A')));
-                    ++p;
+                for (i = 0; i < min_len; i++) {
+                    HANDLE_XDIGIT();
+                }
+                for (/*NOP*/; IS_XDIGIT(*p) && p < limit && i < max_len; i++) { \
+                    HANDLE_XDIGIT();
                 }
                 ok = U_IS_TRAIL(cp);
                 if (0 != suffix_len) {

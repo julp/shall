@@ -1,0 +1,12 @@
+--TEST--
+PHP: Unicode surrogate head followed by non surrogate
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+"\u{D835}\u{0022}"
+--EXPECT--
+STRING_DOUBLE: "
+ERROR: \u{D835}
+SEQUENCE_ESCAPED: \u{0022}
+STRING_DOUBLE: "

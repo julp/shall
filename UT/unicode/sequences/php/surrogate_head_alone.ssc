@@ -1,0 +1,11 @@
+--TEST--
+PHP: Unicode head surrogate alone
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+"\u{D835}"
+--EXPECT--
+STRING_DOUBLE: "
+ERROR: \u{D835}
+STRING_DOUBLE: "

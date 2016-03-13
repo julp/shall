@@ -1,0 +1,11 @@
+--TEST--
+PHP: Unicode valid surrogate pair
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+"\u{D835}\u{DE3C}"
+--EXPECT--
+STRING_DOUBLE: "
+SEQUENCE_ESCAPED: \u{D835}\u{DE3C}
+STRING_DOUBLE: "

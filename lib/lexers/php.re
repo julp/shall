@@ -834,6 +834,9 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 
 <ST_DOUBLE_QUOTES,ST_BACKQUOTE,ST_HEREDOC>"\\u{" [0-9a-fA-F]+ "}" {
     if (myoptions->version >= 7) {
+        if (!check_codepoint(YYTEXT, YYLIMIT, &YYCURSOR, "\\u{", STR_LEN("\\u{"), "}", STR_LEN("}"), 1, (size_t) -1, 16 | 32)) {
+            TOKEN(ERROR);
+        }
         VALUED_TOKEN(ESCAPED_CHAR, T_ENCAPSED_AND_WHITESPACE);
     } else {
         VALUED_TOKEN(default_token_type[YYSTATE], T_ENCAPSED_AND_WHITESPACE);

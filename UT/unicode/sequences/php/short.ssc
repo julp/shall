@@ -1,0 +1,11 @@
+--TEST--
+PHP: Unicode shortest sequence
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+"\u{A}"
+--EXPECT--
+STRING_DOUBLE: "
+SEQUENCE_ESCAPED: \u{A}
+STRING_DOUBLE: "
