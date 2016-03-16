@@ -34,8 +34,6 @@ set(COMMON_INCLUDE_DIRECTORIES #
 )
 set(SHALL_LIB_INCLUDE_DIRS ${COMMON_INCLUDE_DIRECTORIES})
 
-find_package(BISON 3 REQUIRED)
-
 set(WITH_ICU false)
 set(WITH_ICONV false)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
@@ -98,7 +96,7 @@ set(SOURCES #
 set(THEMES monokai molokai)
 set(FORMATTERS bbcode html plain rtf terminal)
 set(C_LEXERS cpp diff text) # annotations
-set(RE2C_LEXERS apache c cmake css dtd go js json lua nginx pgsql php python ruby twig varnish xml)
+set(RE2C_LEXERS apache bash c cmake css dtd go js json lua nginx pgsql php python ruby twig varnish xml)
 set(BISON_GRAMMARS )
 
 foreach(lexer ${C_LEXERS})
