@@ -12,6 +12,16 @@ Filename(s): httpd.conf, apache.conf, apache2.conf, .htaccess
 
 MIME type(s): text/x-apacheconf
 
+## Bash
+
+Lexer for (ba|k|)sh shell scripts.
+
+Alias(es): shell, sh
+
+Filename(s): *.sh, *.bash, *.ebuild, *.eclass, .bashrc, bashrc, .bash_*, bash_*, PKGBUILD
+
+MIME type(s): application/x-sh, application/x-shellscript
+
 ## C
 
 For C source code with preprocessor directives

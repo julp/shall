@@ -16,6 +16,7 @@
 
 #ifndef DOXYGEN
 extern const LexerImplementation apache_lexer;
+extern const LexerImplementation bash_lexer;
 extern const LexerImplementation c_lexer;
 extern const LexerImplementation cmake_lexer;
 extern const LexerImplementation css_lexer;
@@ -41,6 +42,7 @@ extern const LexerImplementation xml_lexer;
 // only final/public lexers
 static const LexerImplementation *available_lexers[] = {
     &apache_lexer,
+    &bash_lexer,
     &c_lexer,
     &cmake_lexer,
     &css_lexer,

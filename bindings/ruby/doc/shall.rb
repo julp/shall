@@ -2,6 +2,8 @@ module Shall
     module Lexer
         # Lexer for configuration files following the Apache configuration file format (including .htaccess)
         class Apache < Base ; end
+        # Lexer for (ba|k|)sh shell scripts.
+        class Bash < Base ; end
         # For C source code with preprocessor directives
         class C < Base ; end
         # Lexer for CMake files
