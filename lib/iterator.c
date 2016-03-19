@@ -266,7 +266,7 @@ static bool null_sentineled_field_terminated_array_iterator_is_valid(const void 
 
     s = (nsftas_t *) *state;
 
-    return NULL != (const void *) *(s->ptr + s->field_offset);
+    return NULL != *((char **) (s->ptr + s->field_offset));
 }
 
 static void null_sentineled_field_terminated_array_iterator_current(const void *UNUSED(collection), void **state, void **value)
