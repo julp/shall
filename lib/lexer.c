@@ -195,7 +195,7 @@ SHALL_API const LexerImplementation *lexer_implementation_for_filename(const cha
                 const char * const *pattern;
 
                 for (pattern = (*imp)->patterns; NULL != *pattern; pattern++) {
-                    if (0 == fnmatch(*pattern, basename, 0)) {
+                    if (0 == fnmatch(*pattern, basename, FNM_CASEFOLD)) {
                         return *imp;
                     }
                 }
