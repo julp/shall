@@ -381,7 +381,7 @@ SHALL_API const char *encoding_guess(const char *string, size_t string_len, size
 enum {
     S(__),       // error/invalid, have to be 0
     S(OK),       // accept
-    S(FB),       // last byte (always in range [0x80;0xBF) for a code point encoded on more than a single byte
+    S(FB),       // last byte (always in range [0x80;0xBF] for a code point encoded on more than a single byte
     S(32),       // normal case for the 2nd byte of a 3 bytes code point ([0x80;0xBF])
     S(32E0),     // still 3 bytes encoded code point but when 2nd byte is 0xE0, its range is restricted to [0xA0;0xBF]
     S(32ED),     // still 3 bytes encoded code point but when 2nd byte is 0xED, its range is restricted to [0x80;0x9F]
