@@ -3,6 +3,7 @@
  * @brief charset detection and encoding conversions
  */
 
+#include <sys/param.h> /* BSD */
 #include <unistd.h>
 #include <locale.h>
 #include <stdlib.h>

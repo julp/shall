@@ -34,8 +34,12 @@ set(COMMON_INCLUDE_DIRECTORIES #
 )
 set(SHALL_LIB_INCLUDE_DIRS ${COMMON_INCLUDE_DIRECTORIES})
 
+set(LIBRARIES )
 set(WITH_ICU false)
 set(WITH_ICONV false)
+if(CMAKE_SYSTEM_NAME MATCHES "BSD$")
+    list(APPEND LIBRARIES "util")
+endif(CMAKE_SYSTEM_NAME MATCHES "BSD$")
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 find_package(ICU COMPONENTS uc i18n QUIET)
 if(NOT ICU_FOUND)
@@ -147,7 +151,7 @@ set_target_properties(common_cli PROPERTIES COMPILE_FLAGS "-fPIC" INCLUDE_DIRECT
 
 add_library(shall_lib SHARED ${SOURCES} $<TARGET_OBJECTS:common>)
 if(WITH_ICU OR WITH_ICONV)
-    target_link_libraries(shall_lib ${ICONV_LIBRARIES} ${ICU_LIBRARIES})
+    target_link_libraries(shall_lib ${ICONV_LIBRARIES} ${ICU_LIBRARIES} ${LIBRARIES})
 endif(WITH_ICU OR WITH_ICONV)
 
 # add_library(shall_lib SHARED $<TARGET_OBJECTS:common>)
