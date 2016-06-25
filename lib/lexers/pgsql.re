@@ -48,6 +48,12 @@ enum {
     RESERVED_KEYWORD
 };
 
+/**
+ * TODO: recognize the "sequences" (as a whole instead of word by word)?
+ * - 'DOUBLE' whitespace+ 'PRECISION'
+ * - ('BIT' | 'CHARACTER') whitespace+ 'VARYING'
+ * - 'TIME' 'STAMP'? ((whitespace*"('" <a constant?> "')"whitespace*)? | whitespace+) ('WITH' 'OUT'? whitespace* 'TIME' whitespace* 'ZONE')?
+ **/
 #define PG_TYPE(name) \
     { NE(name), KEYWORD_TYPE },
 // PG_KEYWORD\(("[^"]*"),[^,]+,([^)]+)\) => PG_KEYWORD(\1,\2)
@@ -88,7 +94,7 @@ static const typed_named_element_t keywords[] = {
     PG_TYPE("BIGSERIAL")
     // PG_KEYWORD("BIGINT", COL_NAME_KEYWORD)
     PG_KEYWORD("BINARY", TYPE_FUNC_NAME_KEYWORD)
-    PG_TYPE("BIT") // TODO: BIT VARYING
+    PG_TYPE("BIT")
     // PG_KEYWORD("BIT", COL_NAME_KEYWORD)
     PG_TYPE("BOOL")
     PG_TYPE("BOOLEAN")
@@ -107,7 +113,7 @@ static const typed_named_element_t keywords[] = {
     PG_KEYWORD("CHAIN", UNRESERVED_KEYWORD)
     PG_KEYWORD("CHAR", COL_NAME_KEYWORD)
     // PG_KEYWORD("CHARACTER", COL_NAME_KEYWORD)
-    PG_TYPE("CHARACTER") // TODO: CHARACTER VARYING
+    PG_TYPE("CHARACTER")
     PG_KEYWORD("CHARACTERISTICS", UNRESERVED_KEYWORD)
     PG_KEYWORD("CHECK", RESERVED_KEYWORD)
     PG_KEYWORD("CHECKPOINT", UNRESERVED_KEYWORD)
@@ -444,9 +450,9 @@ static const typed_named_element_t keywords[] = {
     PG_TYPE("TEXT")
     PG_KEYWORD("THEN", RESERVED_KEYWORD)
     // PG_KEYWORD("TIME", COL_NAME_KEYWORD)
-    PG_TYPE("TIME") // TODO: WITH(?:OUT)? TIME ZONE
+    PG_TYPE("TIME")
     // PG_KEYWORD("TIMESTAMP", COL_NAME_KEYWORD)
-    PG_TYPE("TIMESTAMP") // TODO: WITH(?:OUT)? TIME ZONE
+    PG_TYPE("TIMESTAMP")
     PG_KEYWORD("TO", RESERVED_KEYWORD)
     PG_KEYWORD("TRAILING", RESERVED_KEYWORD)
     PG_KEYWORD("TRANSACTION", UNRESERVED_KEYWORD)
@@ -716,7 +722,8 @@ other = .;
 // <xh><<EOF>>
 
 <INITIAL> xnstart {
-    // ?
+    BEGIN(xq);
+    TOKEN(STRING_SINGLE);
 }
 
 <INITIAL> xqstart {
