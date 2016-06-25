@@ -206,7 +206,7 @@ char *memstr(const char *haystack, const char *needle, size_t needle_len, const 
             return (char *) memchr(haystack, (int) needle[0], haystack_end - haystack);
         } else {
             const char *p;
-            const char const *l = haystack_end - needle_len; // last possible position to find a match
+            const char * const l = haystack_end - needle_len; // last possible position to find a match
 
             for (p = haystack; p <= l; p++) {
                 if (*p == needle[0] && 0 == memcmp(needle + 1, p + 1, needle_len - 1)) {
