@@ -42,6 +42,7 @@ const SHALL_API Theme molokai = {
         [ OPERATOR ]               = { COMMON_STYLE },
 #undef COMMON_STYLE
 #define COMMON_STYLE FG(violet)
+        [ NUMBER ]                 = { COMMON_STYLE },
         [ NUMBER_FLOAT ]           = { COMMON_STYLE },
         [ NUMBER_DECIMAL ]         = { COMMON_STYLE },
         [ NUMBER_BINARY ]          = { COMMON_STYLE },
@@ -51,6 +52,7 @@ const SHALL_API Theme molokai = {
         [ SEQUENCE_ESCAPED ]       = { COMMON_STYLE },
 #undef COMMON_STYLE
 #define COMMON_STYLE FG(yellow)
+        [ STRING ]                 = { COMMON_STYLE },
         [ STRING_REGEX ]           = { COMMON_STYLE },
         [ STRING_SINGLE ]          = { COMMON_STYLE },
         [ STRING_DOUBLE ]          = { COMMON_STYLE },
@@ -58,6 +60,7 @@ const SHALL_API Theme molokai = {
         [ STRING_INTERNED ]        = { COMMON_STYLE },
 #undef COMMON_STYLE
 #define COMMON_STYLE FG(green), .bold = true
+        [ NAME ]                   = { COMMON_STYLE },
         [ NAME_CLASS ]             = { COMMON_STYLE },
         [ NAME_FUNCTION ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
