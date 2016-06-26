@@ -20,12 +20,14 @@ module Shall
         class Go < Base ; end
         # XXX
         class HTML < Base ; end
-        # For the Lua programming language (lua.org)
-        class Lua < Base ; end
         # TODO
         class Javascript < Base ; end
         # For JSON data structures
         class JSON < Base ; end
+        # For the Lua programming language (lua.org)
+        class Lua < Base ; end
+        # Lexer for the MySQL dialect of SQL
+        class MySQL < Base ; end
         # Lexer for Nginx configuration files
         class Nginx < Base ; end
         # For PHP source code

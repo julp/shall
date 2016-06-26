@@ -100,7 +100,7 @@ set(SOURCES #
 set(THEMES monokai molokai)
 set(FORMATTERS bbcode html plain rtf terminal)
 set(C_LEXERS cpp diff text) # annotations
-set(RE2C_LEXERS apache bash c cmake css dtd go js json lua nginx pgsql php python ruby twig varnish xml)
+set(RE2C_LEXERS apache bash c cmake css dtd go js json lua mysql nginx pgsql php python ruby twig varnish xml)
 set(BISON_GRAMMARS )
 
 foreach(lexer ${C_LEXERS})

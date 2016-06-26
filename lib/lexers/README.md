@@ -96,14 +96,6 @@ Filename(s): *.html
 
 MIME type(s): text/html
 
-## Lua
-
-For the Lua programming language (lua.org)
-
-Filename(s): *.lua
-
-MIME type(s): text/x-lua, application/x-lua
-
 ## Javascript
 
 TODO
@@ -121,6 +113,28 @@ For JSON data structures
 Filename(s): *.json
 
 MIME type(s): application/json
+
+## Lua
+
+For the Lua programming language (lua.org)
+
+Filename(s): *.lua
+
+MIME type(s): text/x-lua, application/x-lua
+
+## MySQL
+
+Lexer for the MySQL dialect of SQL
+
+Alias(es): mariadb
+
+MIME type(s): text/x-mysql
+
+| Option | Type | Default value | Description |
+| ------ | ---- | ------------- | ----------- |
+| uppercase_keywords | boolean | false | When true, MySQL keywords are uppercased |
+| ansi_quotes | boolean | false | When true, double-quoted strings are identifiers instead of string literals. |
+| no_backslash_escapes | boolean | false | When true, disable the use of the backslash character as an escape character within strings, backslash becomes an ordinary character like any other. |
 
 ## Nginx
 
@@ -160,7 +174,7 @@ MIME type(s): text/x-postgresql
 
 | Option | Type | Default value | Description |
 | ------ | ---- | ------------- | ----------- |
-| uppercase_keywords | boolean | false | when true, PostgreSQL keywords are uppercased |
+| uppercase_keywords | boolean | false | When true, PostgreSQL keywords are uppercased |
 | standard_conforming_strings | boolean | true | To treat backslashes literally in ordinary string literals (`'...'`) or not |
 
 ## Python
