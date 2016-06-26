@@ -31,14 +31,19 @@ static int default_token_type[] = {
     [ STATE(IN_IDENTIFIER) ] = NAME,
 };
 
-#define RESERVED(s) NE(s)
-static const named_element_t keywords[] = {
+#define RESERVED(s) \
+    { NE(s), KEYWORD }
+#define CONSTANT(s) \
+    { NE(s), KEYWORD_CONSTANT }
+#define KW_OPERATOR(s) \
+    { NE(s), OPERATOR }
+static const typed_named_element_t keywords[] = {
     RESERVED("ACCESSIBLE"),
     RESERVED("ADD"),
     RESERVED("ALL"),
     RESERVED("ALTER"),
     RESERVED("ANALYZE"),
-    RESERVED("AND"),
+    KW_OPERATOR("AND"),
     RESERVED("AS"),
     RESERVED("ASC"),
     RESERVED("ASENSITIVE"),
@@ -54,7 +59,6 @@ static const named_element_t keywords[] = {
     RESERVED("CASE"),
     RESERVED("CHANGE"),
     RESERVED("CHAR"),
-    RESERVED("CHAR"),
     RESERVED("CHECK"),
     RESERVED("COLLATE"),
     RESERVED("COLUMN"),
@@ -65,17 +69,15 @@ static const named_element_t keywords[] = {
     RESERVED("CREATE"),
     RESERVED("CROSS"),
     RESERVED("CURDATE"),
-    RESERVED("CURTIME"),
-    RESERVED("NOW"),
     RESERVED("CURRENT_USER"),
     RESERVED("CURSOR"),
+    RESERVED("CURTIME"),
     RESERVED("DATABASE"),
     RESERVED("DATABASES"),
     RESERVED("DAY_HOUR"),
     RESERVED("DAY_MICROSECOND"),
     RESERVED("DAY_MINUTE"),
     RESERVED("DAY_SECOND"),
-    RESERVED("DECIMAL"),
     RESERVED("DECIMAL"),
     RESERVED("DECLARE"),
     RESERVED("DEFAULT"),
@@ -85,8 +87,7 @@ static const named_element_t keywords[] = {
     RESERVED("DESCRIBE"),
     RESERVED("DETERMINISTIC"),
     RESERVED("DISTINCT"),
-    RESERVED("DISTINCT"),
-    RESERVED("DIV"),
+    KW_OPERATOR("DIV"),
     RESERVED("DOUBLE"),
     RESERVED("DROP"),
     RESERVED("DUAL"),
@@ -97,12 +98,9 @@ static const named_element_t keywords[] = {
     RESERVED("ESCAPED"),
     RESERVED("EXISTS"),
     RESERVED("EXIT"),
-    RESERVED("DESCRIBE"),
-    RESERVED("FALSE"),
+    CONSTANT("FALSE"),
     RESERVED("FETCH"),
     RESERVED("FLOAT"),
-    RESERVED("FLOAT"),
-    RESERVED("DOUBLE"),
     RESERVED("FOR"),
     RESERVED("FORCE"),
     RESERVED("FOREIGN"),
@@ -126,17 +124,11 @@ static const named_element_t keywords[] = {
     RESERVED("INSENSITIVE"),
     RESERVED("INSERT"),
     RESERVED("INT"),
-    RESERVED("TINYINT"),
-    RESERVED("SMALLINT"),
-    RESERVED("MEDIUMINT"),
-    RESERVED("INT"),
-    RESERVED("BIGINT"),
-    RESERVED("INT"),
     RESERVED("INTERVAL"),
     RESERVED("INTO"),
     RESERVED("IO_AFTER_GTIDS"),
     RESERVED("IO_BEFORE_GTIDS"),
-    RESERVED("IS"),
+    KW_OPERATOR("IS"),
     RESERVED("ITERATE"),
     RESERVED("JOIN"),
     RESERVED("KEY"),
@@ -145,13 +137,11 @@ static const named_element_t keywords[] = {
     RESERVED("LEADING"),
     RESERVED("LEAVE"),
     RESERVED("LEFT"),
-    RESERVED("LIKE"),
+    KW_OPERATOR("LIKE"),
     RESERVED("LIMIT"),
     RESERVED("LINEAR"),
     RESERVED("LINES"),
     RESERVED("LOAD"),
-    RESERVED("NOW"),
-    RESERVED("NOW"),
     RESERVED("LOCK"),
     RESERVED("LONG"),
     RESERVED("LONGBLOB"),
@@ -165,21 +155,21 @@ static const named_element_t keywords[] = {
     RESERVED("MEDIUMBLOB"),
     RESERVED("MEDIUMINT"),
     RESERVED("MEDIUMTEXT"),
-    RESERVED("MEDIUMINT"),
     RESERVED("MINUTE_MICROSECOND"),
     RESERVED("MINUTE_SECOND"),
-    RESERVED("MOD"),
+    KW_OPERATOR("MOD"),
     RESERVED("MODIFIES"),
     RESERVED("NATURAL"),
-    RESERVED("NOT"),
+    KW_OPERATOR("NOT"),
+    RESERVED("NOW"),
     RESERVED("NO_WRITE_TO_BINLOG"),
-    RESERVED("NULL"),
+    CONSTANT("NULL"),
     RESERVED("NUMERIC"),
     RESERVED("ON"),
     RESERVED("OPTIMIZE"),
     RESERVED("OPTION"),
     RESERVED("OPTIONALLY"),
-    RESERVED("OR"),
+    KW_OPERATOR("OR"),
     RESERVED("ORDER"),
     RESERVED("OUT"),
     RESERVED("OUTER"),
@@ -191,24 +181,22 @@ static const named_element_t keywords[] = {
     RESERVED("PURGE"),
     RESERVED("RANGE"),
     RESERVED("READ"),
-    RESERVED("READ_WRITE"),
     RESERVED("READS"),
+    RESERVED("READ_WRITE"),
     RESERVED("REAL"),
     RESERVED("REFERENCES"),
-    RESERVED("REGEXP"),
+    KW_OPERATOR("REGEXP"),
     RESERVED("RELEASE"),
     RESERVED("RENAME"),
-    RESERVED("REPLACE"),
     RESERVED("REPEAT"),
+    RESERVED("REPLACE"),
     RESERVED("REQUIRE"),
     RESERVED("RESIGNAL"),
     RESERVED("RESTRICT"),
     RESERVED("RETURN"),
     RESERVED("REVOKE"),
     RESERVED("RIGHT"),
-    RESERVED("REGEXP"),
-    RESERVED("DATABASE"),
-    RESERVED("DATABASES"),
+    KW_OPERATOR("RLIKE"),
     RESERVED("SECOND_MICROSECOND"),
     RESERVED("SELECT"),
     RESERVED("SENSITIVE"),
@@ -238,7 +226,7 @@ static const named_element_t keywords[] = {
     RESERVED("TO"),
     RESERVED("TRAILING"),
     RESERVED("TRIGGER"),
-    RESERVED("TRUE"),
+    CONSTANT("TRUE"),
     RESERVED("UNDO"),
     RESERVED("UNION"),
     RESERVED("UNIQUE"),
@@ -254,26 +242,34 @@ static const named_element_t keywords[] = {
     RESERVED("VALUES"),
     RESERVED("VARBINARY"),
     RESERVED("VARCHAR"),
-    RESERVED("VARCHAR"),
     RESERVED("VARYING"),
     RESERVED("WHEN"),
     RESERVED("WHERE"),
     RESERVED("WHILE"),
     RESERVED("WITH"),
     RESERVED("WRITE"),
-    RESERVED("XOR"),
+    KW_OPERATOR("XOR"),
     RESERVED("YEAR_MONTH"),
     RESERVED("ZEROFILL"),
 };
 
-/**
- * NOTE:
- * sql/lex.h
- *
- * TODO:
- * - /#!VERSI ... #/
- **/
 #if 0
+      /*
+        Discard:
+        - regular '/' '*' comments,
+        - special comments '/' '*' '!' for a future version,
+        by scanning until we find a closing '*' '/' marker.
+
+        Nesting regular comments isn't allowed.  The first
+        '*' '/' returns the parser to the previous state.
+
+        /#!VERSI oned containing /# regular #/ is allowed #/
+
+                Inside one versioned comment, another versioned comment
+                is treated as a regular discardable comment.  It gets
+                no special parsing.
+      */
+
 #define my_isspace(s, c)  (((s)->ctype+1)[(uchar) (c)] & _MY_SPC)
 #define _MY_SPC 010     /* Spacing character */
 
@@ -302,13 +298,10 @@ xdigit = [a-fA-F0-9];
 space = [\x10-\x14];
 control = [\x01-\x32];
 
-// \N, synonym for NULL, is case sensitive (NULL is not)
-null = 'null' | "\\N";
-// true/false are also case insensitive
-true = 'true';
-false = 'false';
+unquoted_var_name = [a-zA-Z0-9._$]+;
 
-operator = [!:<>] "=" | "<=>" | "->" ">"? | "<>" | "&&" | "||" | ">>" | "<<" | [=&|~*^/<>%!+-] | "IS" | "X"? "OR" | "AND" | "MOD" | "NOT"; // TODO: case insensitive + keyword or not + (R)LIKE + REGEXP + SOUNDS LIKE ?
+// TODO: recognize 'SOUNDS' spaces and/or comments 'LIKE'
+operator = [!:<>] "=" | "<=>" | "->" ">"? | "<>" | "&&" | "||" | ">>" | "<<" | [=&|~*^/<>%!+-];
 
 // SELECT CONCAT("'", GROUP_CONCAT(CHARACTER_SET_NAME ORDER BY CHARACTER_SET_NAME SEPARATOR "'\n | '"), "'") FROM INFORMATION_SCHEMA.CHARACTER_SETS;
 charset = 'armscii8'
@@ -354,25 +347,31 @@ charset = 'armscii8'
     | 'utf8mb4'
 ;
 
-quoted_identifier = [\x01-\x7F\u0080-\uFFFF]+;
+//quoted_identifier = [\x01-\x7F\u0080-\uFFFF]+;
 unquoted_identifier = [0-9a-zA-Z$_\u0080-\uFFFF]+;
-identifier = unquoted_identifier; // TODO
+identifier = unquoted_identifier;
 
 // the “-- ” (double-dash) comment style requires the second dash to be followed by at least one whitespace or control character (such as a space, tab, newline, and so on). This syntax differs slightly from standard SQL comment syntax
-<INITIAL> "--" (control | space) [^\n\r]* {
+<INITIAL> ("--" (control | space) | "#") [^\n\r]* {
     TOKEN(COMMENT_SINGLE);
 }
 
-// C-comment style for extension
-// The special comment format is very strict:
-// '/' '*' '!', followed by exactly
-// 1 digit (major), 2 digits (minor), then 2 digits (dot).
+// Versioned C-comment style
+// The special comment format is very strict: '/' '*' '!', followed by exactly 1 digit (major), 2 digits (minor), then 2 digits (dot)
 <INITIAL> "/*!" digit{5} {
+    // TODO: push/pop to highlight comment content
     BEGIN(IN_COMMENT);
     TOKEN(COMMENT_MULTILINE);
 }
 
-// C-comment style for hints
+// C-comment style for MySQL extension
+<INITIAL> "/*!" {
+    // TODO: push/pop to highlight comment content
+    BEGIN(IN_COMMENT);
+    TOKEN(COMMENT_MULTILINE);
+}
+
+// C-comment style for optimizer hints
 <INITIAL> "/*+" {
     BEGIN(IN_COMMENT);
     TOKEN(COMMENT_MULTILINE);
@@ -388,29 +387,46 @@ identifier = unquoted_identifier; // TODO
     TOKEN(COMMENT_MULTILINE);
 }
 
-<INITIAL> null | true | false {
+// \N, synonym for NULL, is case sensitive (NULL is not)
+<INITIAL> "\\N" {
     TOKEN(KEYWORD_CONSTANT);
 }
 
+// have to precede identifier lookup (else the number becomes an identifier)
 <INITIAL> [+-]? (digit+ | digit* '.' digit+) ('e' [+-]? digit+)? {
     TOKEN(NUMBER);
 }
 
+<INITIAL> operator {
+    TOKEN(OPERATOR);
+}
+
 <INITIAL> identifier {
-    named_element_t *match, key = { (char *) YYTEXT, YYLENG };
+    typed_named_element_t *match;
+    named_element_t key = { (char *) YYTEXT, YYLENG };
 
     if (NULL == (match = bsearch(&key, keywords, ARRAY_SIZE(keywords), sizeof(keywords[0]), named_elements_casecmp))) {
         TOKEN(NAME);
     } else {
         if (myoptions->uppercase_keywords/* && KEYWORD == match->type*/) {
-            TOKEN_OUTSRC(KEYWORD, (const YYCTYPE *) match->name, (const YYCTYPE *) match->name + match->name_len);
+            TOKEN_OUTSRC(match->type, (const YYCTYPE *) match->ne.name, (const YYCTYPE *) match->ne.name + match->ne.name_len);
         } else {
-            TOKEN(KEYWORD);
+            TOKEN(match->type);
         }
     }
 }
 
-<INITIAL> ('n' | "_" charset)? "'" { // TODO: charset fonctionne aussi avec les " + il peut y avoir des espaces (et/ou commentaires) entre _charset et la quote
+/**
+ * NOTE:
+ * We don't use:
+ *  <INITIAL> "_" charset ['"] { ...
+ * because between charset and the quote we can find comments and/or whitespaces
+ **/
+<INITIAL> "_" charset {
+    TOKEN(KEYWORD); // TODO: better type?
+}
+
+<INITIAL> 'n'? "'" {
     mydata->delim = '\'';
     BEGIN(IN_STRING);
     TOKEN(STRING);
@@ -430,13 +446,13 @@ identifier = unquoted_identifier; // TODO
     }
 }
 
-<INITIAL> operator {
-    TOKEN(OPERATOR);
+<INITIAL> [.,;()] {
+    TOKEN(PUNCTUATION);
 }
 
-// TODO: @@variable? + ["'`]
+// TODO: quoted var name ["'`]
 // User variables are written as @var_name, where the variable name var_name consists of alphanumeric characters, “.”, “_”, and “$”. A user variable name can contain other characters if you quote it as a string or identifier (for example, @'my-var', @"my-var", or @`my-var`).
-<INITIAL> "@" identifier {
+<INITIAL> "@" "@"? unquoted_var_name {
     TOKEN(NAME_VARIABLE);
 }
 
@@ -500,6 +516,11 @@ identifier = unquoted_identifier; // TODO
         BEGIN(INITIAL);
     }
     TOKEN(NAME);
+}
+
+// ASCII NUL (U+0000) and supplementary characters (U+10000 and higher) are not permitted in quoted or unquoted identifiers
+<IN_IDENTIFIER> [\000\U00010000-\U0010FFFF] {
+    TOKEN(ERROR);
 }
 
 <*> [^] { // should be the last "rule"
