@@ -6,6 +6,8 @@
 #include "tokens.h"
 #include "lexer.h"
 
+#define STACK_COMMENTS 1
+
 typedef struct {
     LexerData data;
     YYCTYPE delim;
@@ -17,11 +19,37 @@ typedef struct {
     int no_backslash_escapes ALIGNED(sizeof(OptionValue));
 } MyLexerOption;
 
+static int myanalyse(const char *src, size_t src_len)
+{
+    int score;
+    char *found;
+    void *kmp_ctxt;
+
+    score = 0;
+    kmp_ctxt = kmp_init("ENGINE=", STR_LEN("ENGINE="), KMP_INSENSITIVE);
+    if (NULL != (found = kmp_search_first(src, src_len, kmp_ctxt))) {
+        found += STR_LEN("ENGINE=");
+        src_len -= found - src;
+        if (
+            src_len > STR_LEN("InnoDB") && (
+                0 == ascii_strncasecmp_l(found, src_len, "InnoDB", STR_LEN("InnoDB"), STR_LEN("InnoDB"))
+                || 0 == ascii_strncasecmp_l(found, src_len, "MyISAM", STR_LEN("MyISAM"), STR_LEN("MyISAM"))
+            )
+        ) {
+            score = 100;
+        }
+    }
+    kmp_finalize(kmp_ctxt);
+
+    return score;
+}
+
 enum {
     STATE(INITIAL),
-    STATE(IN_STRING),
-    STATE(IN_COMMENT),
-    STATE(IN_IDENTIFIER),
+    STATE(IN_STRING),     // a string literal delimited by ' or " if ansi_quotes is off
+    STATE(IN_COMMENT),    // a regular C-comment style
+    STATE(IN_IDENTIFIER), // SQL identifier delimited by ` or " if ansi_quotes is on
+    STATE(IN_VARIABLE),   // to handle complex (all kind of quoted) user defined variable names
 };
 
 static int default_token_type[] = {
@@ -29,6 +57,7 @@ static int default_token_type[] = {
     [ STATE(IN_STRING) ] = STRING,
     [ STATE(IN_COMMENT) ] = COMMENT_MULTILINE,
     [ STATE(IN_IDENTIFIER) ] = NAME,
+    [ STATE(IN_VARIABLE) ] = NAME_VARIABLE,
 };
 
 #define RESERVED(s) \
@@ -359,15 +388,30 @@ identifier = unquoted_identifier;
 // Versioned C-comment style
 // The special comment format is very strict: '/' '*' '!', followed by exactly 1 digit (major), 2 digits (minor), then 2 digits (dot)
 <INITIAL> "/*!" digit{5} {
-    // TODO: push/pop to highlight comment content
+#if STACK_COMMENTS
+    yyless(STR_LEN("/*!"));
+    if (darray_length(data->state_stack)) {
+        PUSH_STATE(IN_COMMENT);
+    } else {
+        PUSH_STATE(INITIAL);
+    }
+#else
     BEGIN(IN_COMMENT);
+#endif
     TOKEN(COMMENT_MULTILINE);
 }
 
 // C-comment style for MySQL extension
 <INITIAL> "/*!" {
-    // TODO: push/pop to highlight comment content
+#if STACK_COMMENTS
+    if (darray_length(data->state_stack)) {
+        PUSH_STATE(IN_COMMENT);
+    } else {
+        PUSH_STATE(INITIAL);
+    }
+#else
     BEGIN(IN_COMMENT);
+#endif
     TOKEN(COMMENT_MULTILINE);
 }
 
@@ -378,12 +422,33 @@ identifier = unquoted_identifier;
 }
 
 <INITIAL> "/*" {
+#if STACK_COMMENTS
+    PUSH_STATE(IN_COMMENT);
+#else
     BEGIN(IN_COMMENT);
+#endif
     TOKEN(COMMENT_MULTILINE);
 }
 
+//#if STACK_COMMENTS
+<INITIAL> "*/" {
+    if (darray_pop(data->state_stack, &YYSTATE)) {
+        TOKEN(COMMENT_MULTILINE);
+    } else {
+        yyless(1);
+        TOKEN(OPERATOR);
+    }
+}
+//#endif
+
 <IN_COMMENT> "*/" {
+#if STACK_COMMENTS
+    if (!darray_pop(data->state_stack, &YYSTATE)) {
+        BEGIN(INITIAL);
+    }
+#else
     BEGIN(INITIAL);
+#endif
     TOKEN(COMMENT_MULTILINE);
 }
 
@@ -450,9 +515,41 @@ identifier = unquoted_identifier;
     TOKEN(PUNCTUATION);
 }
 
-// TODO: quoted var name ["'`]
 // User variables are written as @var_name, where the variable name var_name consists of alphanumeric characters, “.”, “_”, and “$”. A user variable name can contain other characters if you quote it as a string or identifier (for example, @'my-var', @"my-var", or @`my-var`).
+//<INITIAL> "@" "@"? (unquoted_var_name | '`' ('``' | [^`])+ '`' | "'" ("''" | "\\'" | [^'])+ "'" | '"' ('""' | '\\"' | [^"])+ '"') {
 <INITIAL> "@" "@"? unquoted_var_name {
+    TOKEN(NAME_VARIABLE);
+}
+
+<INITIAL> "@" [`'"] {
+    mydata->delim = YYTEXT[1];
+    BEGIN(IN_VARIABLE);
+    TOKEN(NAME_VARIABLE);
+}
+
+<IN_VARIABLE> "``" | '""' | "''" {
+    if (*YYTEXT == mydata->delim) {
+        TOKEN(ESCAPED_CHAR);
+    } else {
+        TOKEN(NAME_VARIABLE);
+    }
+}
+
+<IN_VARIABLE> "\\" [`'"] {
+    if (myoptions->no_backslash_escapes) {
+        if (YYTEXT[1] == mydata->delim) {
+            BEGIN(INITIAL);
+        }
+        TOKEN(NAME_VARIABLE);
+    } else {
+        TOKEN(ESCAPED_CHAR);
+    }
+}
+
+<IN_VARIABLE> [`'"] {
+    if (*YYTEXT == mydata->delim) {
+        BEGIN(INITIAL);
+    }
     TOKEN(NAME_VARIABLE);
 }
 
@@ -474,9 +571,12 @@ identifier = unquoted_identifier;
 
 <IN_STRING> "\\" [0'"bnrtZ\\%_] {
     if (myoptions->no_backslash_escapes) {
-        TOKEN(ESCAPED_CHAR);
-    } else {
+        if (YYTEXT[1] == mydata->delim) {
+            BEGIN(INITIAL);
+        }
         TOKEN(STRING);
+    } else {
+        TOKEN(ESCAPED_CHAR);
     }
 }
 
@@ -519,7 +619,7 @@ identifier = unquoted_identifier;
 }
 
 // ASCII NUL (U+0000) and supplementary characters (U+10000 and higher) are not permitted in quoted or unquoted identifiers
-<IN_IDENTIFIER> [\000\U00010000-\U0010FFFF] {
+<IN_IDENTIFIER,IN_VARIABLE> [\000\U00010000-\U0010FFFF] {
     TOKEN(ERROR);
 }
 
@@ -538,7 +638,7 @@ LexerImplementation mysql_lexer = {
     NULL, // "*.sql" but it may conflict with future mysql & co?
     (const char * const []) { "text/x-mysql", NULL },
     NULL, // interpreters
-    NULL, // analyze
+    myanalyse, // analyze
     NULL, // init
     mylex,
     NULL,
