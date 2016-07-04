@@ -42,11 +42,13 @@ static const named_element_t builtin_commands[] = {
     NE("aux_source_directory"),
     NE("break"),
     NE("build_command"),
-    NE("build_name"),
+    NE("build_name"), // deprecated
     NE("cmake_host_system_information"),
     NE("cmake_minimum_required"),
+    NE("cmake_parse_arguments"), // becomes a real/builtin command as of 3.5
     NE("cmake_policy"),
     NE("configure_file"),
+    NE("continue"), // 3.2
     NE("create_test_sourcelist"),
     NE("define_property"),
     NE("else"),
@@ -58,10 +60,10 @@ static const named_element_t builtin_commands[] = {
     NE("endif"),
     NE("endmacro"),
     NE("endwhile"),
-    NE("exec_program"),
+    NE("exec_program"), // deprecated
     NE("execute_process"),
     NE("export"),
-    NE("export_library_dependencies"),
+    NE("export_library_dependencies"), // deprecated
     NE("file"),
     NE("find_file"),
     NE("find_library"),
@@ -84,25 +86,25 @@ static const named_element_t builtin_commands[] = {
     NE("include_external_msproject"),
     NE("include_regular_expression"),
     NE("install"),
-    NE("install_files"),
-    NE("install_programs"),
-    NE("install_targets"),
+    NE("install_files"), // deprecated
+    NE("install_programs"), // deprecated
+    NE("install_targets"), // deprecated
     NE("link_directories"),
     NE("link_libraries"),
     NE("list"),
     NE("load_cache"),
-    NE("load_command"),
+    NE("load_command"), // deprecated
     NE("macro"),
-    NE("make_directory"),
+    NE("make_directory"), // deprecated
     NE("mark_as_advanced"),
     NE("math"),
     NE("message"),
     NE("option"),
-    NE("output_required_files"),
+    NE("output_required_files"), // deprecated
     NE("project"),
     NE("qt_wrap_cpp"),
     NE("qt_wrap_ui"),
-    NE("remove"),
+    NE("remove"), // deprecated
     NE("remove_definitions"),
     NE("return"),
     NE("separate_arguments"),
@@ -115,21 +117,23 @@ static const named_element_t builtin_commands[] = {
     NE("site_name"),
     NE("source_group"),
     NE("string"),
-    NE("subdir_depends"),
-    NE("subdirs"),
+    NE("subdir_depends"), // deprecated
+    NE("subdirs"), // deprecated
     NE("target_compile_definitions"),
+    NE("target_compile_features"), // 3.1
     NE("target_compile_options"),
     NE("target_include_directories"),
     NE("target_link_libraries"),
+    NE("target_sources"), // 3.1
     NE("try_compile"),
     NE("try_run"),
     NE("unset"),
-    NE("use_mangled_mesa"),
-    NE("utility_source"),
-    NE("variable_requires"),
+    NE("use_mangled_mesa"), // deprecated
+    NE("utility_source"), // deprecated
+    NE("variable_requires"), // deprecated
     NE("variable_watch"),
     NE("while"),
-    NE("write_file"),
+    NE("write_file"), // deprecated
 };
 
 /**
