@@ -6,9 +6,16 @@ set(SHALL_VERSION_MAJOR 0)
 set(SHALL_VERSION_MINOR 0)
 set(SHALL_VERSION_PATCH 0)
 
+if(CMAKE_VERSION VERSION_GREATER "3.1.0")
+    set(CMAKE_C_STANDARD 99)
+    set(CMAKE_C_STANDARD_REQUIRED TRUE)
+else(CMAKE_VERSION VERSION_GREATER "3.1.0")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99") # "poor" fallback
+endif(CMAKE_VERSION VERSION_GREATER "3.1.0")
+
 math(EXPR SHALL_VERSION_NUMBER "${SHALL_VERSION_MAJOR} * 1000 + ${SHALL_VERSION_MINOR} * 100 + ${SHALL_VERSION_PATCH}")
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99 -Wwrite-strings -Wstrict-prototypes -Wuninitialized -Wunreachable-code -Wno-comment -Wnonnull -Wunreachable-code")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wwrite-strings -Wstrict-prototypes -Wuninitialized -Wunreachable-code -Wno-comment -Wnonnull -Wunreachable-code")
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR})
 
