@@ -5,14 +5,12 @@
  * This is simple as this:
  * \code
  *   Iterator it;
+ *   const MyItem *item;
  *
  *   // initialize the iterator
  *   my_collection_to_iterator(&it);
  *   // traverse it (forward order here)
- *   for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
- *       const MyItem *item;
- *
- *       item = (const MyItem *) iterator_current(&it);
+ *   for (iterator_first(&it); iterator_is_valid(&it, NULL, &item); iterator_next(&it)) {
  *       // use item
  *   }
  *   // we're done, "close" the iterator
@@ -22,19 +20,17 @@
  * You can even known if your collection is empty by writing:
  * \code
  *   Iterator it;
+ *   const MyItem *item;
  *
  *   // initialize the iterator
  *   my_collection_to_iterator(&it);
  *   iterator_first(&it);
- *   if (iterator_is_valid(&it)) {
+ *   if (iterator_is_valid(&it, NULL, &item)) {
  *       // collection is not empty, "normal" traversal
  *       do {
- *           const MyItem *item;
- *
- *           item = (const MyItem *) iterator_current(&it);
  *           // use item
  *           iterator_next(&it); // have to be the last instruction of the loop
- *       } while (iterator_is_valid(&it));
+ *       } while (iterator_is_valid(&it, NULL, &item));
  *   } else {
  *       // collection is empty
  *   }
@@ -44,6 +40,7 @@
 
 #include <stddef.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "cpp.h"
 #include "iterator.h"
@@ -105,21 +102,6 @@ SHALL_API void iterator_close(Iterator *it)
     *it = NULL_ITERATOR;
 }
 
-/**
- * Get the current value
- *
- * @param it the iterator
- */
-SHALL_API void *iterator_current(Iterator *it)
-{
-    void *value = NULL;
-
-    if (NULL != it->current) {
-        it->current(it->collection, &it->state, &value);
-    }
-
-    return value;
-}
 
 /**
  * (Re)set internal position to the first element (if supported)
@@ -176,10 +158,18 @@ SHALL_API void iterator_previous(Iterator *it)
  * you are done
  *
  * @param it the iterator
+ * @param key the associated to the current element, if any
+ * @param value the current element
  */
-SHALL_API bool iterator_is_valid(Iterator *it)
+SHALL_API bool iterator_is_valid(Iterator *it, void **key, void **value)
 {
-    return it->valid(it->collection, &it->state);
+    bool valid;
+
+    if ((valid = it->valid(it->collection, &it->state))) {
+        it->current(it->collection, &it->state, key, value);
+    }
+
+    return valid;
 }
 
 /* ========== NULL terminated (pointers) array ========== */
@@ -199,13 +189,17 @@ static bool null_terminated_ptr_array_iterator_is_valid(const void *UNUSED(colle
     return NULL != **((void ***) state);
 }
 
-static void null_terminated_ptr_array_iterator_current(const void *collection, void **state, void **value)
+static void null_terminated_ptr_array_iterator_current(const void *collection, void **state, void **key, void **value)
 {
     assert(NULL != collection);
     assert(NULL != state);
-    assert(NULL != value);
 
-    *value = **(void ***) state;
+    if (NULL != value) {
+        *value = **(void ***) state;
+    }
+    if (NULL != key) {
+        *((uint64_t *) key) = *state - collection;
+    }
 }
 
 static void null_terminated_ptr_array_iterator_next(const void *UNUSED(collection), void **state)
@@ -269,16 +263,20 @@ static bool null_sentineled_field_terminated_array_iterator_is_valid(const void 
     return NULL != *((char **) (s->ptr + s->field_offset));
 }
 
-static void null_sentineled_field_terminated_array_iterator_current(const void *UNUSED(collection), void **state, void **value)
+static void null_sentineled_field_terminated_array_iterator_current(const void *collection, void **state, void **key, void **value)
 {
     nsftas_t *s;
 
     assert(NULL != state);
     assert(NULL != value);
-    assert(NULL != *state);
 
     s = (nsftas_t *) *state;
-    *value = (void *) s->ptr;
+    if (NULL != value) {
+        *value = (void *) s->ptr;
+    }
+    if (NULL != key) {
+        *((uint64_t *) key) = (s->ptr - ((const char *) collection)) / s->element_size;
+    }
 }
 
 static void null_sentineled_field_terminated_array_iterator_next(const void *UNUSED(collection), void **state)

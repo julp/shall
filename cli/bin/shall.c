@@ -340,19 +340,17 @@ int main(int argc, char **argv)
                     {
 #include "formatter.h"
                         Iterator it;
+                        const FormatterImplementation *imp;
 
                         formatter_implementations_to_iterator(&it);
-                        for (iterator_first(&it); iterator_is_valid(&it); iterator_next(&it)) {
+                        for (iterator_first(&it); iterator_is_valid(&it, NULL, (void **) &imp); iterator_next(&it)) {
                             Iterator subit;
-                            const FormatterImplementation *imp;
 
-                            imp = (const FormatterImplementation *) iterator_current(&it);
                             printf("- %s\n", formatter_implementation_name(imp));
                             if (formatter_implementation_options_to_iterator(&subit, imp)) {
-                                for (iterator_first(&subit); iterator_is_valid(&subit); iterator_next(&subit)) {
-                                    const FormatterOption *option;
+                                const FormatterOption *option;
 
-                                    option = (const FormatterOption *) iterator_current(&subit);
+                                for (iterator_first(&subit); iterator_is_valid(&subit, NULL, (void **) &option); iterator_next(&subit)) {
                                     print_option_cb(option->type, option->name, option->defval, option->docstr, NULL);
                                 }
                                 iterator_close(&subit);

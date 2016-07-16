@@ -706,7 +706,7 @@ static bool hashtable_iterator_is_valid(const void *UNUSED(collection), void **s
     return NULL != *state;
 }
 
-static void hashtable_iterator_current(const void *UNUSED(collection), void **state, void **value)
+static void hashtable_iterator_current(const void *UNUSED(collection), void **state, void **key, void **value)
 {
     HashNode *n;
 
@@ -714,7 +714,12 @@ static void hashtable_iterator_current(const void *UNUSED(collection), void **st
     assert(NULL != value);
 
     n = (HashNode *) *state;
-    *value = n->data;
+    if (NULL != value) {
+        *value = n->data;
+    }
+    if (NULL != key) {
+        *key = (void *) n->key;
+    }
 }
 
 static void hashtable_iterator_next(const void *UNUSED(collection), void **state)

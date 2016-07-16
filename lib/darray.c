@@ -221,7 +221,7 @@ static bool darray_iterator_is_valid(const void *collection, void **state)
     return *((uint8_t **) state) >= ary->data && *((uint8_t **) state) < (ary->data + LENGTH(ary, ary->length));
 }
 
-static void darray_iterator_current(const void *collection, void **state, void **value)
+static void darray_iterator_current(const void *collection, void **state, void **key, void **value)
 {
     DArray *ary;
 
@@ -230,7 +230,12 @@ static void darray_iterator_current(const void *collection, void **state, void *
     assert(NULL != value);
 
     ary = (DArray *) collection;
-    *value = *(uint8_t **) state;
+    if (NULL != value) {
+        *value = *(uint8_t **) state;
+    }
+    if (NULL != key) {
+        *((uint64_t *) key) = *((uint8_t **) state) - ary->data;
+    }
 }
 
 static void darray_iterator_next(const void *collection, void **state)

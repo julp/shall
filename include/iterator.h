@@ -5,7 +5,7 @@
 
 typedef void (*iterator_first_t)(const void *, void **);
 typedef void (*iterator_last_t)(const void *, void **);
-typedef void (*iterator_current_t)(const void *, void **, void **);
+typedef void (*iterator_current_t)(const void *, void **, void **, void **);
 typedef void (*iterator_next_t)(const void *, void **);
 typedef void (*iterator_previous_t)(const void *, void **);
 typedef bool (*iterator_is_valid_t)(const void *, void **);
@@ -39,10 +39,9 @@ SHALL_API void iterator_init(
 );
 SHALL_API void iterator_first(Iterator *);
 SHALL_API void iterator_last(Iterator *);
-SHALL_API void *iterator_current(Iterator *);
 SHALL_API void iterator_next(Iterator *);
 SHALL_API void iterator_previous(Iterator *);
-SHALL_API bool iterator_is_valid(Iterator *);
+SHALL_API bool iterator_is_valid(Iterator *, void **, void **);
 SHALL_API void iterator_close(Iterator *);
 
 SHALL_API void null_terminated_ptr_array_to_iterator(Iterator *, void **);
