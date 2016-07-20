@@ -161,7 +161,7 @@ SHALL_API void iterator_previous(Iterator *it)
  * @param key the associated to the current element, if any
  * @param value the current element
  */
-SHALL_API bool iterator_is_valid(Iterator *it, void **key, void **value)
+SHALL_API bool _iterator_is_valid(Iterator *it, void **key, void **value)
 {
     bool valid;
 
