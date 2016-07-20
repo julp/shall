@@ -41,6 +41,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "cpp.h"
 #include "iterator.h"
@@ -172,6 +173,119 @@ SHALL_API bool _iterator_is_valid(Iterator *it, void **key, void **value)
     return valid;
 }
 
+#define CHAR_P(p) \
+    ((const char *) (p))
+
+/* ========== array ========== */
+
+typedef struct {
+    const char *ptr;
+    size_t element_size;
+    size_t element_count;
+} as_t /*array_state*/;
+
+static void array_iterator_first(const void *collection, void **state)
+{
+    as_t *s;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (as_t *) *state;
+    s->ptr = collection;
+}
+
+static void array_iterator_last(const void *collection, void **state)
+{
+    as_t *s;
+
+    assert(NULL != collection);
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (as_t *) *state;
+    s->ptr = collection + (s->element_count - 1) * s->element_size;
+}
+
+static bool array_iterator_is_valid(const void *collection, void **state)
+{
+    as_t *s;
+
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (as_t *) *state;
+
+    return s->ptr >= CHAR_P(collection) && s->ptr < CHAR_P(collection) + s->element_count * s->element_size;
+}
+
+static void array_iterator_current(const void *collection, void **state, void **key, void **value)
+{
+    as_t *s;
+
+    assert(NULL != state);
+    assert(NULL != value);
+
+    s = (as_t *) *state;
+    if (NULL != value) {
+        memcpy((char *) value, s->ptr, s->element_size);
+    }
+    if (NULL != key) {
+        *((uint64_t *) key) = (s->ptr - CHAR_P(collection)) / s->element_size;
+    }
+}
+
+static void array_iterator_next(const void *UNUSED(collection), void **state)
+{
+    as_t *s;
+
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (as_t *) *state;
+    s->ptr += s->element_size;
+}
+
+static void array_iterator_prev(const void *UNUSED(collection), void **state)
+{
+    as_t *s;
+
+    assert(NULL != state);
+    assert(NULL != *state);
+
+    s = (as_t *) *state;
+    s->ptr -= s->element_size;
+}
+
+/**
+ * Iterate on an array of struct (or union) where one of its field is sentineled
+ * by a NULL pointer.
+ *
+ * @param it the iterator to initialize
+ * @param array the array to iterate on
+ * @param element_size the size of an element of this array
+ * @param element_count the number of elements in the array
+ */
+SHALL_API void array_to_iterator(Iterator *it, void *array, size_t element_size, size_t element_count)
+{
+    as_t *s;
+
+    s = malloc(sizeof(*s));
+    s->ptr = CHAR_P(array);
+    s->element_size = element_size;
+    s->element_count = element_count;
+
+    iterator_init(
+        it, array, s,
+        array_iterator_first, array_iterator_last,
+        array_iterator_current,
+        array_iterator_next, array_iterator_prev,
+        array_iterator_is_valid,
+        free
+    );
+}
+
 /* ========== NULL terminated (pointers) array ========== */
 
 static void null_terminated_ptr_array_iterator_first(const void *collection, void **state)
@@ -275,7 +389,7 @@ static void null_sentineled_field_terminated_array_iterator_current(const void *
         *value = (void *) s->ptr;
     }
     if (NULL != key) {
-        *((uint64_t *) key) = (s->ptr - ((const char *) collection)) / s->element_size;
+        *((uint64_t *) key) = (s->ptr - CHAR_P(collection)) / s->element_size;
     }
 }
 
@@ -305,7 +419,7 @@ SHALL_API void null_sentineled_field_terminated_array_to_iterator(Iterator *it, 
     nsftas_t *s;
 
     s = malloc(sizeof(*s));
-    s->ptr = (const char *) array;
+    s->ptr = CHAR_P(array);
     s->element_size = element_size;
     s->field_offset = field_offset;
 
