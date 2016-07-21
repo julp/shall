@@ -227,7 +227,6 @@ static void darray_iterator_current(const void *collection, void **state, void *
 
     assert(NULL != collection);
     assert(NULL != state);
-    assert(NULL != value);
 
     ary = (DArray *) collection;
     if (NULL != value) {

@@ -711,7 +711,6 @@ static void hashtable_iterator_current(const void *UNUSED(collection), void **st
     HashNode *n;
 
     assert(NULL != state);
-    assert(NULL != value);
 
     n = (HashNode *) *state;
     if (NULL != value) {
