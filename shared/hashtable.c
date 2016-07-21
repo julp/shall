@@ -5,11 +5,12 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "cpp.h"
+#include "utils.h"
 #include "nearest_power.h"
 #include "hashtable.h"
-#include "utils.h"
 
 #define HASHTABLE_MIN_SIZE 8
 
@@ -648,7 +649,6 @@ void hashtable_destroy(HashTable *ht)
 
     hashtable_clear_real(ht);
     free(ht->nodes);
-    //free(ht); // caller have to do this
 }
 
 /**
@@ -681,76 +681,6 @@ void *hashtable_last(HashTable *ht)
     } else {
         return ht->gTail->data;
     }
-}
-
-static void hashtable_iterator_first(const void *collection, void **state)
-{
-    assert(NULL != collection);
-    assert(NULL != state);
-
-    *state = ((HashTable *) collection)->gHead;
-}
-
-static void hashtable_iterator_last(const void *collection, void **state)
-{
-    assert(NULL != collection);
-    assert(NULL != state);
-
-    *state = ((HashTable *) collection)->gTail;
-}
-
-static bool hashtable_iterator_is_valid(const void *UNUSED(collection), void **state)
-{
-    assert(NULL != state);
-
-    return NULL != *state;
-}
-
-static void hashtable_iterator_current(const void *UNUSED(collection), void **state, void **key, void **value)
-{
-    HashNode *n;
-
-    assert(NULL != state);
-
-    n = (HashNode *) *state;
-    if (NULL != value) {
-        *value = n->data;
-    }
-    if (NULL != key) {
-        *key = (void *) n->key;
-    }
-}
-
-static void hashtable_iterator_next(const void *UNUSED(collection), void **state)
-{
-    assert(NULL != state);
-
-    *state = ((HashNode *) *state)->gNext;
-}
-
-static void hashtable_iterator_previous(const void *UNUSED(collection), void **state)
-{
-    assert(NULL != state);
-
-    *state = ((HashNode *) *state)->gPrev;
-}
-
-/**
- * Initialize an iterator to loop on the values of an HashTable
- *
- * @param it the iterator to initialize
- * @param ht the hashtable to traverse
- **/
-void hashtable_to_iterator(Iterator *it, HashTable *ht)
-{
-    iterator_init(
-        it, ht, NULL,
-        hashtable_iterator_first, hashtable_iterator_last,
-        hashtable_iterator_current,
-        hashtable_iterator_next, hashtable_iterator_previous,
-        hashtable_iterator_is_valid,
-        NULL
-    );
 }
 
 /**
@@ -862,3 +792,77 @@ bool hashtable_equals(HashTable *ht1, HashTable *ht2)
 
     return equals;
 }
+
+#ifndef WITHOUT_ITERATOR
+static void hashtable_iterator_first(const void *collection, void **state)
+{
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    *state = ((HashTable *) collection)->gHead;
+}
+
+static void hashtable_iterator_last(const void *collection, void **state)
+{
+    assert(NULL != collection);
+    assert(NULL != state);
+
+    *state = ((HashTable *) collection)->gTail;
+}
+
+static bool hashtable_iterator_is_valid(const void *UNUSED(collection), void **state)
+{
+    assert(NULL != state);
+
+    return NULL != *state;
+}
+
+static void hashtable_iterator_current(const void *UNUSED(collection), void **state, void **key, void **value)
+{
+    HashNode *n;
+
+    assert(NULL != state);
+
+    n = (HashNode *) *state;
+    if (NULL != value) {
+        *value = n->data;
+    }
+    if (NULL != key) {
+        *key = (void *) n->key;
+    }
+}
+
+static void hashtable_iterator_next(const void *UNUSED(collection), void **state)
+{
+    assert(NULL != state);
+
+    *state = ((HashNode *) *state)->gNext;
+}
+
+static void hashtable_iterator_previous(const void *UNUSED(collection), void **state)
+{
+    assert(NULL != state);
+
+    *state = ((HashNode *) *state)->gPrev;
+}
+
+/**
+ * Initialize an iterator to loop on the values of an HashTable
+ *
+ * @param it the iterator to initialize
+ * @param ht the hashtable to traverse
+ *
+ * @note iterator directions: forward and backward
+ **/
+void hashtable_to_iterator(Iterator *it, HashTable *ht)
+{
+    iterator_init(
+        it, ht, NULL,
+        hashtable_iterator_first, hashtable_iterator_last,
+        hashtable_iterator_current,
+        hashtable_iterator_next, hashtable_iterator_previous,
+        hashtable_iterator_is_valid,
+        NULL
+    );
+}
+#endif /* !WITHOUT_ITERATOR */

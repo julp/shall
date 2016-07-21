@@ -4,8 +4,6 @@
 #include <stdint.h> /* uint32_t */
 #include <stdbool.h>
 
-#include "iterator.h"
-
 typedef struct _HashTable HashTable;
 
 typedef uintptr_t ht_key_t; // key_t is defined for ftok
@@ -43,12 +41,6 @@ struct _HashTable {
     size_t count;
     ht_hash_t mask;
 };
-
-typedef struct {
-    ht_hash_t hash;
-    char *string;
-    size_t string_len;
-} pre_computed_string_t;
 
 #define HT_PUT_ON_DUP_KEY_PRESERVE (1<<1)
 /*#define HT_PUT_ON_DUP_KEY_NO_DTOR  (1<<2)*/
@@ -126,4 +118,8 @@ HashTable *hashtable_union(HashTable *, HashTable *, HashTable *, DupFunc, DupFu
 #define hashtable_quick_delete(ht, h, k, dtor) \
     _hashtable_quick_delete(ht, h, (ht_key_t) k, dtor)
 
+#ifndef WITHOUT_ITERATOR
+# include "iterator.h"
+
 void hashtable_to_iterator(Iterator *, HashTable *);
+#endif /* !WITHOUT_ITERATOR */
