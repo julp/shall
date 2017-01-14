@@ -674,7 +674,7 @@ abandon_or_done:
     if (NULL != fmt->imp->end_document) {
         fmt->imp->end_document(buffer, &fmt->optvals);
     }
-    dlist_destroy(&ctxt.lexer_stack);
+    dlist_clear(&ctxt.lexer_stack);
     hashtable_destroy(&ctxt.lexers);
 
     // set result string

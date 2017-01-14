@@ -14,7 +14,10 @@ typedef ht_hash_t (*HashFunc)(ht_key_t);
 # define DTOR_FUNC
 typedef void (*DtorFunc)(void *);
 #endif /* !DOTR_FUNC */
+#ifndef DUP_FUNC
+# define DUP_FUNC
 typedef void *(*DupFunc)(const void *);
+#endif /* !DUP_FUNC */
 typedef bool (*EqualFunc)(ht_key_t, ht_key_t);
 // typedef int (*CmpFunc)(const void *, const void *);
 
