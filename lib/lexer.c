@@ -22,6 +22,8 @@ extern const LexerImplementation cmake_lexer;
 extern const LexerImplementation css_lexer;
 extern const LexerImplementation diff_lexer;
 extern const LexerImplementation dtd_lexer;
+extern const LexerImplementation eex_lexer; // provided by elixir lexer
+extern const LexerImplementation elixir_lexer;
 extern const LexerImplementation erb_lexer; // provided by ruby lexer
 extern const LexerImplementation go_lexer;
 extern const LexerImplementation html_lexer; // provided by xml lexer
@@ -49,6 +51,8 @@ static const LexerImplementation *available_lexers[] = {
     &css_lexer,
     &diff_lexer,
     &dtd_lexer,
+    &eex_lexer,
+    &elixir_lexer,
     &erb_lexer,
     &go_lexer,
     &html_lexer,

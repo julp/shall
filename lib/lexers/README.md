@@ -68,6 +68,26 @@ Filename(s): *.dtd
 
 MIME type(s): application/xml-dtd
 
+## EEX
+
+For EEX (Elixir) templates. Use the "secondary" option to delegate tokenization of parts which are outside of EEX tags.
+
+Filename(s): *.eex
+
+MIME type(s): application/x-elixir-templating
+
+| Option | Type | Default value | Description |
+| ------ | ---- | ------------- | ----------- |
+| secondary | lexer | null/none | Lexer to highlight content outside of EEX tags (if none, these parts will not be highlighted) |
+
+## Elixir
+
+For the Elixir programming language (elixir-lang.org)
+
+Filename(s): *.ex, *.exs
+
+MIME type(s): text/x-elixir
+
 ## ERB
 
 For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.

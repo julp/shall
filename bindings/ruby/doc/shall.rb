@@ -14,6 +14,10 @@ module Shall
         class Diff < Base ; end
         # A lexer for DTDs (Document Type Definitions)
         class DTD < Base ; end
+        # For EEX (Elixir) templates. Use the "secondary" option to delegate tokenization of parts which are outside of EEX tags.
+        class EEX < Base ; end
+        # For the Elixir programming language (elixir-lang.org)
+        class Elixir < Base ; end
         # For ERB (Ruby) templates. Use the "secondary" option to delegate tokenization of parts which are outside of ERB tags.
         class ERB < Base ; end
         # For the Google Go programming language (golang.org)
