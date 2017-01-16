@@ -14,7 +14,6 @@ enum {
     STATE(INITIAL),
     STATE(IN_ELIXIR),
     STATE(IN_EEX_COMMENT),
-    STATE(IN_SIGIL),
     STATE(IN_SINGLE_STRING),
     STATE(IN_HEREDOC_STRING),
     STATE(IN_SINGLE_CHARLIST),
@@ -23,7 +22,8 @@ enum {
 
 static int default_token_type[] = {
     [ STATE(INITIAL) ] = IGNORABLE,
-    [ STATE(IN_SIGIL) ] = IGNORABLE,
+    [ STATE(IN_ELIXIR) ] = IGNORABLE,
+    [ STATE(IN_EEX_COMMENT) ] = COMMENT_SINGLE,
     [ STATE(IN_SINGLE_STRING) ] = STRING_DOUBLE,
     [ STATE(IN_HEREDOC_STRING) ] = STRING_DOUBLE,
     [ STATE(IN_SINGLE_CHARLIST) ] = STRING_SINGLE,
@@ -33,7 +33,6 @@ static int default_token_type[] = {
 typedef struct {
     LexerData data;
     bool eex;
-    YYCTYPE quote_char;
 } ElixirLexerData;
 
 typedef struct {
@@ -63,7 +62,6 @@ static void eexinit(const OptionValue *options, LexerData *data, void *ctxt)
 
 #if 0
 TODO:
-* def(p), defmacro, defstruct, defmodule, ...
 * modules attributes ("@" identifier)
 * spec/types ?
 * magic constants
@@ -92,9 +90,8 @@ identifier_start = [a-zA-Z_];
 atom = identifier_start ([0-9@] | identifier_start)*;
 identifier = identifier_start ([0-9] | identifier_start)*;
 
-// TODO: handle modifier(s?) after the sigil character terminator
 <IN_ELIXIR> "~" alpha sigilseparator {
-    YYCTYPE terminator;
+    YYCTYPE terminator, *ptr;
 
     switch (YYTEXT[2]) {
         case '<':
@@ -113,30 +110,33 @@ identifier = identifier_start ([0-9] | identifier_start)*;
             terminator = YYTEXT[2];
             break;
     }
-#if 1
-    BEGIN(IN_SIGIL);
-    mydata->quote_char = terminator;
-    TOKEN(KEYWORD);
-#else
-    YYCTYPE *ptr;
-
     if (NULL == (ptr = memchr(YYCURSOR, terminator, YYLIMIT - YYCURSOR))) {
         YYCURSOR = YYLIMIT;
         DONE();
     } else {
-        YYCURSOR = ptr;
-        TOKEN(STRING);
-        ++YYCURSOR;
-    }
-#endif
-}
+        int type;
 
-<IN_SIGIL> [^] {
-    if (mydata->quote_char == *YYTEXT) {
-        BEGIN(IN_ELIXIR);
-        TOKEN(KEYWORD);
-    } else {
-        TOKEN(IGNORABLE); // TODO
+        YYCURSOR = ptr;
+        ++YYCURSOR;
+        while (YYCURSOR < YYLIMIT && IS_ALPHA(*YYCURSOR)) {
+            ++YYCURSOR;
+        }
+        switch (YYTEXT[1]) {
+            case 'r':
+            case 'R':
+                type = STRING_REGEX;
+                break;
+            case 's':
+            case 'S':
+            case 'c':
+            case 'C':
+                type = STRING_DOUBLE;
+                break;
+            default:
+                type = IGNORABLE;
+                break;
+        }
+        TOKEN(type);
     }
 }
 
@@ -161,7 +161,7 @@ identifier = identifier_start ([0-9] | identifier_start)*;
     TOKEN(NUMBER_HEXADECIMAL);
 }
 
-<IN_ELIXIR> "and" | "in" | "or" | "not" | "when" {
+<IN_ELIXIR> "^" | "and" | "in" | "or" | "not" | "when" {
     TOKEN(OPERATOR);
 }
 
@@ -232,6 +232,14 @@ identifier = identifier_start ([0-9] | identifier_start)*;
 
 <IN_ELIXIR> [(){}[\],:] | "->" | "=>" | "%{" | "|>" {
     TOKEN(PUNCTUATION);
+}
+
+<IN_ELIXIR> "def" "macro"? "p"? {
+    TOKEN(KEYWORD);
+}
+
+<IN_ELIXIR> "def" ("delegate" | "exception" | "impl" | "module" | "overridable" | "protocol" | "struct") {
+    TOKEN(KEYWORD);
 }
 
 <IN_ELIXIR> "fn" | "do" | "end" | "after" | "else" | "rescue" | "if" | "unless" | "case" | "cond" | "for" | "with" | "use" | "import" | "alias" | "require" {

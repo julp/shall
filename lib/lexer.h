@@ -425,6 +425,9 @@ struct LexerReturnValue {
         } \
     } while (0);
 
+#define IS_ALPHA(c) \
+    ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
+
 typedef struct {
     const char *name;
     size_t name_len;
