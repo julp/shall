@@ -77,9 +77,8 @@ static int yylex(YYLEX_ARGS)
     (void) options;
     mydata = (ElixirLexerData *) data;
 
-    if (YYCURSOR > YYLIMIT) {
-        DONE();
-    } else {
+    while (YYCURSOR < YYLIMIT) {
+        YYTEXT = YYCURSOR;
 /*!re2c
 re2c:yyfill:check = 0;
 re2c:yyfill:enable = 0;
@@ -307,6 +306,7 @@ identifier = identifier_start ([0-9] | identifier_start)*;
 }
 */
     }
+    DONE();
 }
 
 LexerImplementation elixir_lexer = {
