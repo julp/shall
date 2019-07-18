@@ -12,6 +12,10 @@
 # define __has_builtin(x) 0
 #endif /* !__has_builtin */
 
+#ifndef typeof
+# define typeof __typeof__
+#endif /* !typeof */
+
 #if __has_builtin(__builtin_expect)
 # define EXPECTED(condition)   __builtin_expect(!!(condition), 1)
 # define UNEXPECTED(condition) __builtin_expect(!!(condition), 0)
