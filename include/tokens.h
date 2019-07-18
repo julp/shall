@@ -19,4 +19,4 @@ typedef struct {
     const char *cssclass;
 } Token;
 
-/*SHALL_API */const Token tokens[_TOKEN_COUNT];
+extern /*SHALL_API*/ const Token tokens[_TOKEN_COUNT];
