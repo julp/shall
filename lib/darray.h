@@ -7,7 +7,7 @@
 #ifndef DTOR_FUNC
 # define DTOR_FUNC
 typedef void (*DtorFunc)(void *);
-#endif /* !DOTR_FUNC */
+#endif /* !DTOR_FUNC */
 
 typedef struct {
     uint8_t *data;
