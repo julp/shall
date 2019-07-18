@@ -313,7 +313,7 @@ static void unregister_lexer(void *data)
 }
 
 // TODO: forbids to stack a same LexerImplementation twice?
-static void _add_lexer_real(ProcessingContext *ctxt, Lexer *lexer, bool prepend, bool keep)
+static void _add_lexer_real(ProcessingContext *ctxt, Lexer *lexer, bool UNUSED(prepend), bool keep)
 {
     bool known;
     LexerListElement *lle;
@@ -473,7 +473,7 @@ SHALL_API int highlight_string(const char *src, size_t src_len, char **dst, size
     LexerReturnValue rv;
     ProcessingContext ctxt;
     Lexer *current_lexer;
-    int what, prev, token;
+    int ret, what, prev, token;
     const YYCTYPE *prev_yycursor;
     size_t buffer_len, yycursor_unchanged;
     const char * const src_end = src + src_len;
@@ -481,6 +481,7 @@ SHALL_API int highlight_string(const char *src, size_t src_len, char **dst, size
     assert(lexerc > 0); // nothing to do, returns ""?
     assert(NULL != lexerv);
 
+    ret = 0;
     yy = &xx;
     ldata = NULL;
     delegation_init(&ds);
@@ -540,8 +541,9 @@ SHALL_API int highlight_string(const char *src, size_t src_len, char **dst, size
         // trivial safety against infinite loop
         if (YYCURSOR == prev_yycursor) {
             if (++yycursor_unchanged >= RECURSION_LIMIT) {
-                // TODO: return an error code and add a size_t * argument to set, if not NULL, the output string length
-                fputs("[ ERR ] RECURSION FOUND\n", stderr);
+                // TODO: return a real error code
+                ret = 1;
+                debug("[ ERR ] RECURSION FOUND");
                 goto abandon_or_done;
             }
         } else {
@@ -684,7 +686,7 @@ abandon_or_done:
         *dst_len = buffer_len;
     }
 
-    return 0;
+    return ret;
 }
 
 /**
