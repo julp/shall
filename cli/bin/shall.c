@@ -318,7 +318,12 @@ int main(int argc, char **argv)
     }
     g = NULL;
     fmt = NULL;
+#if 0
     fimp = termfmt;
+#else
+    fimp = formatter_implementation_by_name("terminal");
+#endif
+    assert(NULL != fimp);
     eFlag = cFlag = vFlag = false;
     for (o = 0; o < COUNT; o++) {
         options_store_init(&options[o]);
