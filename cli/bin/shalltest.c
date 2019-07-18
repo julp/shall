@@ -134,8 +134,6 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
         PART_FORMATTER
     };
 
-    enum { FD_EXPECT, FD_SOURCE, FD_COUNT };
-
     size_t i;
     FILE *fp;
     Lexer *lexer;
@@ -145,19 +143,19 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
     bool guess_limp;
     int oldpart, part;
     size_t result_len;
+    int ret, status, fdsource;
     OptionsStore options[COUNT];
-    int ret, status, fd[FD_COUNT] = { -1, -1 };
     const LexerImplementation *limp;
     const FormatterImplementation *fimp;
-//     char ppath[FD_COUNT][PATH_MAX]; // TODO: build a unique path to run several shalltest in parallel ("/tmp/shall.<source/expect>.$$")?
-    const char *ppath[FD_COUNT] = { "/tmp/shallexpect", "/tmp/shallsource" };
+    char sourcepath[PATH_MAX] = "/tmp/shallsource"; // TODO: build a unique path to run several shalltest in parallel ("/tmp/shall.<source/expect>.$$")?
 
     ret = 0;
     g = NULL;
     limp = NULL;
     result = NULL;
-    guess_limp = false;
+    fdsource = -1;
     fimp = plainfmt;
+    guess_limp = false;
     oldpart = part = PART_NONE;
     ctxt_flush(ctxt);
     for (i = 0; i < COUNT; i++) {
@@ -308,15 +306,24 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
         options_store_free(&options[i]);
     }
     {
-        pid_t pid;
+        enum {
+            PROC_RECV, // NOTE: always reader/receiver first to stick with pipe(2) ([0] = read end, [1] = write end)
+            PROC_SEND,
+            _PROC_COUNT
+        };
 
-        // snprintf(ppath[FD_SOURCE], "/tmp/shall.source.%d", pid);
-        for (i = 0; i < FD_COUNT; i++) {
-            unlink(ppath[i]);
-            if (0 != mkfifo(ppath[i], 0640)) {
-                STERR("mkfifo %s failed: %s", ppath[i], strerror(errno));
-                return 0;
-            }
+        pid_t pid;
+        int fd[_PROC_COUNT];
+
+        //snprintf(sourcepath, "/tmp/shall.source.%d", pid);
+        unlink(sourcepath);
+        if (0 != mkfifo(sourcepath, 0640)) {
+            STERR("mkfifo %s failed: %s", sourcepath, strerror(errno));
+            return 0;
+        }
+        if (0 != pipe(fd)) {
+            STERR("pipe failed: %s", strerror(errno));
+            return 0;
         }
         pid = fork();
         if (-1 == pid) {
@@ -334,38 +341,37 @@ static int procfile(const char *filename, st_ctxt_t *ctxt, int verbosity)
             *++dot = 'f';
             *++dot = 'f';
             *++dot = '\0';
+            close(fd[PROC_SEND]);
+            dup2(fd[PROC_RECV], STDIN_FILENO);
+            close(fd[PROC_RECV]);
             fdout = open(dpath, O_CREAT | O_WRONLY | O_TRUNC, S_IRUSR | S_IWUSR);
             dup2(fdout, STDOUT_FILENO);
             close(fdout);
-            execlp("diff", "diff", "-u", ppath[FD_EXPECT], ppath[FD_SOURCE], NULL);
+            execlp("diff", "diff", "-u", sourcepath, "-", NULL);
             STERR("execlp failed: %s", strerror(errno));
             exit(EXIT_FAILURE);
         }
-        for (i = 0; i < FD_COUNT; i++) {
-            if (-1 == (fd[i] = open(ppath[i], O_WRONLY))) {
-                STERR("open %s failed: %s", ppath[i], strerror(errno));
-                goto end;
-            }
+        if (-1 == (fdsource = open(sourcepath, O_WRONLY))) {
+            STERR("open %s failed: %s", sourcepath, strerror(errno));
+            goto end;
         }
-        if (-1 == write(fd[FD_EXPECT], ctxt->expect->ptr, ctxt->expect->len)) {
+        close(fd[PROC_RECV]);
+        if (-1 == write(fd[PROC_SEND], result, result_len)) {
             STERR("write failed: %s", strerror(errno));
             goto end;
         }
-        if (-1 == write(fd[FD_SOURCE], result, result_len)) {
+        close(fd[PROC_SEND]);
+        if (-1 == write(fdsource, ctxt->expect->ptr, ctxt->expect->len)) {
             STERR("write failed: %s", strerror(errno));
             goto end;
         }
 end:
-        for (i = 0; i < FD_COUNT; i++) {
-            if (-1 != fd[i]) {
-                close(fd[i]);
-            }
+        if (-1 != fdsource) {
+            close(fdsource);
         }
         waitpid(pid, &status, 0);
         ret = WIFEXITED(status) ? EXIT_SUCCESS == WEXITSTATUS(status) : 0;
-        for (i = 0; i < FD_COUNT; i++) {
-            unlink(ppath[i]);
-        }
+        unlink(sourcepath);
     }
     if (NULL != result) {
         free(result);
