@@ -9,7 +9,7 @@
 
 typedef void (*on_lexer_destroy_cb_t)(void *);
 
-SHALL_API const size_t SHALL_LEXER_COUNT;
+extern SHALL_API const size_t SHALL_LEXER_COUNT;
 
 SHALL_API Lexer *lexer_unwrap(OptionValue);
 
@@ -53,12 +53,12 @@ SHALL_API int lexer_get_option(Lexer *, const char *, OptionValue **);
 SHALL_API int lexer_set_option(Lexer *, const char *, OptionType, OptionValue, void **);
 SHALL_API int lexer_set_option_as_string(Lexer *, const char *, const char *, size_t);
 
-SHALL_API const FormatterImplementation *bbcodefmt;
-SHALL_API const FormatterImplementation *htmlfmt;
-SHALL_API const FormatterImplementation *termfmt;
-SHALL_API const FormatterImplementation *plainfmt;
+extern SHALL_API const FormatterImplementation *bbcodefmt;
+extern SHALL_API const FormatterImplementation *htmlfmt;
+extern SHALL_API const FormatterImplementation *termfmt;
+extern SHALL_API const FormatterImplementation *plainfmt;
 
-SHALL_API const size_t SHALL_FORMATTER_COUNT;
+extern SHALL_API const size_t SHALL_FORMATTER_COUNT;
 
 SHALL_API const FormatterImplementation *formatter_implementation(Formatter *);
 SHALL_API const FormatterImplementation *formatter_implementation_by_name(const char *);
