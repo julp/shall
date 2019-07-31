@@ -160,5 +160,8 @@ LexerImplementation lua_lexer = {
     NULL, // finalize
     sizeof(LuaLexerData),
     NULL, // options
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

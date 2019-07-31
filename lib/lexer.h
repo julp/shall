@@ -295,7 +295,7 @@ struct LexerInput {
     const YYCTYPE *marker;
 //     size_t yyleng;
     /**
-     * Begin of current token
+     * Beginning of current token
      */
     const YYCTYPE *yytext;
 //     size_t lineno;
@@ -307,6 +307,8 @@ struct LexerInput {
 
 typedef struct LexerInput LexerInput;
 typedef struct LexerReturnValue LexerReturnValue;
+
+typedef struct yypstate yypstate;
 
 /**
  * Define a lexer (acts as a class)
@@ -375,6 +377,12 @@ struct LexerImplementation {
      * Implicit dependencies to other lexers
      */
     const struct LexerImplementation * const *implicit;
+    /**
+     * TODO
+     */
+    int (*yypush_parse)(yypstate *, int, LexerReturnValue/*YYSTYPE*/ const *);
+    void *(*yypstate_new)(void);
+    void (*yypstate_delete)(void *);
 };
 
 /**
@@ -393,10 +401,11 @@ struct Lexer {
 
 // TODO: rename as YYSTYPE
 struct LexerReturnValue {
+    LexerReturnValue *next;
     const YYCTYPE *yystart;
     const YYCTYPE *yyend;
-    int token_value; // TOKEN
-    int token_default_type; // TOKEN
+    int token_value; // TOKEN, the token value for the parser (it might be different for the one of the lexer and highlighting)
+    int token_default_type; // TOKEN, the default token value set by the lexer and used to highlight
     const YYCTYPE *child_limit; // DELEGATE_*
     int delegation_fallback; // DELEGATE_*
 #ifdef DEBUG

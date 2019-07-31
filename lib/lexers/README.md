@@ -170,9 +170,9 @@ MIME type(s): text/x-nginx-conf
 
 For PHP source code
 
-Alias(es): php3, php4, php5
+Alias(es): php3, php4, php5, php7
 
-Filename(s): *.php, *.php[345], *.inc
+Filename(s): *.php, *.php[3457], *.inc
 
 MIME type(s): text/x-php, application/x-httpd-php
 

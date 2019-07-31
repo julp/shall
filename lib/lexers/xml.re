@@ -337,7 +337,10 @@ LexerImplementation xml_lexer = {
     NULL, // finalize
     sizeof(XMLLexerData),
     NULL, // options
-    (const LexerImplementation * const []) { &dtd_lexer, NULL }
+    (const LexerImplementation * const []) { &dtd_lexer, NULL },
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };
 
 LexerImplementation html_lexer = {
@@ -353,5 +356,8 @@ LexerImplementation html_lexer = {
     NULL, // finalize
     sizeof(XMLLexerData),
     NULL, // options
-    (const LexerImplementation * const []) { &css_lexer, &js_lexer, NULL }
+    (const LexerImplementation * const []) { &css_lexer, &js_lexer, NULL },
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

@@ -482,5 +482,8 @@ LexerImplementation varnish_lexer = {
         { S("version"), OPT_TYPE_INT, offsetof(VarnishLexerOption, version), OPT_DEF_INT(3), "VCL version, default is 3 if `vcl` statement is absent" },
         END_OF_OPTIONS
     },
-    (const LexerImplementation * const []) { &c_lexer, NULL }
+    (const LexerImplementation * const []) { &c_lexer, NULL },
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

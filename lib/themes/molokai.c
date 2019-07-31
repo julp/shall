@@ -64,7 +64,7 @@ const SHALL_API Theme molokai = {
         [ NAME_CLASS ]             = { COMMON_STYLE },
         [ NAME_FUNCTION ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
-//         [ NAME_CONSTANT ]          = { .fg = blue },
+        [ NAME_CONSTANT ]          = { FG(blue) },
 #define COMMON_STYLE FG(white)
         [ NAME_BUILTIN_PSEUDO ]    = { COMMON_STYLE },
         [ NAME_BUILTIN ]           = { COMMON_STYLE },

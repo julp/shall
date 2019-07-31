@@ -1,0 +1,21 @@
+--TEST--
+PHP : assume constants are recognized in use statement
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+use const \Foo\CONSTA, \Bar\CONSTB as CONSTC;
+--EXPECT--
+KEYWORD: use
+IGNORABLE:  
+KEYWORD: const
+IGNORABLE:  
+NAME_CONSTANT: \Foo\CONSTA
+PUNCTUATION: ,
+IGNORABLE:  
+NAME_CONSTANT: \Bar\CONSTB
+IGNORABLE:  
+KEYWORD: as
+IGNORABLE:  
+NAME_CONSTANT: CONSTC
+PUNCTUATION: ;

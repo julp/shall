@@ -161,5 +161,8 @@ LexerImplementation js_lexer = {
     NULL, // finalyze
     sizeof(LexerData),
     NULL, // options
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

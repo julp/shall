@@ -38,6 +38,7 @@ set(COMMON_INCLUDE_DIRECTORIES #
     ${PROJECT_SOURCE_DIR}/shared/
     ${PROJECT_SOURCE_DIR}/include/
     ${PROJECT_BINARY_DIR}
+    ${PROJECT_BINARY_DIR}/gengrammars/
 )
 set(SHALL_LIB_INCLUDE_DIRS ${COMMON_INCLUDE_DIRECTORIES})
 
@@ -92,6 +93,7 @@ if("${srcdir}" STREQUAL "${bindir}")
 endif("${srcdir}" STREQUAL "${bindir}")
 
 find_package(RE2C 0.13.7 REQUIRED)
+find_package(BISON 3 REQUIRED)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
@@ -99,16 +101,16 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 #     add_definitions(-DDEBUG -DTEST)
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-set(SOURCES #
+set(SOURCES
     lib/lexer.c lib/formatter.c lib/highlight.c lib/options.c lib/themes.c lib/tokens.c lib/lexers/helpers.c lib/version.c lib/encoding.c lib/iterator.c
     lib/darray.c lib/dlist.c
     shared/xtring.c shared/hashtable.c
 )
-set(THEMES monokai molokai)
+set(THEMES monokai molokai tulip)
 set(FORMATTERS bbcode html plain rtf terminal)
 set(C_LEXERS cpp diff text) # annotations
 set(RE2C_LEXERS apache bash c cmake css dtd elixir go js json lua mysql nginx pgsql php python ruby twig varnish xml)
-set(BISON_GRAMMARS )
+set(BISON_GRAMMARS php)
 
 foreach(lexer ${C_LEXERS})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.c")
@@ -118,19 +120,19 @@ foreach(theme ${THEMES})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/themes/${theme}.c")
 endforeach(theme)
 
-set(RE2C_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/genlexers")
-file(MAKE_DIRECTORY "${RE2C_OUTPUT_DIRECTORY}")
-foreach(lexer ${RE2C_LEXERS})
-    list(APPEND SOURCES "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c")
-    RE2C_TARGET(NAME "${lexer}" INPUT "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "${PROJECT_SOURCE_DIR}/lib/lexer.h")
-endforeach(lexer)
-
 set(BISON_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/gengrammars")
 file(MAKE_DIRECTORY "${BISON_OUTPUT_DIRECTORY}")
 foreach(grammar ${BISON_GRAMMARS})
     list(APPEND SOURCES "${BISON_OUTPUT_DIRECTORY}/${grammar}.c")
     BISON_TARGET("${grammar}" "${PROJECT_SOURCE_DIR}/lib/lexers/${grammar}.y" "${BISON_OUTPUT_DIRECTORY}/${grammar}.c" COMPILE_FLAGS "-dp ${grammar}")
 endforeach(grammar)
+
+set(RE2C_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/genlexers")
+file(MAKE_DIRECTORY "${RE2C_OUTPUT_DIRECTORY}")
+foreach(lexer ${RE2C_LEXERS})
+    list(APPEND SOURCES "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c")
+    RE2C_TARGET(NAME "${lexer}" INPUT "${PROJECT_SOURCE_DIR}/lib/lexers/${lexer}.re" OUTPUT "${RE2C_OUTPUT_DIRECTORY}/${lexer}.c" OPTIONS "-cd8" DEPENDS "${PROJECT_SOURCE_DIR}/lib/lexer.h")
+endforeach(lexer)
 
 foreach(fmt ${FORMATTERS})
     list(APPEND SOURCES "${PROJECT_SOURCE_DIR}/lib/formatters/${fmt}.c")

@@ -64,6 +64,7 @@ const SHALL_API Theme monokai = {
 #define COMMON_STYLE FG(bright_green), .bold = true
         [ NAME ]                   = { COMMON_STYLE },
         [ NAME_CLASS ]             = { COMMON_STYLE },
+        [ NAME_CONSTANT ]          = { COMMON_STYLE },
         [ NAME_FUNCTION ]          = { COMMON_STYLE },
 #undef COMMON_STYLE
 //         [ NAME_CONSTANT ]          = { FG(soft_cyan) },

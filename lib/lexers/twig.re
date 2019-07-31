@@ -61,11 +61,13 @@ static named_element_t statement_keywords[] = {
     NE("with"),
 };
 
+#if 0 /* UNUSED */
 static named_element_t global_variables[] = {
     NE("_charset"),
     NE("_context"),
     NE("_self"),
 };
+#endif
 
 enum {
     STATE(INITIAL),
@@ -284,5 +286,8 @@ LexerImplementation twig_lexer = {
         { S("secondary"), OPT_TYPE_LEXER, offsetof(TwigLexerOption, secondary), OPT_DEF_LEXER, "Lexer to highlight content outside of Twig blocks (if none, these parts will not be highlighted)" },
         END_OF_OPTIONS
     },
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

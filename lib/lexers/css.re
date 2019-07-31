@@ -380,6 +380,7 @@ static named_element_t attributes[] = {
     NE("z-index"),
 };
 
+#if 0 /* UNUSED */
 static named_element_t constants[] = {
     NE("aliceblue"),
     NE("antiquewhite"),
@@ -522,6 +523,7 @@ static named_element_t constants[] = {
     NE("yellow"),
     NE("yellowgreen"),
 };
+#endif
 
 static named_element_t builtins[] = {
     NE("above"),
@@ -889,5 +891,8 @@ LexerImplementation css_lexer = {
     NULL, // finalyze
     sizeof(LexerData),
     NULL, // options
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

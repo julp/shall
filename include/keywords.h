@@ -8,6 +8,13 @@ http://pygments.org/docs/tokens/
 
 #endif
 
+#define SHEBANG IGNORABLE
+#define NAME_METHOD NAME_FUNCTION
+#define NAME_CLASS_TRAIT NAME_CLASS
+#define NAME_CLASS_CONSTANT NAME_CONSTANT
+#define NAME_CLASS_EXCEPTION NAME_CLASS
+#define NAME_CLASS_INTERFACE NAME_CLASS
+
 // internal use
 TOKEN(EOS, -1, "end of stream", " ")
 // public
@@ -28,6 +35,7 @@ TOKEN(NAME, -1, "uncategorized name type", "n")
     TOKEN(NAME_ATTRIBUTE, NAME, "tag attribute's name", "na")
     TOKEN(NAME_FUNCTION, NAME, "a function name", "nf")
     TOKEN(NAME_CLASS, NAME, "a class name", "nc")
+    TOKEN(NAME_CONSTANT, NAME, "a constant name", "nco")
     TOKEN(NAME_NAMESPACE, NAME, "a namespace name", "nn")
     TOKEN(NAME_VARIABLE, NAME, "variable name", "v")
         TOKEN(NAME_VARIABLE_CLASS, NAME_VARIABLE, "name of a class variable", "vc")

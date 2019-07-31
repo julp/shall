@@ -1000,5 +1000,8 @@ LexerImplementation postgresql_lexer = {
         { S("standard_conforming_strings"), OPT_TYPE_BOOL, offsetof(PgLexerOption, standard_conforming_strings), OPT_DEF_BOOL(1), "To treat backslashes literally in ordinary string literals (`'...'`) or not" },
         END_OF_OPTIONS
     },
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

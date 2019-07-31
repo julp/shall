@@ -95,5 +95,8 @@ LexerImplementation diff_lexer = {
         { S("secondary"), OPT_TYPE_LEXER, offsetof(DiffLexerOption, secondary), OPT_DEF_LEXER, "Lexer to highlight non diff lines (if none, these parts will not be highlighted)" },
         END_OF_OPTIONS
     },
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

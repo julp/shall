@@ -92,89 +92,91 @@ module Shall
         NAME_FUNCTION = 13
         # a class name
         NAME_CLASS = 14
+        # a constant name
+        NAME_CONSTANT = 15
         # a namespace name
-        NAME_NAMESPACE = 15
+        NAME_NAMESPACE = 16
         # variable name
-        NAME_VARIABLE = 16
+        NAME_VARIABLE = 17
         # name of a class variable
-        NAME_VARIABLE_CLASS = 17
+        NAME_VARIABLE_CLASS = 18
         # name of a global variable
-        NAME_VARIABLE_GLOBAL = 18
+        NAME_VARIABLE_GLOBAL = 19
         # name of a variable instance
-        NAME_VARIABLE_INSTANCE = 19
+        NAME_VARIABLE_INSTANCE = 20
         # uncategorized keyword type
-        KEYWORD = 20
+        KEYWORD = 21
         # 
-        KEYWORD_DEFAULT = 21
+        KEYWORD_DEFAULT = 22
         # 
-        KEYWORD_BUILTIN = 22
+        KEYWORD_BUILTIN = 23
         # a keyword that is constant
-        KEYWORD_CONSTANT = 23
+        KEYWORD_CONSTANT = 24
         # a keyword used for variable declaration (`var` or `let` in Javascript)
-        KEYWORD_DECLARATION = 24
+        KEYWORD_DECLARATION = 25
         # a keyword used for namespace declaration (`namespace` in PHP, `package` in Java
-        KEYWORD_NAMESPACE = 25
+        KEYWORD_NAMESPACE = 26
         # a keyword that is't really a keyword
-        KEYWORD_PSEUDO = 26
+        KEYWORD_PSEUDO = 27
         # a reserved keyword
-        KEYWORD_RESERVED = 27
+        KEYWORD_RESERVED = 28
         # a builtin type (`char`, `int`, ... in C)
-        KEYWORD_TYPE = 28
+        KEYWORD_TYPE = 29
         # uncategorized number type
-        NUMBER = 29
+        NUMBER = 30
         # float number
-        NUMBER_FLOAT = 30
+        NUMBER_FLOAT = 31
         # decimal number
-        NUMBER_DECIMAL = 31
+        NUMBER_DECIMAL = 32
         # imaginary number
-        NUMBER_IMAGINARY = 32
+        NUMBER_IMAGINARY = 33
         # binary number
-        NUMBER_BINARY = 33
+        NUMBER_BINARY = 34
         # octal number
-        NUMBER_OCTAL = 34
+        NUMBER_OCTAL = 35
         # hexadecimal number
-        NUMBER_HEXADECIMAL = 35
+        NUMBER_HEXADECIMAL = 36
         # uncategorized comment type
-        COMMENT = 36
+        COMMENT = 37
         # comment which ends at the end of the line
-        COMMENT_SINGLE = 37
+        COMMENT_SINGLE = 38
         # multiline comment
-        COMMENT_MULTILINE = 38
+        COMMENT_MULTILINE = 39
         # comment with documentation value
-        COMMENT_DOCUMENTATION = 39
+        COMMENT_DOCUMENTATION = 40
         # uncategorized string type
-        STRING = 40
+        STRING = 41
         # single quoted string
-        STRING_SINGLE = 41
+        STRING_SINGLE = 42
         # double quoted string
-        STRING_DOUBLE = 42
+        STRING_DOUBLE = 43
         # string enclosed in backticks
-        STRING_BACKTICK = 43
+        STRING_BACKTICK = 44
         # regular expression
-        STRING_REGEX = 44
+        STRING_REGEX = 45
         # interned string
-        STRING_INTERNED = 45
+        STRING_INTERNED = 46
         # escaped sequence in string like \n, \x32, \u1234, etc
-        SEQUENCE_ESCAPED = 46
+        SEQUENCE_ESCAPED = 47
         # sequence in string for interpolated variables
-        SEQUENCE_INTERPOLATED = 47
+        SEQUENCE_INTERPOLATED = 48
         # uncategorized literal type
-        LITERAL = 48
+        LITERAL = 49
         # size literals (eg: 3ko)
-        LITERAL_SIZE = 49
+        LITERAL_SIZE = 50
         # duration literals (eg: 23s)
-        LITERAL_DURATION = 50
+        LITERAL_DURATION = 51
         # 
-        GENERIC = 51
+        GENERIC = 52
         # the token value as bold
-        GENERIC_STRONG = 52
+        GENERIC_STRONG = 53
         # the token value is a headline
-        GENERIC_HEADING = 53
+        GENERIC_HEADING = 54
         # the token value is a subheadline
-        GENERIC_SUBHEADING = 54
+        GENERIC_SUBHEADING = 55
         # marks the token value as deleted
-        GENERIC_DELETED = 55
+        GENERIC_DELETED = 56
         # marks the token value as inserted
-        GENERIC_INSERTED = 56
+        GENERIC_INSERTED = 57
     end
 end

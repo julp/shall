@@ -649,5 +649,8 @@ LexerImplementation mysql_lexer = {
         { S("no_backslash_escapes"), OPT_TYPE_BOOL, offsetof(MyLexerOption, no_backslash_escapes), OPT_DEF_BOOL(0), "When true, disable the use of the backslash character as an escape character within strings, backslash becomes an ordinary character like any other." },
         END_OF_OPTIONS
     },
-    NULL // dependencies
+    NULL, // dependencies
+    NULL, // yypush_parse
+    NULL, // yypstate_new
+    NULL, // yypstate_delete
 };

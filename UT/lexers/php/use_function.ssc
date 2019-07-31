@@ -1,0 +1,21 @@
+--TEST--
+PHP : assume functions are recognized in use statement
+--LEXER--
+php
+start_inline=1
+--SOURCE--
+use function \Foo\fnA, \Bar\fnB as fnC;
+--EXPECT--
+KEYWORD: use
+IGNORABLE:  
+KEYWORD: function
+IGNORABLE:  
+NAME_FUNCTION: \Foo\fnA
+PUNCTUATION: ,
+IGNORABLE:  
+NAME_FUNCTION: \Bar\fnB
+IGNORABLE:  
+KEYWORD: as
+IGNORABLE:  
+NAME_FUNCTION: fnC
+PUNCTUATION: ;
