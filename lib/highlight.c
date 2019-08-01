@@ -452,7 +452,9 @@ retry_as_token:
                 debug("parse error on >%.*s< (%d) (%s)", (int) (obc.cursor->yyend - obc.cursor->yystart), obc.cursor->yystart, obc.cursor->token_value, tokens[obc.cursor->token_default_type].name);
                 skip_parser = true;
                 status = YYPUSH_MORE;
+#ifdef DEBUG
                 goto abandon_or_done; // WARNING: temporary
+#endif
             }
         }
         switch ((what & ~TOKEN)) {
