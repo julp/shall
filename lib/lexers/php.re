@@ -468,8 +468,8 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     VALUED_TOKEN(KEYWORD, T_ELSE);
 }
 
-<ST_IN_SCRIPTING> 'empty' | 'eval' {
-    VALUED_TOKEN(KEYWORD, T_FUNCTION_LIKE_KEYWORD);
+<ST_IN_SCRIPTING> 'empty' {
+    VALUED_TOKEN(KEYWORD, T_EMPTY);
 }
 
 <ST_IN_SCRIPTING> 'enddeclare' {
@@ -494,6 +494,10 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 
 <ST_IN_SCRIPTING> 'endwhile' {
     VALUED_TOKEN(KEYWORD, T_ENDWHILE);
+}
+
+<ST_IN_SCRIPTING> 'eval' {
+    VALUED_TOKEN(KEYWORD, T_EVAL);
 }
 
 <ST_IN_SCRIPTING> 'exit' | 'die' {
@@ -604,8 +608,20 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     VALUED_TOKEN(OPERATOR, T_LOGICAL_BINARY_OP);
 }
 
-<ST_IN_SCRIPTING> "&&" | "||" | "**" | "<=>" | "??" | "<<" | ">>" | [<>]"=" | [!=]"="{1,2} | [<>/%|&.+*^-] {
-    VALUED_TOKEN(OPERATOR, T_BINARY_OP);
+<ST_IN_SCRIPTING> "<=>" | [<>]"="? | [!=]"="{1,2} {
+    VALUED_TOKEN(OPERATOR, T_NONASSOC_BINARY_OP);
+}
+
+<ST_IN_SCRIPTING> "&&" | "||" | "<<" | ">>" | [.*%/|&^] {
+    VALUED_TOKEN(OPERATOR, T_LEFT_BINARY_OP);
+}
+
+<ST_IN_SCRIPTING> "**" | "??" {
+    VALUED_TOKEN(OPERATOR, T_RIGHT_BINARY_OP);
+}
+
+<ST_IN_SCRIPTING> [@!=~+-] {
+    VALUED_TOKEN(OPERATOR, *YYTEXT);
 }
 
 <ST_IN_SCRIPTING> 'throw' {
