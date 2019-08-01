@@ -131,7 +131,7 @@ void list_apply(List *list, int type)
 
 %token <rv> T_IGNORE "internaly used by shall, has to be the very first"
 
-%left T_INCLUDE_REQUIRE //T_EVAL
+%left T_INCLUDE_REQUIRE T_EVAL
 %left ','
 %left T_LOGICAL_BINARY_OP
 %right T_PRINT
@@ -140,21 +140,13 @@ void list_apply(List *list, int type)
 %right T_YIELD_FROM
 %left '=' T_EQUAL_OP
 %left '?' ':'
-// %right T_COALESCE
-// %left T_BOOLEAN_OR
-// %left T_BOOLEAN_AND
-%left '|'
-%left '^'
-%left '&'
-// %nonassoc T_IS_EQUAL T_IS_NOT_EQUAL T_IS_IDENTICAL T_IS_NOT_IDENTICAL T_SPACESHIP T_IS_SMALLER_OR_EQUAL T_IS_GREATER_OR_EQUAL
-%nonassoc '<' '>'
-// %left T_SL T_SR
-%left '+' '-' '.'
-%left '*' '/' '%'
+%right T_RIGHT_BINARY_OP
+%left T_LEFT_BINARY_OP
+%nonassoc T_NONASSOC_BINARY_OP
+%left '+' '-'
 %right '!'
 %nonassoc T_INSTANCEOF
 %right '~' T_INC T_DEC T_CAST '@'
-// %right T_POW
 %right '['
 %nonassoc T_NEW T_CLONE
 %left T_NOELSE
@@ -171,7 +163,9 @@ void list_apply(List *list, int type)
 %token <rv> T_DOUBLE_ARROW "=>"
 %token <rv> T_OBJECT_OPERATOR "->"
 %token <rv> T_PAAMAYIM_NEKUDOTAYIM "::"
-%token <rv> T_BINARY_OP "a binary operator"
+%token <rv> T_LEFT_BINARY_OP "a (left) binary operator"
+%token <rv> T_RIGHT_BINARY_OP "a (right) binary operator"
+%token <rv> T_NONASSOC_BINARY_OP "a (nonassoc) binary operator"
 %token <rv> T_EQUAL_OP "an operator with assignment (eg .=)"
 
 %token <rv> T_LNUMBER "an integer (decimal)"
@@ -195,12 +189,14 @@ void list_apply(List *list, int type)
 %token <rv> T_ECHO "echo"
 %token <rv> T_ELSE "else"
 %token <rv> T_ELSEIF "elseif"
+%token <rv> T_EMPTY "empty"
 %token <rv> T_ENDIF "endif"
 %token <rv> T_ENDDECLARE "enddeclare"
 %token <rv> T_ENDFOR "endfor"
 %token <rv> T_ENDFOREACH "endforeach"
 %token <rv> T_ENDSWITCH "endswitch"
 %token <rv> T_ENDWHILE "endwhile"
+%token <rv> T_EVAL "eval"
 %token <rv> T_EXIT "exit"
 %token <rv> T_EXTENDS "extends"
 %token <rv> T_FINAL "final"
@@ -238,7 +234,6 @@ void list_apply(List *list, int type)
 %token <rv> T_START_HEREDOC
 
 %token <rv> T_VARIABLE "a variable"
-%token <rv> T_FUNCTION_LIKE_KEYWORD "empty/eval"
 %token <rv> T_VISIBILITY "public/protected/private"
 %token <rv> T_INCLUDE_REQUIRE "(include|require)(_once)?"
 %token <rv> T_LOGICAL_BINARY_OP "and|or|xor"
@@ -261,7 +256,7 @@ void list_apply(List *list, int type)
 
 // TODO: regrouper or/and/xor sous un token à part
 reserved_non_modifiers:
-        T_INCLUDE_REQUIRE | T_FUNCTION_LIKE_KEYWORD | T_LOGICAL_BINARY_OP
+        T_INCLUDE_REQUIRE | T_EVAL | T_EMPTY | T_LOGICAL_BINARY_OP
     |   T_INSTANCEOF | T_NEW | T_CLONE | T_EXIT | T_IF | T_ELSEIF | T_ELSE | T_ENDIF | T_ECHO | T_DO | T_WHILE | T_ENDWHILE
     |   T_FOR | T_ENDFOR | T_FOREACH | T_ENDFOREACH | T_DECLARE | T_ENDDECLARE | T_AS | T_TRY | T_CATCH | T_FINALLY
     |   T_THROW | T_USE | T_INSTEADOF | T_GLOBAL | T_VAR | T_UNSET | T_ISSET | T_CONTINUE | T_GOTO
@@ -770,7 +765,11 @@ expr:
     |   T_INC variable
     |   variable T_DEC
     |   T_DEC variable
-    |   expr T_BINARY_OP expr
+    |   expr T_LEFT_BINARY_OP expr
+    |   expr T_RIGHT_BINARY_OP expr
+    |   expr T_NONASSOC_BINARY_OP expr
+    |   expr '+' expr
+    |   expr '-' expr
     |   '+' expr %prec T_INC
     |   '-' expr %prec T_INC
     |   '!' expr
@@ -872,8 +871,8 @@ scalar:
         T_LNUMBER
     |   T_DNUMBER
     |   T_INTERNAL_CONSTANT
-    |   T_START_HEREDOC T_ENCAPSED_AND_WHITESPACE T_END_HEREDOC
-    |   T_START_HEREDOC T_END_HEREDOC
+    //|   T_START_HEREDOC T_ENCAPSED_AND_WHITESPACE T_END_HEREDOC /* T_ENCAPSED_AND_WHITESPACE also handled by encaps_list */
+    //|   T_START_HEREDOC T_END_HEREDOC /* encaps_list can be %empty */
     |   '"' encaps_list '"'
     |   T_START_HEREDOC encaps_list T_END_HEREDOC
     |   dereferencable_scalar
@@ -1026,7 +1025,8 @@ encaps_var_offset:
 internal_functions_in_yacc:
         T_ISSET '(' isset_variables possible_comma ')'
     |   T_INCLUDE_REQUIRE expr
-    |   T_FUNCTION_LIKE_KEYWORD '(' expr ')'
+    |   T_EVAL '(' expr ')'
+    |   T_EMPTY '(' expr ')'
 ;
 
 isset_variables:
