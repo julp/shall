@@ -299,6 +299,13 @@ NEWLINE = ("\r"|"\n"|"\r\n");
     VALUED_TOKEN(default_token_type[YYSTATE], T_START_HEREDOC);
 }
 
+/**
+ * NOTE: PHP doesn't allow:
+ * - a mix of spaces and tabulations to indent the label which ends the (here|now)doc string
+ * - inner string have to be indenteed with at least the same amount of spaces/tabulations (not less else parse error)
+ *
+ * But we do (at least we doesn't check these points at all)
+ */
 <ST_HEREDOC,ST_NOWDOC> NEWLINE TABS_AND_SPACES LABEL [^a-zA-Z0-9_\x80-\xFF] {
     int old_state, token_value;
     // beginning and end of the LABEL
@@ -827,13 +834,14 @@ NEWLINE = ("\r"|"\n"|"\r\n");
 }
 
 <ST_VAR_OFFSET> "[" {
-    VALUED_TOKEN(PUNCTUATION, *YYTEXT); // ???
+    VALUED_TOKEN(PUNCTUATION, *YYTEXT);
 }
 
 <ST_VAR_OFFSET> LABEL {
     VALUED_TOKEN(NAME_CONSTANT, T_STRING);
 }
 
+// TODO: not needed?
 <ST_VAR_OFFSET>[ \n\r\t\\'#] {
     /* Invalid rule to return a more explicit parse error with proper line number */
     yyless(0);

@@ -851,7 +851,8 @@ exit_expr:
 ;
 
 backticks_expr:
-        /* JULP %empty
+    /* JULP: see comment of "encaps_list" rule */
+        /*%empty
     |   T_ENCAPSED_AND_WHITESPACE
     |*/   encaps_list
 ;
@@ -977,7 +978,11 @@ array_pair:
 ;
 
 encaps_list:
-/* JULP if 1 */
+    /* JULP: this change was necessary to allow consecutive T_ENCAPSED_AND_WHITESPACE tokens:
+     * PHP send only one (the longest possible one) at the time but this is not our case where
+     * each character (almost) is a token in order to handle escaped characters and sequences.
+     */
+/*if 1 */
         %empty
     |   non_empty_encaps_list
 ;

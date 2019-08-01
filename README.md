@@ -20,6 +20,7 @@ See README.md in lib/formatters/
 * cmake (>= 2.8.8)
 * a C(99) compiler
 * re2c (>= 0.13.7)
+* bison 3
 * doxygen (optionnal)
 * ICU or iconv (optionnal, for conversions in CLI)
 
@@ -63,5 +64,5 @@ Examples:
 
 * re2c: -b option generates broken lexers?
 * input/output strings have to be UTF-8 encoded
-* formatters: there are leaking (for now) if a same formatter is used to highlight more than one source
+* formatters: they are leaking (for now) if a same formatter is used to highlight more than one source
 * themes: style hashing (recognize that 2 styles are the same) requires a 64-bit system (results may be wrong on 32-bit system)
